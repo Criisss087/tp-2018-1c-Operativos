@@ -8,13 +8,13 @@
 #ifndef UTILIDADES_H_
 #define UTILIDADES_H_
 
-#include <stdio.h> // Por dependencia de readline en algunas distros de linux :)
+#include <stdio.h> 				// Por dependencia de readline en algunas distros de linux :)
 #include <string.h>
-#include <stdlib.h> // Para malloc
-#include <sys/socket.h> // Para crear sockets, enviar, recibir, etc
-#include <netdb.h> // Para getaddrinfo
-#include <unistd.h> // Para close
-#include <readline/readline.h> // Para usar readline
+#include <stdlib.h> 			// Para malloc
+#include <sys/socket.h> 		// Para crear sockets, enviar, recibir, etc
+#include <netdb.h> 				// Para getaddrinfo
+#include <unistd.h> 			// Para close
+#include <readline/readline.h> 	// Para usar readline
 #include <commons/log.h>
 #include <commons/string.h>
 #include <commons/collections/list.h>
