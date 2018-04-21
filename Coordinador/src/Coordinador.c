@@ -27,7 +27,7 @@ int main(void)
     struct sockaddr_in their_addr; // información sobre la dirección del cliente
     int sin_size;
     int yes=1;
-
+//agrego este texto para hacer pruebas con github
     if ((sockfd = socket(AF_INET, SOCK_STREAM, 0)) == -1) {
             perror("socket");
             exit(1);
