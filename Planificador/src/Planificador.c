@@ -2,24 +2,13 @@
  ============================================================================
  Name        : Planificador.c
  Author      : La Orden Del Socket
- Version     :
- Copyright   : Si nos copias nos desaprueban el coloquio
- Description : Hello World in C, Ansi-style
+ Version     : 0.1
+ Copyright   : Si nos copias nos desaprueban cel coloquio
+ Description : Planificador
  ============================================================================
  */
 
-#include <stdio.h>
-#include <stdlib.h>
-#include <sys/socket.h>
-#include <pthread.h>
-
-#define IP "127.0.0.1"
-#define PORT "8080"
-
-int *conectar_coordinador();
-int *abrir_consola();
-int *iniciar_servidor();
-
+#include "Planificador.h"
 
 int main(void) {
 
@@ -34,18 +23,26 @@ int main(void) {
 	// Conectar al Coordinador
 	pthread_attr_init(&t_cord_attr);
 	pthread_create(&t_cord_id, &t_cord_attr, conectar_coordinador, NULL);
-	pthread_join(t_cord_id, NULL);
 
 	// Iniciarse como servidor
-	//iniciar_servidor();
+	pthread_attr_init(&t_servidor_attr);
+	pthread_create(&t_servidor_id, &t_servidor_attr, (void *)iniciar_servidor, NULL);
+
+
+	pthread_join(t_cord_id, NULL);
+	pthread_join(t_servidor_id, NULL);
 
 	// Abrir la consola
-	//abrir_consola();
+	pthread_attr_init(&t_consola_attr);
+	pthread_create(&t_consola_id, &t_consola_attr, (void *)consola, NULL);
+
+	pthread_join(t_consola_id, NULL);
+
 
 	return EXIT_SUCCESS;
 }
 
-int *conectar_coordinador() {
+void *conectar_coordinador() {
 
 	int server_socket;
 	int familiaProt = PF_INET;
@@ -62,29 +59,35 @@ int *conectar_coordinador() {
 	getaddrinfo(IP, PORT, &hints, &server_info); // Carga en server_info los datos de la conexion
 
 	// TODO Hacerlo cliente
-	server_socket = socket(server_info->ai_family, server_info->ai_socktype,
-			server_info->ai_protocol);
-	if (server_socket != -1)
-		printf("CREO EL SOCKET");
-	else
-		printf("NOPS");
+	printf("\nIniciando como cliente hacia el coordinador...\n");
 
-	int respuesta = connect(server_socket, server_info->ai_addr,
-			server_info->ai_addrlen);
+	server_socket = socket(server_info->ai_family, server_info->ai_socktype, server_info->ai_protocol);
+	if (server_socket != -1)
+		printf("Socket creado correctamente!\n");
+	else
+		printf("Error al crear el socket\n");
+
+	int res_connect = connect(server_socket, server_info->ai_addr, server_info->ai_addrlen);
+	if (res_connect < 0)
+	{
+		printf("Error al intentar conectar al servidor\n");
+		pthread_exit(0);
+	}
+	else
+		printf("Conectando con el servidor...\n");
+
 	freeaddrinfo(server_info);
 
-	if (respuesta < 0) {
-		_exit_with_error(server_socket, "No me pude conectar al servidor",
-		NULL);
-	}
-
-	void *mensaje;
-	int size;
+	char *mensaje = malloc(1000);
 
 	//Intento enviar mensaje al coordinador
-	int resp_send = send(server_socket, mensaje, size, 0);
+	int res_send = send(server_socket, mensaje, sizeof(mensaje), 0);
+	printf("Intentando mandar un mensaje vacío...\n");
 
-	close(socket);
+	free(mensaje);
+
+	int res_close = close(server_socket);
+	printf("Cerrando el socket y saliendo el hilo...\n");
 
 	pthread_exit(0);
 }
@@ -92,13 +95,102 @@ int *conectar_coordinador() {
 
 int *iniciar_servidor() {
 
+	printf("Iniciando como servidor...\n");
+
 	pthread_exit(0);
+	return EXIT_SUCCESS;
 }
 
 
 // TODO Armar la consola
-int *abrir_consola() {
+int *consola() {
+
+	printf("\nAbriendo consola...\n");
+	printf("Ingrese un comando...\n");
+
+	int comando_key;
+	char buffer[255];
+	char *comando;
+	char *parametros;
+
+	do
+	{
+		scanf("%s", buffer);
+
+		//Por ahora no separo el comando de los parametros
+		comando_key = obtener_key_comando(buffer);
+		switch(comando_key)
+		{
+			case pausar:
+				printf("Estas intentando pausar...\n");
+				break;
+			case continuar:
+				printf("Estas intentando continuar...\n");
+				break;
+			case bloquear:
+				printf("Estas intentando bloquear nada...\n");
+				break;
+			case desbloquear:
+				printf("Estas intentando desbloqear nada...\n");
+				break;
+			case listar:
+				printf("Nada que listar...\n");
+				break;
+			case kill:
+				printf("Nada para matar...\n");
+				break;
+			case status:
+				printf("Status de una clave...\n");
+				break;
+			case deadlock:
+				printf("Si tan solo supiera que es...\n");
+				break;
+			case salir:
+				printf("Terminando consola...\n");
+				break;
+			default:
+				printf("No reconozco el comando vieja...\n");
+				break;
+		}
+
+	}while(strcmp(buffer,"exit"));
+
+
 
 	pthread_exit(0);
+	return EXIT_SUCCESS;
 }
 
+int obtener_key_comando(char* comando)
+{
+	int key = -1;
+
+	if(!strcmp(comando, "pausar"))
+		key = pausar;
+
+	if(!strcmp(comando, "continuar"))
+		key = continuar;
+
+	if(!strcmp(comando, "bloquear"))
+		key = bloquear;
+
+	if(!strcmp(comando, "desbloquear"))
+		key = desbloquear;
+
+	if(!strcmp(comando, "listar"))
+		key = listar;
+
+	if(!strcmp(comando, "kill"))
+		key = kill;
+
+	if(!strcmp(comando, "status"))
+		key = status;
+
+	if(!strcmp(comando, "deadlock"))
+		key = deadlock;
+
+	if(!strcmp(comando, "exit"))
+		key = salir;
+
+	return key;
+}
