@@ -27,8 +27,8 @@ int *consola();
 int *iniciar_servidor();
 
 int obtener_key_comando(char* comando);
-void obtener_parametros(char* comando, char* parametros);//Falta implementarla
-
+void obtener_parametros(char* buffer, char** comando, char** parametro1, char** parametro2);//Falta implementarla
+char * leer_linea(void);
 
 //Enumeracion de los comandos de la consola
 enum comandos { pausar, continuar, bloquear, desbloquear, listar, kill, status, deadlock, salir };

@@ -58,7 +58,7 @@ void *conectar_coordinador() {
 
 	getaddrinfo(IP, PORT, &hints, &server_info); // Carga en server_info los datos de la conexion
 
-	// TODO Hacerlo cliente
+
 	printf("\nIniciando como cliente hacia el coordinador...\n");
 
 	server_socket = socket(server_info->ai_family, server_info->ai_socktype, server_info->ai_protocol);
@@ -102,23 +102,34 @@ int *iniciar_servidor() {
 }
 
 
-// TODO Armar la consola
+
 int *consola() {
 
 	printf("\nAbriendo consola...\n");
 	printf("Ingrese un comando...\n");
 
 	int comando_key;
-	char buffer[255];
+	char *buffer;
 	char *comando;
-	char *parametros;
+	char *parametro1;
+	char *parametro2;
 
 	do
 	{
-		scanf("%s", buffer);
+
+		buffer = leer_linea();
+		//scanf("%s", buffer);
+
+		//printf("escribiste el string %s\n",buffer);
+		obtener_parametros(buffer, &comando, &parametro1, &parametro2);
+		//printf("Despues de obtenr par\n");
+	//	printf("escribiste: %s %s %s\n",comando, parametro1, parametro2);
+		//printf("escribiste: %s len %d \n",comando,strlen(comando) );
+
 
 		//Por ahora no separo el comando de los parametros
-		comando_key = obtener_key_comando(buffer);
+		comando_key = obtener_key_comando(comando);
+
 		switch(comando_key)
 		{
 			case pausar:
@@ -128,19 +139,19 @@ int *consola() {
 				printf("Estas intentando continuar...\n");
 				break;
 			case bloquear:
-				printf("Estas intentando bloquear nada...\n");
+				printf("Bloquear clave: %s id: %s\n",parametro1, parametro2);
 				break;
 			case desbloquear:
-				printf("Estas intentando desbloqear nada...\n");
+				printf("Desbloquear clave: %s id: %s\n",parametro1, parametro2);
 				break;
 			case listar:
-				printf("Nada que listar...\n");
+				printf("Listar recurso: %s\n",parametro1);
 				break;
 			case kill:
-				printf("Nada para matar...\n");
+				printf("KILL ID: %s\n",parametro1);
 				break;
 			case status:
-				printf("Status de una clave...\n");
+				printf("Status clave: %s \n",parametro1);
 				break;
 			case deadlock:
 				printf("Si tan solo supiera que es...\n");
@@ -153,9 +164,12 @@ int *consola() {
 				break;
 		}
 
-	}while(strcmp(buffer,"exit"));
+		//free(parametro1);
+		//free(parametro2);
 
+	}while(strcmp(comando,"exit"));
 
+	//free(comando);
 
 	pthread_exit(0);
 	return EXIT_SUCCESS;
@@ -193,4 +207,75 @@ int obtener_key_comando(char* comando)
 		key = salir;
 
 	return key;
+}
+
+void obtener_parametros(char* buffer, char** comando, char** parametro1, char** parametro2)
+{
+	char line[255];
+	char *des_line;
+
+	strcpy(line, buffer);
+
+	des_line = strtok(line, " \n");
+	//printf("parseado comando: %s",des_line);
+	if(des_line != NULL)
+	{
+		*comando = (char*)malloc(strlen(des_line)+1);
+		(*comando)[strlen(des_line)]= '\n';
+		strcpy(*comando, des_line);
+	}
+
+	des_line = strtok(NULL, " \n");
+	if(des_line != NULL)
+	{
+		*parametro1 = (char*)malloc(strlen(des_line)+1);
+		(*parametro1)[strlen(des_line)]= '\n';
+		strcpy(*parametro1, des_line);
+		//printf("parseado comando: %s",des_line);
+	}
+
+
+	des_line = strtok(NULL, " \n");
+	if(des_line != NULL)
+	{
+		*parametro2 = (char*)malloc(strlen(des_line)+1);
+		(*parametro2)[strlen(des_line)]= '\n';
+		strcpy(*parametro2, des_line);
+	//	printf("parseado comando: %s",des_line);
+	}
+
+}
+
+char * leer_linea(void)
+{
+
+	char * line = malloc(100), * linep = line;
+	    size_t lenmax = 100, len = lenmax;
+	    int c;
+
+	    if(line == NULL)
+	        return NULL;
+
+	    for(;;) {
+	        c = fgetc(stdin);
+	        if(c == EOF)
+	            break;
+
+	        if(--len == 0) {
+	            len = lenmax;
+	            char * linen = realloc(linep, lenmax *= 2);
+
+	            if(linen == NULL) {
+	                free(linep);
+	                return NULL;
+	            }
+	            line = linen + (line - linep);
+	            linep = linen;
+	        }
+
+	        if((*line++ = c) == '\n')
+	            break;
+	    }
+	    *line = '\0';
+	    return linep;
 }
