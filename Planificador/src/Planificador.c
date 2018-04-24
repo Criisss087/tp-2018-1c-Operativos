@@ -105,56 +105,54 @@ int *iniciar_servidor() {
 
 int *consola() {
 
-	printf("\nAbriendo consola...\n");
-	printf("Ingrese un comando...\n");
-
 	int comando_key;
-	char *buffer;
-	char *comando;
-	char *parametro1;
-	char *parametro2;
+	char *buffer = NULL;
+	char *comando = NULL;
+	char *parametro1 = NULL;
+	char *parametro2 = NULL;
+
+	printf("\nAbriendo consola...\n");
 
 	do
 	{
+		printf("Ingrese un comando: ");
 
 		buffer = leer_linea();
 		//scanf("%s", buffer);
 
-		//printf("escribiste el string %s\n",buffer);
+		//printf("buffer: %s\n",buffer);
+		// Separa la linea de consola en comando y sus parametros
 		obtener_parametros(buffer, &comando, &parametro1, &parametro2);
-		//printf("Despues de obtenr par\n");
-	//	printf("escribiste: %s %s %s\n",comando, parametro1, parametro2);
-		//printf("escribiste: %s len %d \n",comando,strlen(comando) );
+		//printf("comando: %s p1: %s p2: %s\n",comando,parametro1,parametro2);
 
-
-		//Por ahora no separo el comando de los parametros
+		// Obtiene la clave del comando a ejecutar para el switch
 		comando_key = obtener_key_comando(comando);
 
 		switch(comando_key)
 		{
 			case pausar:
-				printf("Estas intentando pausar...\n");
+				pausar_consola();
 				break;
 			case continuar:
-				printf("Estas intentando continuar...\n");
+				continuar_consola();
 				break;
 			case bloquear:
-				printf("Bloquear clave: %s id: %s\n",parametro1, parametro2);
+				bloquear_clave(parametro1,parametro2);
 				break;
 			case desbloquear:
-				printf("Desbloquear clave: %s id: %s\n",parametro1, parametro2);
+				desbloquear_clave(parametro1, parametro2);
 				break;
 			case listar:
-				printf("Listar recurso: %s\n",parametro1);
+				listar_recurso(parametro1);
 				break;
 			case kill:
-				printf("KILL ID: %s\n",parametro1);
+				kill_id(parametro1);
 				break;
 			case status:
-				printf("Status clave: %s \n",parametro1);
+				status_clave(parametro1);
 				break;
 			case deadlock:
-				printf("Si tan solo supiera que es...\n");
+				deadlock_consola();
 				break;
 			case salir:
 				printf("Terminando consola...\n");
@@ -217,7 +215,7 @@ void obtener_parametros(char* buffer, char** comando, char** parametro1, char** 
 	strcpy(line, buffer);
 
 	des_line = strtok(line, " \n");
-	//printf("parseado comando: %s",des_line);
+
 	if(des_line != NULL)
 	{
 		*comando = (char*)malloc(strlen(des_line)+1);
@@ -231,9 +229,7 @@ void obtener_parametros(char* buffer, char** comando, char** parametro1, char** 
 		*parametro1 = (char*)malloc(strlen(des_line)+1);
 		(*parametro1)[strlen(des_line)]= '\n';
 		strcpy(*parametro1, des_line);
-		//printf("parseado comando: %s",des_line);
 	}
-
 
 	des_line = strtok(NULL, " \n");
 	if(des_line != NULL)
@@ -241,7 +237,6 @@ void obtener_parametros(char* buffer, char** comando, char** parametro1, char** 
 		*parametro2 = (char*)malloc(strlen(des_line)+1);
 		(*parametro2)[strlen(des_line)]= '\n';
 		strcpy(*parametro2, des_line);
-	//	printf("parseado comando: %s",des_line);
 	}
 
 }
@@ -279,3 +274,77 @@ char * leer_linea(void)
 	    *line = '\0';
 	    return linep;
 }
+
+
+void pausar_consola(void)
+{
+	printf("Estas intentando pausar...\n");
+	return;
+}
+
+void continuar_consola(void)
+{
+	printf("Estas intentando continuar...\n");
+	return;
+}
+
+void bloquear_clave(char* clave , char* id)
+{
+	if(clave == NULL || id == NULL)
+		printf("Parametros incorrectos (bloquear <clave> <id>)\n");
+	else
+		printf("Bloquear clave: %s id: %s\n",clave, id);
+	return;
+}
+
+void desbloquear_clave(char* clave, char* id)
+{
+	if(clave == NULL || id == NULL)
+		printf("Parametros incorrectos (desbloquear <clave> <id>)\n");
+	else
+		printf("Desbloquear clave: %s id: %s\n",clave, id);
+
+	return;
+
+}
+
+void listar_recurso(char* recurso)
+{
+	if(recurso == NULL)
+		printf("Parametros incorrectos (listar <recurso>)\n");
+	else
+		printf("Listar recurso: %s\n",recurso);
+
+	return;
+}
+
+
+void kill_id(char* id)
+{
+	if(id == NULL)
+		printf("Parametros incorrectos (kill <id>)\n");
+	else
+		printf("KILL ID: %s\n",id);
+
+	return;
+}
+
+
+void status_clave(char* clave)
+{
+	if(clave == NULL)
+		printf("Parametros incorrectos (status <clave>)\n");
+	else
+		printf("Status clave: %s \n",clave);
+
+	return;
+}
+
+
+void deadlock_consola(void)
+{
+	printf("Si tan solo supiera que es...\n");
+	return;
+}
+
+

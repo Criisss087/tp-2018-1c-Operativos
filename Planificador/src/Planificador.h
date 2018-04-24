@@ -33,4 +33,11 @@ char * leer_linea(void);
 //Enumeracion de los comandos de la consola
 enum comandos { pausar, continuar, bloquear, desbloquear, listar, kill, status, deadlock, salir };
 
-
+void pausar_consola(void);
+void continuar_consola(void);
+void bloquear_clave(char* clave , char* id);
+void desbloquear_clave(char* clave, char* id);
+void listar_recurso(char* recurso);
+void kill_id(char* id);
+void status_clave(char* clave);
+void deadlock_consola(void);
