@@ -13,6 +13,7 @@
 #include <stdlib.h>
 #include <string.h>			// funciones de strings
 #include <sys/socket.h>		// Para crear los sockets
+#include <sys/types.h>
 #include <netdb.h> 			// Para getaddrinfo
 #include <unistd.h> 		// Para close(socket)
 #include <pthread.h>		// Manejo de hilos

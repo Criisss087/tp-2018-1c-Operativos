@@ -3,7 +3,7 @@
  Name        : Planificador.c
  Author      : La Orden Del Socket
  Version     : 0.1
- Copyright   : Si nos copias nos desaprueban cel coloquio
+ Copyright   : Si nos copias nos desaprueban el coloquio
  Description : Planificador
  ============================================================================
  */
@@ -19,25 +19,23 @@ int main(void) {
 	pthread_attr_t t_cord_attr;
 	pthread_attr_t t_servidor_attr;
 	pthread_attr_t t_consola_attr;
-
+/*
 	// Conectar al Coordinador
 	pthread_attr_init(&t_cord_attr);
 	pthread_create(&t_cord_id, &t_cord_attr, conectar_coordinador, NULL);
-
+	pthread_join(t_cord_id, NULL);
+*/
 	// Iniciarse como servidor
 	pthread_attr_init(&t_servidor_attr);
 	pthread_create(&t_servidor_id, &t_servidor_attr, (void *)iniciar_servidor, NULL);
-
-
-	pthread_join(t_cord_id, NULL);
 	pthread_join(t_servidor_id, NULL);
 
+/*
 	// Abrir la consola
 	pthread_attr_init(&t_consola_attr);
 	pthread_create(&t_consola_id, &t_consola_attr, (void *)consola, NULL);
-
 	pthread_join(t_consola_id, NULL);
-
+*/
 
 	return EXIT_SUCCESS;
 }
@@ -95,8 +93,41 @@ void *conectar_coordinador() {
 
 int *iniciar_servidor() {
 
+	struct sockaddr_in dir_serv_pl;
+	struct sockaddr_in dir_cli_pl;
+
+	unsigned int dir_cli_size;
+
+	dir_serv_pl.sin_family = AF_INET;
+	dir_serv_pl.sin_addr.s_addr = INADDR_ANY;
+	dir_serv_pl.sin_port = htons(8080);
+
 	printf("Iniciando como servidor...\n");
 
+	int serv_pl = socket(AF_INET, SOCK_STREAM, 0);
+
+	int activado = 1;
+	setsockopt(serv_pl,SOL_SOCKET,SO_REUSEADDR, &activado, sizeof(activado));
+
+
+	if(bind(serv_pl, (void*)&dir_serv_pl, sizeof(dir_serv_pl)) != 0)
+	{
+		printf("Falló el bind del servidor\n");
+		return 1;
+	}
+
+
+	printf("Servidor escuchando\n");
+	listen(serv_pl, 10);
+
+	int cliente = accept(serv_pl, (void*)&dir_cli_pl, &dir_cli_size);
+	printf("Recibí una nueva coneccion (%d) \n", cliente);
+	send(cliente, "Te conectaste al planificador!\n",32,0);
+
+	for(;;);
+
+
+	//close(serv_pl);
 	pthread_exit(0);
 	return EXIT_SUCCESS;
 }
