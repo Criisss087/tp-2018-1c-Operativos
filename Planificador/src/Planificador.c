@@ -19,12 +19,12 @@ int main(void) {
 	pthread_attr_t t_cord_attr;
 	pthread_attr_t t_servidor_attr;
 	pthread_attr_t t_consola_attr;
-/*
+
 	// Conectar al Coordinador
 	pthread_attr_init(&t_cord_attr);
 	pthread_create(&t_cord_id, &t_cord_attr, conectar_coordinador, NULL);
 	pthread_join(t_cord_id, NULL);
-*/
+
 /*
 	// Iniciarse como servidor
 	pthread_attr_init(&t_servidor_attr);
@@ -66,6 +66,10 @@ void *conectar_coordinador() {
 	else
 		printf("Error al crear el socket\n");
 
+	int activado = 1;
+	setsockopt(server_socket, SOL_SOCKET, SO_REUSEADDR, &activado, sizeof(activado));
+
+
 	int res_connect = connect(server_socket, server_info->ai_addr, server_info->ai_addrlen);
 	if (res_connect < 0)
 	{
@@ -77,16 +81,18 @@ void *conectar_coordinador() {
 
 	freeaddrinfo(server_info);
 
-	char *mensaje = malloc(1000);
+	char *mensaje = malloc(28);
+	strcpy(mensaje,"Se conectó el planificador\n");
 
 	//Intento enviar mensaje al coordinador
 	int res_send = send(server_socket, mensaje, sizeof(mensaje), 0);
-	printf("Intentando mandar un mensaje vacío...\n");
+	printf("Intentando mandar un mensaje...\n");
 
 	free(mensaje);
 
 	int res_close = close(server_socket);
 	printf("Cerrando el socket y saliendo el hilo...\n");
+
 
 	pthread_exit(0);
 }
