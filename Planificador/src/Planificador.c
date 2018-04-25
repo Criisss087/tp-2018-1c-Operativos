@@ -25,17 +25,18 @@ int main(void) {
 	pthread_create(&t_cord_id, &t_cord_attr, conectar_coordinador, NULL);
 	pthread_join(t_cord_id, NULL);
 */
+/*
 	// Iniciarse como servidor
 	pthread_attr_init(&t_servidor_attr);
 	pthread_create(&t_servidor_id, &t_servidor_attr, (void *)iniciar_servidor, NULL);
 	pthread_join(t_servidor_id, NULL);
+*/
 
-/*
 	// Abrir la consola
 	pthread_attr_init(&t_consola_attr);
 	pthread_create(&t_consola_id, &t_consola_attr, (void *)consola, NULL);
 	pthread_join(t_consola_id, NULL);
-*/
+
 
 	return EXIT_SUCCESS;
 }
@@ -91,7 +92,7 @@ void *conectar_coordinador() {
 }
 
 
-int *iniciar_servidor() {
+void *iniciar_servidor() {
 
 	struct sockaddr_in dir_serv_pl;
 	struct sockaddr_in dir_cli_pl;
@@ -113,7 +114,7 @@ int *iniciar_servidor() {
 	if(bind(serv_pl, (void*)&dir_serv_pl, sizeof(dir_serv_pl)) != 0)
 	{
 		printf("Falló el bind del servidor\n");
-		return 1;
+		exit(1);
 	}
 
 
@@ -129,12 +130,12 @@ int *iniciar_servidor() {
 
 	//close(serv_pl);
 	pthread_exit(0);
-	return EXIT_SUCCESS;
+
 }
 
 
 
-int *consola() {
+void *consola() {
 
 	int comando_key;
 	char *buffer = NULL;
@@ -144,23 +145,20 @@ int *consola() {
 
 	printf("\nAbriendo consola...\n");
 
-	do
-	{
-		printf("Ingrese un comando: ");
+	while(1){
 
-		buffer = leer_linea();
-		//scanf("%s", buffer);
+		//Trae la linea de consola
+		buffer = readline(">");
 
-		//printf("buffer: %s\n",buffer);
 		// Separa la linea de consola en comando y sus parametros
 		obtener_parametros(buffer, &comando, &parametro1, &parametro2);
 		//printf("comando: %s p1: %s p2: %s\n",comando,parametro1,parametro2);
+		free(buffer);
 
 		// Obtiene la clave del comando a ejecutar para el switch
 		comando_key = obtener_key_comando(comando);
 
-		switch(comando_key)
-		{
+		switch(comando_key){
 			case pausar:
 				pausar_consola();
 				break;
@@ -193,20 +191,40 @@ int *consola() {
 				break;
 		}
 
-		//free(parametro1);
-		//free(parametro2);
+		//Limpio el parametro 1
+		if(parametro1 != NULL)
+		{
+			free(parametro1);
+			parametro1 = NULL;
+		}
 
-	}while(strcmp(comando,"exit"));
+		//Limpio el parametro 2
+		if(parametro2 != NULL)
+		{
+			free(parametro2);
+			parametro2 = NULL;
+		}
 
-	//free(comando);
+		//Sale de la consola con exit
+		if(!strcmp(comando,"exit")){
+			free(comando);
+			break;
+		}
+		else{
+			free(comando);
+		}
+	}
 
 	pthread_exit(0);
-	return EXIT_SUCCESS;
+
 }
 
 int obtener_key_comando(char* comando)
 {
 	int key = -1;
+
+	if(comando == NULL)
+		return key;
 
 	if(!strcmp(comando, "pausar"))
 		key = pausar;
@@ -240,72 +258,38 @@ int obtener_key_comando(char* comando)
 
 void obtener_parametros(char* buffer, char** comando, char** parametro1, char** parametro2)
 {
-	char line[255];
-	char *des_line;
+	char** comandos;
+	int i,j=0;
 
-	strcpy(line, buffer);
+	comandos = string_n_split(buffer,3," ");
 
-	des_line = strtok(line, " \n");
-
-	if(des_line != NULL)
+	while(comandos[j])
 	{
-		*comando = (char*)malloc(strlen(des_line)+1);
-		(*comando)[strlen(des_line)]= '\n';
-		strcpy(*comando, des_line);
+		switch(j)
+		{
+			case 0:
+				*comando = comandos[j];
+				break;
+			case 1:
+				*parametro1 = comandos[j];
+				break;
+			case 2:
+				*parametro2 = comandos[j];
+				break;
+		}
+
+		j++;
 	}
 
-	des_line = strtok(NULL, " \n");
-	if(des_line != NULL)
-	{
-		*parametro1 = (char*)malloc(strlen(des_line)+1);
-		(*parametro1)[strlen(des_line)]= '\n';
-		strcpy(*parametro1, des_line);
-	}
 
-	des_line = strtok(NULL, " \n");
-	if(des_line != NULL)
+	for(i=0;i>j;i++)
 	{
-		*parametro2 = (char*)malloc(strlen(des_line)+1);
-		(*parametro2)[strlen(des_line)]= '\n';
-		strcpy(*parametro2, des_line);
+		printf("parte %d: %s\n", j,comandos[j]);
+		free(comandos[j]);
 	}
+	free(comandos);
 
 }
-
-char * leer_linea(void)
-{
-
-	char * line = malloc(100), * linep = line;
-	    size_t lenmax = 100, len = lenmax;
-	    int c;
-
-	    if(line == NULL)
-	        return NULL;
-
-	    for(;;) {
-	        c = fgetc(stdin);
-	        if(c == EOF)
-	            break;
-
-	        if(--len == 0) {
-	            len = lenmax;
-	            char * linen = realloc(linep, lenmax *= 2);
-
-	            if(linen == NULL) {
-	                free(linep);
-	                return NULL;
-	            }
-	            line = linen + (line - linep);
-	            linep = linen;
-	        }
-
-	        if((*line++ = c) == '\n')
-	            break;
-	    }
-	    *line = '\0';
-	    return linep;
-}
-
 
 void pausar_consola(void)
 {
