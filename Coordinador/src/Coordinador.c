@@ -8,71 +8,59 @@
  */
 
 #include <stdio.h>
-#include <stdlib.h>
-#include <unistd.h>
-#include <errno.h>
 #include <string.h>
+#include <stdlib.h>
 #include <sys/types.h>
 #include <sys/socket.h>
-#include <netinet/in.h>
-#include <arpa/inet.h>
-#include <signal.h>
-#define MIPUERTO 5050    // Puerto al que conectarán los usuarios
-#define BACKLOG 3     // Cuántas conexiones pendientes se mantienen en cola
+#include <netdb.h>
+#include <unistd.h>
 
-int main(void)
+
+#define PUERTO "5050"
+#define BACKLOG 5			// Define cuantas conexiones vamos a mantener pendientes al mismo tiempo
+#define PACKAGESIZE 1024
+
+int main()
 {
-    int sockfd, new_fd;  // Escuchar sobre sock_fd, nuevas conexiones sobre new_fd
-    struct sockaddr_in my_addr;    // información sobre mi dirección
-    struct sockaddr_in their_addr; // información sobre la dirección del cliente
-    int sin_size;
-    int yes=1;
-//agrego este texto para hacer pruebas con github
-    if ((sockfd = socket(AF_INET, SOCK_STREAM, 0)) == -1) {
-            perror("socket");
-            exit(1);
-        }
+    struct addrinfo hints;
+    struct addrinfo *serverInfo;
 
-        /*if (setsockopt(sockfd,SOL_SOCKET,SO_REUSEADDR,&yes,sizeof(int)) == -1) {
-            perror("setsockopt");
-            exit(1);
-        }*/ //para liberar un puerto que estuvo usado?)
+    memset(&hints, 0, sizeof(hints));
+    hints.ai_family = AF_UNSPEC;		// No importa si uso IPv4 o IPv6
+    hints.ai_flags = AI_PASSIVE;		// Asigna el address del localhost: 127.0.0.1
+    hints.ai_socktype = SOCK_STREAM;	// Indica que usaremos el protocolo TCP
 
-        my_addr.sin_family = AF_INET;         // Ordenación de bytes de la máquina
-        my_addr.sin_port = htons(MIPUERTO);     // short, Ordenación de bytes de la red
-        my_addr.sin_addr.s_addr = INADDR_ANY; // Rellenar con mi dirección IP
-        memset(&(my_addr.sin_zero), '\0', 8); // Poner a cero el resto de la estructura
+    getaddrinfo(NULL, PUERTO, &hints, &serverInfo);
 
-        if (bind(sockfd, (struct sockaddr *)&my_addr, sizeof(struct sockaddr))== -1) {
-            perror("bind");
-            exit(1);
-        }
+    int listenningSocket;
+    listenningSocket = socket(serverInfo->ai_family, serverInfo->ai_socktype, serverInfo->ai_protocol);
 
-        if (listen(sockfd, BACKLOG) == -1) {
-            perror("listen");
-            exit(1);
-        }
+    bind(listenningSocket,serverInfo->ai_addr, serverInfo->ai_addrlen);
+    freeaddrinfo(serverInfo);
 
-        while(1) {  // main accept() loop
-            sin_size = sizeof(struct sockaddr_in);
-            if ((new_fd = accept(sockfd, (struct sockaddr *)&their_addr, &sin_size)) == -1) {
-                perror("accept");
-                continue;
-            }
-            printf("server: got connection from %s\n", inet_ntoa(their_addr.sin_addr));
-            if (!fork()) { // Este es el proceso hijo
-                close(sockfd); // El hijo no necesita este descriptor
-                if (send(new_fd, "Hello, world!\n", 14, 0) == -1)
-                    perror("send");
-                close(new_fd);
-                exit(0);
-            }
-            close(new_fd);  // El proceso padre no lo necesita
-        }
+    listen(listenningSocket, BACKLOG);
 
-        return 0;
-    }
-	return EXIT_SUCCESS;
+    struct sockaddr_in addr;			// Esta estructura contendra los datos de la conexion del cliente. IP, puerto, etc.
+    socklen_t addrlen = sizeof(addr);
+
+    int socketCliente = accept(listenningSocket, (struct sockaddr *) &addr, &addrlen);
+
+    char package[PACKAGESIZE];
+    int status = 1;		// Estructura que manjea el status de los recieve.
+
+    printf("Cliente conectado. Esperando mensajes:\n");
+
+    while (status != 0){
+    	status = recv(socketCliente, (void*) package, PACKAGESIZE, 0);
+    	if (status != 0) printf("%s", package);
+   	}
+
+    close(socketCliente);
+    close(listenningSocket);
+
+    return 0;
+
+
 }
 
 /*
