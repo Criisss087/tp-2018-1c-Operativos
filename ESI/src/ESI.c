@@ -16,7 +16,7 @@
 #include <unistd.h>
 
 #define IP "127.0.0.1"
-#define PUERTO "5050"
+#define PUERTO "8080"
 #define PACKAGESIZE 1024	// Define cual va a ser el size maximo del paquete a enviar
 
 int main(){
@@ -42,9 +42,12 @@ int main(){
 	printf("Conectado al servidor. Bienvenido al sistema, ya puede enviar mensajes. Escriba 'exit' para salir\n");
 
 	while(enviar){
-		fgets(message, PACKAGESIZE, stdin);			// Lee una linea en el stdin (lo que escribimos en la consola) hasta encontrar un \n (y lo incluye) o llegar a PACKAGESIZE.
-			if (!strcmp(message,"exit\n")) enviar = 0;			// Chequeo que el usuario no quiera salir
-			if (enviar) send(serverSocket, message, strlen(message) + 1, 0); 	// Solo envio si el usuario no quiere salir.
+		// Lee una linea en el stdin (lo que escribimos en la consola) hasta encontrar un \n (y lo incluye) o llegar a PACKAGESIZE.
+		fgets(message, PACKAGESIZE, stdin);
+			// Chequeo que el usuario no quiera salir
+			if (!strcmp(message,"exit\n")) enviar = 0;
+			// Solo envio si el usuario no quiere salir.
+			if (enviar) send(serverSocket, message, strlen(message) + 1, 0);
 		}
 
 	close(serverSocket);
