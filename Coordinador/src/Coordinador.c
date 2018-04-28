@@ -15,8 +15,8 @@
 #include <netdb.h>
 #include <unistd.h>
 
-
-#define PUERTO "5050"
+#define IP "127.0.0.1"
+#define PUERTO "8080"
 #define BACKLOG 5			// Define cuantas conexiones vamos a mantener pendientes al mismo tiempo
 #define PACKAGESIZE 1024
 
@@ -27,24 +27,30 @@ int main()
 
     memset(&hints, 0, sizeof(hints));
     hints.ai_family = AF_UNSPEC;		// No importa si uso IPv4 o IPv6
-    hints.ai_flags = AI_PASSIVE;		// Asigna el address del localhost: 127.0.0.1
     hints.ai_socktype = SOCK_STREAM;	// Indica que usaremos el protocolo TCP
 
-    getaddrinfo(NULL, PUERTO, &hints, &serverInfo);
+    getaddrinfo(IP, PUERTO, &hints, &serverInfo);
 
     int listenningSocket;
     listenningSocket = socket(serverInfo->ai_family, serverInfo->ai_socktype, serverInfo->ai_protocol);
+    printf("socket creado \n");
+
+    // Las siguientes dos lineas sirven para no lockear el address
+    	int activado = 1;
+    	setsockopt(listenningSocket, SOL_SOCKET, SO_REUSEADDR, &activado, sizeof(activado));
 
     bind(listenningSocket,serverInfo->ai_addr, serverInfo->ai_addrlen);
+    printf("socket bindeado \n");
     freeaddrinfo(serverInfo);
 
+    printf("escuchando \n");
     listen(listenningSocket, BACKLOG);
 
     struct sockaddr_in addr;			// Esta estructura contendra los datos de la conexion del cliente. IP, puerto, etc.
     socklen_t addrlen = sizeof(addr);
 
     int socketCliente = accept(listenningSocket, (struct sockaddr *) &addr, &addrlen);
-
+    printf("Escuchando? %d \n",socketCliente);
     char package[PACKAGESIZE];
     int status = 1;		// Estructura que manjea el status de los recieve.
 
