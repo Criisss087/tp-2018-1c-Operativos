@@ -16,7 +16,7 @@
 #include <sys/socket.h>
 
 #define IP "127.0.0.1"
-#define PUERTO "5050"
+#define PUERTO 8080
 #define PACKAGESIZE 1024
 
 int main(void) {
@@ -36,6 +36,10 @@ int main(void) {
 	while (1) {
 		char mensaje[PACKAGESIZE];
 		scanf("%s", mensaje);
+		mensaje[strlen(mensaje)] = '\n';
+		//fgets(mensaje, PACKAGESIZE, stdin);
+		//diferencia entre fgets y scanf: fgets lee hasta un \n, scanf lee y pone \0.
+		send(server,mensaje,strlen(mensaje)+1,0);
 	}
 
 	return 0;
