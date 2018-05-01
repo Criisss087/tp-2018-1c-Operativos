@@ -17,13 +17,19 @@
 #include <unistd.h>
 #include <pthread.h>
 #include <commons/log.h>
+#include <commons/string.h>
 #include "Utilidades.c"
 
 #define IP "127.0.0.1"
 #define PUERTO "8080"
 #define BACKLOG 5			// Define cuantas conexiones vamos a mantener pendientes al mismo tiempo
 #define PACKAGESIZE 1024
+#define HEADER_LENGTH 10
 
 void crear_hilo_conexion(int,void(* f)(int));
+void *escucharRequests(int);
+void atenderESI();
+void atenderInstancia();
+void atenderPlanificador();
 
 #endif /* SRC_UTILIDADES_H_ */

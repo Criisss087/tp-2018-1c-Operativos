@@ -10,3 +10,14 @@ void crear_hilo_conexion(int socket, void(*funcion_a_ejecutar)(int)){
 	pthread_create(&hilo,NULL,*funcion_a_ejecutar,socket);
 	pthread_detach(&hilo);
 }
+
+void atenderESI(){
+}
+
+void atenderInstancia(){
+}
+
+void atenderPlanificador(){
+}
+
+

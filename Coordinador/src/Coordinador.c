@@ -45,6 +45,24 @@ void *escucharMensajesEntrantes(int socketCliente){
     close(socketCliente);
 }
 
+void *escucharRequests(int socketCliente){
+	char header[HEADER_LENGTH];
+	int status = recv(socketCliente,(void*) header,HEADER_LENGTH,0);
+	//header: xxx-xxxx..
+	int header_process = (int) string_substring(header, 0,0);
+	int header_cod = (int) string_substring(header, 1,2);
+	int header_op = (int) string_substring(header, 4,HEADER_LENGTH);
+	switch(header_process){
+	case 1 : atenderESI();
+	break;
+	case 2 : atenderInstancia();
+	break;
+	case 3 : atenderPlanificador();
+	break;
+	default : ;//do smthng
+	}
+}
+
 int main()
 {
 	struct addrinfo *serverInfo = crear_addrinfo();
