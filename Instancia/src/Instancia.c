@@ -19,6 +19,14 @@
 #define PUERTO 8080
 #define PACKAGESIZE 1024
 
+#define TYPE_INSTANCIA 2
+
+typedef struct {
+	int proceso_tipo;
+	int operacion;
+	int cantidad_a_leer;
+	} __attribute__((packed)) ContentHeader;
+
 int main(void) {
 	struct sockaddr_in direccionServidor;
 	direccionServidor.sin_family = AF_INET;
@@ -33,14 +41,34 @@ int main(void) {
 	}
 
 	//Se envia mensaje al coordinador
-	while (1) {
+	/*	while (1) {
 		char mensaje[PACKAGESIZE];
 		scanf("%s", mensaje);
 		mensaje[strlen(mensaje)] = '\n';
 		//fgets(mensaje, PACKAGESIZE, stdin);
 		//diferencia entre fgets y scanf: fgets lee hasta un \n, scanf lee y pone \0.
 		send(server,mensaje,strlen(mensaje)+1,0);
-	}
+		}
+	*/
+
+	char mensaje[PACKAGESIZE];
+	scanf("%s", mensaje);
+	mensaje[strlen(mensaje)] = '\n';
+	
+	VariableCustom info = mensaje;
+
+	ContentHeader * header = malloc(sizeof(ContentHeader));
+
+	header.operacion->0000;
+	header.proceso_tipo->TYPE_INSTANCIA;
+	header.cantidad_a_leer->sizeof(VariableCustom);
+
+	int resultado = send(server, &header, sizeof(ContentHeader), 0);
+
+	// a continuación, enviamos el contenido del paquete;
+	// Si el struct VariableCustom tiene campos tipo punteros, no será tan sencillo como hacer un sizeof
+
+	send(server, &info, sizeof(VariableCustom), 0));
 
 	return 0;
 }
