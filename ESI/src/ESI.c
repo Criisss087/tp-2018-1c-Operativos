@@ -7,21 +7,9 @@
  ============================================================================
  */
 
-#include <stdio.h>
-#include <string.h>
-#include <stdlib.h>
-#include <sys/types.h>
-#include <sys/socket.h>
-#include <netdb.h>
-#include <unistd.h>
-#include <parsi/parser.h>
-#define PACKAGESIZE 1024
-#define HEADER_LENGTH 10
+#include <Utilidades.h>
 
-/*#define IP "127.0.0.1"
-#define PUERTO "8080"*/ //LO comento porque necesito que se conecte a 2 servidores, no solo el coordinador
-
-struct addrinfo* crear_addrinfo(){
+struct addrinfo* crear_addrinfo(ip, puerto){
 	struct addrinfo hints;
 	struct addrinfo *serverInfo;
 
@@ -29,7 +17,7 @@ struct addrinfo* crear_addrinfo(){
 	hints.ai_family = AF_UNSPEC;		// Permite que la maquina se encargue de verificar si usamos IPv4 o IPv6
 	hints.ai_socktype = SOCK_STREAM;	// Indica que usaremos el protocolo TCP
 
-	getaddrinfo(IP, PUERTO, &hints, &serverInfo);
+	getaddrinfo(ip, puerto, &hints, &serverInfo);
 
 	return serverInfo;
 }
@@ -53,8 +41,8 @@ int main(int argc, char **argv){
 	size_t len = 0;
 	ssize_t read;
 
-	struct addrinfo *serverInfoCoord = crear_addrinfo();
-	struct addrinfo *serverInfoPlanif = crear_addrinfo();
+	struct addrinfo *serverInfoCoord = crear_addrinfo(IP_COORDINADOR, PUERTO_COORDINADOR);
+	struct addrinfo *serverInfoPlanif = crear_addrinfo(IP_PLANIFICADOR, PUERTO_PLANIFICADOR);
 
 	int serverCoord = socket(serverInfoCoord->ai_family, serverInfoCoord->ai_socktype, serverInfoCoord->ai_protocol);
 	int serverPlanif = socket(serverInfoPlanif->ai_family, serverInfoPlanif->ai_socktype, serverInfoPlanif->ai_protocol);
