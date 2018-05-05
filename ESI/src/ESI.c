@@ -75,9 +75,7 @@ int main(int argc, char **argv){
 	printf("Conectado al servidor: %d \n",coord);
 	printf("Conectado al servidor: %d \n",planif);
 
-	char message1[] = "Error al abrir el archivo";
-
-//	while(enviar){
+	///	while(enviar){
 	while(1){
 
 		fp = fopen(argv[1], "r");
