@@ -18,7 +18,7 @@
 #include <pthread.h>
 #include <commons/log.h>
 #include <commons/string.h>
-#include "Utilidades.c"
+#include <parsi/parser.h>
 
 #define IP "127.0.0.1"
 #define PUERTO "8080"
@@ -26,10 +26,21 @@
 #define PACKAGESIZE 1024
 #define HEADER_LENGTH 10
 
+//***Cod ops
+#define ESI_COORDINADOR_SENTENCIA 1401
+#define COORDINADOR_ESI_RESULTADO_EJECUCION_SENTENCIA 4102
+//***
 void crear_hilo_conexion(int,void(* f)(int));
 void *escucharRequests(int);
 void atenderESI();
 void atenderInstancia();
 void atenderPlanificador();
 
+typedef struct {
+	int proceso_tipo;
+	int operacion;
+	int cantidad_a_leer;
+	} __attribute__((packed)) ContentHeader;
+
+#include "Utilidades.c"
 #endif /* SRC_UTILIDADES_H_ */

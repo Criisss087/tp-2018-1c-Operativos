@@ -10,9 +10,6 @@
 
 int total_hilos = 0;
 
-void *escucharMensajesEntrantes(int);
-//void crear_hilo_conexion(int,void(* f)(int));
-
 struct addrinfo* crear_addrinfo(){
 	struct addrinfo hints;
 	struct addrinfo *serverInfo;
@@ -20,47 +17,77 @@ struct addrinfo* crear_addrinfo(){
 	memset(&hints, 0, sizeof(hints));
 	hints.ai_family = AF_UNSPEC;		// No importa si uso IPv4 o IPv6
 	hints.ai_socktype = SOCK_STREAM;	// Indica que usaremos el protocolo TCP
-
 	getaddrinfo(IP, PUERTO, &hints, &serverInfo);
-
-
 	return serverInfo;
+}
+
+void administrarSentencia(t_esi_operacion * sentencia){
+
+}
+
+void interpretarOperacionInstancia(ContentHeader * hd, int socketCliente){
+
+}
+
+void interpretarOperacionPlanificador(ContentHeader * hd, int socketCliente){
+
+}
+
+void interpretarOperacionESI(ContentHeader * hd, int socketCliente){
+	switch(hd->operacion){
+	case ESI_COORDINADOR_SENTENCIA:
+		;
+		//C no permite hacer declaraciones inmediatamente después de un label.. wtf
+		//Recibo de ESI sentencia parseada
+		t_esi_operacion * sentencia = malloc(sizeof(t_esi_operacion));
+		recv( socket, sentencia, hd->cantidad_a_leer, NULL);
+		administrarSentencia(sentencia);
+		break;
+	default:
+		//TODO no se reconoció el tipo operación
+		break;
+	}
+}
+
+void interpretarHeader(ContentHeader * hd, int socketCliente){
+	switch(hd->proceso_tipo){
+	case 1:
+		//ESI
+		interpretarOperacionESI(hd,socketCliente);
+		break;
+	case 2:
+		interpretarOperacionInstancia(hd,socketCliente);
+		break;
+	case 3:
+		interpretarOperacionPlanificador(hd,socketCliente);
+		break;
+	default:
+		//TODO no se reconoció el tipo proceso
+		break;
+	}
 }
 
 
 void *escucharMensajesEntrantes(int socketCliente){
 
-    char package[PACKAGESIZE];
-    int status = 1;		// Estructura que manjea el status de los recieve.
+    int status_header = 1;		// Estructura que manjea el status de los recieve.
 
     printf("Cliente conectado. Esperando mensajes:\n");
+    total_hilos++;
+    printf("total hilos: %d\n",total_hilos);
 
-    while (status != 0){
-    	status = recv(socketCliente, (void*) package, PACKAGESIZE, 0);
-    	if (status != 0) {
-    		printf("%s", package);
+    ContentHeader * header = malloc(sizeof(ContentHeader));
+
+    while (status_header != 0){
+    	status_header = recv(socketCliente, header, sizeof(ContentHeader), NULL);
+    	if (status_header == 0) {
+    		printf("desconectado\n"); total_hilos--;
     	}
-    	else {printf("desconectado\n"); total_hilos--;};
+    	else {
+    		interpretarHeader(header, socketCliente);
+    	};
    	}
     close(socketCliente);
-}
-
-void *escucharRequests(int socketCliente){
-	char header[HEADER_LENGTH];
-	int status = recv(socketCliente,(void*) header,HEADER_LENGTH,0);
-	//header: xxx-xxxx..
-	int header_process = (int) string_substring(header, 0,0);
-	int header_cod = (int) string_substring(header, 1,2);
-	int header_op = (int) string_substring(header, 4,HEADER_LENGTH);
-	switch(header_process){
-	case 1 : atenderESI();
-	break;
-	case 2 : atenderInstancia();
-	break;
-	case 3 : atenderPlanificador();
-	break;
-	default : ;//do smthng
-	}
 }
 
 int main()
@@ -89,8 +116,6 @@ int main()
 		printf("Escuchando? %d \n",socketCliente);
 
 		crear_hilo_conexion(socketCliente, escucharMensajesEntrantes);
-		total_hilos++;
-		printf("total hilos: %d\n",total_hilos);
     }
 
     close(listenningSocket);
@@ -104,26 +129,17 @@ int main()
 
 /*
 
- Funciones que a mi parecer se van a utilizar:
- ---------------------------------------------
 
  inicializar() ----> 1. leerArchivoDeConfiguracion();
                      2. inicializarEstructurasAdministrativas();
- esperarSolicitud(); EN CASO DE QUE LA SOLICITUD QUE LLEGA ES DE PARTE DE UN ESI
-                     - si es aceptada lanza un hilo encargado de atender la conexion
-                     - si no es aceptada, avisa al planificador
-                     EN CASO DE QUE LA SOLICITUD QUE LLEGA ES DE PARTE DE UNA INSTANCIA
-                     - le provee la configuracion de tamaños de la cantidad y el tamaño de las entradas
- procesarSolicitud(); esto es el hilo para una solicitud de ESI---ejecuta una instancia segun un algoritmo de distribucion
-                      si la instancia no esta disponible, reordena y elige una de las instancias restantes
-                      debe retornar un mensaje informando el resultado de la operacion
+
  registrarEjecucion(); en el log de operaciones
 
 void *elegirYutilizarInstancia(void*); // o gestionarInstancia (algoritmo de distribucion)
 
 
 
-LA FUNCION ESPERARSOLICITUD() es la que determina que el coordinador es un servidor, ya que va a utilizar sockets de escucha.
+
 
 
  Para trabajar con hilos:
@@ -131,30 +147,5 @@ LA FUNCION ESPERARSOLICITUD() es la que determina que el coordinador es un servi
  pthread_create(direccion de memoria del thread que se va a crear, NULL, nombre de la funcion que va a usar, direccion de memoria del argumento que va a recibir);
  pthread_join(thread que se creo, donde se guarda el resultado tras ejecutar la funcion);
 
-
- Ejemplo de como debe quedar ?) :
- -------------------------------
-
- int main(){
-
-     inicializar();
-
-     if(esperarSolicitud() es un ESI y la conexion es aceptada){
-
- 	 pthread_t  procesarSolicitud; //nombre del thread
- 	 pthread_create(&procesarSolicitud, NULL, elegirYUtilizarInstancia, NULL)//por ahora relleno con NULL;
- 	 pthread_join(procesarSolicitud, NULL);
-
- 	 registrarEjecucion();
-
- 	 }else{
- 	       --avisar al planificador--
- 	       }
-
- 	 if(esperarSolicitud() es una instancia y la conexion es aceptada){
- 	 	 proveerRecursosParaLasEntradas();
- 	 	 //¿Se hace otro hilo?
- 	 }
- }
 
  */
