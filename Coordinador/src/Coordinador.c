@@ -7,6 +7,7 @@
  ============================================================================
  */
 #include "Utilidades.h"
+#include "FuncionesCoordinador.c"
 
 int total_hilos = 0;
 

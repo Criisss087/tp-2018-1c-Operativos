@@ -42,5 +42,4 @@ typedef struct {
 	int cantidad_a_leer;
 	} __attribute__((packed)) ContentHeader;
 
-#include "Utilidades.c"
 #endif /* SRC_UTILIDADES_H_ */
