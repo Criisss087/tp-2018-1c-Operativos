@@ -136,6 +136,9 @@ int main()
 
 
 		/////////////////////////////////////
+		//TODO
+		//esta parte es para prueba. seguir con el dummyclient hasta que llegue a administrarSentencia. ahi borrar toda esta preuba pedorra y armar como se debe
+
 		int status_header = 1;		// Estructura que manjea el status de los recieve.
 		printf("Cliente conectado. Esperando mensajes:\n");
 		ContentHeader * header = malloc(sizeof(ContentHeader));
