@@ -11,7 +11,7 @@ void crear_hilo_conexion(int socket, void(*funcion_a_ejecutar)(int)){
 	pthread_detach(&hilo);
 }
 
-void administrarSentencia(t_esi_operacion *);
+void administrarSentencia(t_esi_operacion_sin_puntero *);
 void interpretarOperacionInstancia(ContentHeader *, int);
 void interpretarOperacionPlanificador(ContentHeader *, int);
 void interpretarOperacionESI(ContentHeader *, int);

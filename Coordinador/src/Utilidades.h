@@ -30,11 +30,6 @@
 #define ESI_COORDINADOR_SENTENCIA 1401
 #define COORDINADOR_ESI_RESULTADO_EJECUCION_SENTENCIA 4102
 //***
-void crear_hilo_conexion(int,void(* f)(int));
-void *escucharRequests(int);
-void atenderESI();
-void atenderInstancia();
-void atenderPlanificador();
 
 typedef struct {
 	int proceso_tipo;
@@ -42,4 +37,11 @@ typedef struct {
 	int cantidad_a_leer;
 	} __attribute__((packed)) ContentHeader;
 
+typedef struct{
+	int keyword;
+	char clave[40];
+	char valor[40];
+} __attribute__((packed)) t_esi_operacion_sin_puntero;
+
+#include "Utilidades.c"
 #endif /* SRC_UTILIDADES_H_ */

@@ -22,7 +22,8 @@ struct addrinfo* crear_addrinfo(){
 	return serverInfo;
 }
 
-void administrarSentencia(t_esi_operacion * sentencia){
+void administrarSentencia(t_esi_operacion_sin_puntero * sentencia){
+	printf("setnencia recibida: %i - %s \n",sentencia->keyword,sentencia->clave);
 
 }
 
@@ -35,12 +36,18 @@ void interpretarOperacionPlanificador(ContentHeader * hd, int socketCliente){
 }
 
 void interpretarOperacionESI(ContentHeader * hd, int socketCliente){
+	printf("interpretando op esi\n");
+
+	int po = hd->operacion;
+	printf("p op: %d",po);
+
 	switch(hd->operacion){
 	case ESI_COORDINADOR_SENTENCIA:
+		printf("interpretando op esi correcta\n");
 		;
 		//C no permite hacer declaraciones inmediatamente después de un label.. wtf
 		//Recibo de ESI sentencia parseada
-		t_esi_operacion * sentencia = malloc(sizeof(t_esi_operacion));
+		t_esi_operacion_sin_puntero * sentencia = malloc(sizeof(t_esi_operacion_sin_puntero));
 		recv( socket, sentencia, hd->cantidad_a_leer, NULL);
 		administrarSentencia(sentencia);
 		break;
@@ -51,6 +58,13 @@ void interpretarOperacionESI(ContentHeader * hd, int socketCliente){
 }
 
 void interpretarHeader(ContentHeader * hd, int socketCliente){
+	printf("interpretando header\n");
+
+	int pt = hd->proceso_tipo;
+	printf("p tipo %d \n",pt);
+	int po = hd->operacion;
+	printf("p op: %d \n",po);
+
 	switch(hd->proceso_tipo){
 	case 1:
 		//ESI
@@ -80,11 +94,13 @@ void *escucharMensajesEntrantes(int socketCliente){
     ContentHeader * header = malloc(sizeof(ContentHeader));
 
     while (status_header != 0){
+    	printf("status header: %d \n", status_header);
     	status_header = recv(socketCliente, header, sizeof(ContentHeader), NULL);
     	if (status_header == 0) {
     		printf("desconectado\n"); total_hilos--;
     	}
     	else {
+    		printf("llamando funcion interpretarHeader\n");
     		interpretarHeader(header, socketCliente);
     	};
    	}
@@ -111,13 +127,29 @@ int main()
     struct sockaddr_in addr;// Esta estructura contendra los datos de la conexion del cliente. IP, puerto, etc.
     socklen_t addrlen = sizeof(addr);
 
-    while (1){
+    //while (1){
     	printf("Esperando mensaje\n");
     	int socketCliente = accept(listenningSocket, (struct sockaddr *) &addr, &addrlen);
 		printf("Escuchando? %d \n",socketCliente);
 
-		crear_hilo_conexion(socketCliente, escucharMensajesEntrantes);
-    }
+		//crear_hilo_conexion(socketCliente, escucharMensajesEntrantes);
+
+
+		/////////////////////////////////////
+		int status_header = 1;		// Estructura que manjea el status de los recieve.
+		printf("Cliente conectado. Esperando mensajes:\n");
+		ContentHeader * header = malloc(sizeof(ContentHeader));
+		status_header = recv(socketCliente, header, sizeof(ContentHeader), NULL);
+		printf("status header: %d \n", status_header);
+		int pt = header->proceso_tipo;
+		printf("p tipo %d \n",pt);
+		int po = header->operacion;
+		printf("p op: %d \n",po);
+
+		////////////////////////////////////
+
+
+    //}
 
     close(listenningSocket);
 
