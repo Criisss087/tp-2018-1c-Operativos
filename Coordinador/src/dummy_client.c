@@ -24,6 +24,7 @@ struct addrinfo* crear_addrinfo(ip, puerto){
 
 
 int main(int argc, char **argv){
+	//proof of concept - send header
 	struct addrinfo *serverInfoCoord = crear_addrinfo(IP, PUERTO);
 	int serverCoord = socket(serverInfoCoord->ai_family, serverInfoCoord->ai_socktype, serverInfoCoord->ai_protocol);
 
@@ -44,21 +45,22 @@ int main(int argc, char **argv){
 
    //le envio al coordinador la linea parseada
 	ContentHeader * header_a_coord_de_ESI = malloc(sizeof(ContentHeader));
-	header_a_coord_de_ESI->cantidad_a_leer = sizeof(t);
+	header_a_coord_de_ESI->cantidad_a_leer = sizeof(t_esi_operacion_sin_puntero);
 	header_a_coord_de_ESI->operacion = 1401;
 	header_a_coord_de_ESI->proceso_tipo = 1;
 	printf("mandando header..: \n");
 	printf("op %d \n",header_a_coord_de_ESI->operacion);
 	printf("p tipo: %d \n",header_a_coord_de_ESI->proceso_tipo);
+	printf("cant: %d \n",header_a_coord_de_ESI->cantidad_a_leer);
 
 	int resultado = send(serverCoord, header_a_coord_de_ESI, sizeof(ContentHeader), 0);
 
 	printf("header: %d \n",resultado);
-	/*
+
 	printf("mandando sentencia..: \n");
-	resultado = send(serverCoord, tp, sizeof(t_esi_operacion_sin_puntero),0);
+	resultado = send(serverCoord, t, sizeof(t_esi_operacion_sin_puntero),0);
 	printf("sentencia: %d \n",resultado);
-*/
+
 	printf("closing..\n");
 	close(serverCoord);
 	return 0;

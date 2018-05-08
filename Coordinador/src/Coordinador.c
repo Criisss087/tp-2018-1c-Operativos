@@ -40,7 +40,7 @@ void interpretarOperacionESI(ContentHeader * hd, int socketCliente){
 
 	int po = hd->operacion;
 	printf("p op: %d",po);
-
+	printf(" cant: %d \n",hd->cantidad_a_leer);
 	switch(hd->operacion){
 	case ESI_COORDINADOR_SENTENCIA:
 		printf("interpretando op esi correcta\n");
@@ -141,21 +141,27 @@ int main()
 
 		int status_header = 1;		// Estructura que manjea el status de los recieve.
 		printf("Cliente conectado. Esperando mensajes:\n");
+
 		ContentHeader * header = malloc(sizeof(ContentHeader));
 		status_header = recv(socketCliente, header, sizeof(ContentHeader), NULL);
+
 		printf("status header: %d \n", status_header);
 		int pt = header->proceso_tipo;
 		printf("p tipo %d \n",pt);
 		int po = header->operacion;
 		printf("p op: %d \n",po);
 
+		t_esi_operacion_sin_puntero * sentencia = malloc(sizeof(t_esi_operacion_sin_puntero));
+		sentencia->keyword = 9;
+
+		status_header = recv(socketCliente, sentencia, sizeof(t_esi_operacion_sin_puntero), NULL);
+
+		printf("status header: %d \n", status_header);
+		printf("setnencia recibida: %i - %s \n",sentencia->keyword,sentencia->clave);
 		////////////////////////////////////
-
-
     //}
 
     close(listenningSocket);
-
     return 0;
 
 
