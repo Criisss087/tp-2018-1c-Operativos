@@ -27,4 +27,11 @@
 #define PUERTO_PLANIFICADOR "8082"
 
 
+typedef struct{
+	int keyword;
+	char clave[40];
+	char valor[40];
+} __attribute__((packed)) t_esi_operacion_sin_puntero;
+
+
 #endif /* SRC_UTILIDADES_H_ */

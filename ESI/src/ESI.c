@@ -8,6 +8,7 @@
  */
 
 #include <Utilidades.h>
+t_esi_operacion_sin_puntero transformarSinPuntero(t_esi_operacion t);
 
 struct addrinfo* crear_addrinfo(ip, puerto){
 	struct addrinfo hints;
@@ -22,18 +23,52 @@ struct addrinfo* crear_addrinfo(ip, puerto){
 	return serverInfo;
 }
 
-
 typedef struct {
-
-int proceso_tipo;
-
-int operacion;
-
-int cantidad_a_leer;
-
+	int proceso_tipo;
+	int operacion;
+	int cantidad_a_leer;
 } __attribute__((packed)) ContentHeader;
 
+t_esi_operacion_sin_puntero transformarSinPuntero(t_esi_operacion t){
+	t_esi_operacion_sin_puntero tsp;
+	int keyword = t.keyword;
+	char * valorp = NULL;
+	char * clavep;
+	char valor[40];
+	char clave[40];
 
+	/*
+	get 0
+	set 1
+	store 2
+	*/
+
+	switch(keyword){
+	case 0:
+		clavep = t.argumentos.GET.clave;
+		break;
+	case 1:
+		clavep = t.argumentos.SET.clave;
+		valorp = t.argumentos.SET.valor;
+		break;
+	case 2:
+		clavep = t.argumentos.STORE.clave;
+		break;
+	default: break;
+	}
+
+	tsp.keyword = keyword;
+
+	strncpy(tsp.clave, clavep, sizeof clave - 1);
+	tsp.clave[strlen(clavep)-1] = '\0';
+
+	if (keyword == 1 ) {
+		strncpy(tsp.valor, valorp, sizeof valor - 1);
+		tsp.valor[strlen(valorp)-1] = '\0';
+	};
+
+	return tsp;
+}
 
 int main(int argc, char **argv){
 	FILE * fp;
@@ -58,70 +93,73 @@ int main(int argc, char **argv){
 	freeaddrinfo(serverInfoCoord);
 	freeaddrinfo(serverInfoPlanif);
 
-	int enviar = 1;
-
 	printf("Conectado al servidor: %d \n",coord);
 	printf("Conectado al servidor: %d \n",planif);
 
-	///	while(enviar){
-	while(1){
+	fp = fopen(argv[1], "r");
 
-		fp = fopen(argv[1], "r");
+	char package[PACKAGESIZE];
+	char rtaCoord[PACKAGESIZE];
+	char ordenDeLectura[PACKAGESIZE];
 
-		char package[PACKAGESIZE];
-		char rtaCoord[PACKAGESIZE];
-		char ordenDeLectura[PACKAGESIZE];
+	//recibo orden del planif
 
-		int status = 1;
+	ContentHeader * header_a_ESI_de_planif = malloc(sizeof(ContentHeader));
+	recv(serverPlanif, &header_a_ESI_de_planif, sizeof(ContentHeader),0);
 
-		while (status != 0){
-			//recibo otden del planif
+	if(header_a_ESI_de_planif->operacion == 3101){
+		recv(serverPlanif, ordenDeLectura, sizeof(ordenDeLectura),0);
+		//leo el archivo y parseo
+		if ((read = getline(&line, &len, fp)) != -1) {
+			     t_esi_operacion parsed = parse(line);
+                    //transformo el t_esi_operacion a un tipo que se pueda enviar correctamente
+				    if(parsed.valido){
+				    transformarSinPuntero(parsed);
+				    t_esi_operacion_sin_puntero * t = malloc(sizeof(t_esi_operacion_sin_puntero));
 
-			ContentHeader * header_a_ESI_de_planif = malloc(sizeof(ContentHeader));
-			recv(serverPlanif, &header_a_ESI_de_planif, sizeof(ContentHeader),0);
+				    //le envio al coordinador la linea parseada
 
-			if(header_a_ESI_de_planif->operacion == 3101){
-				status = recv(serverPlanif, ordenDeLectura, sizeof(ordenDeLectura),0);
+				    	    ContentHeader * header_a_coord_de_ESI = malloc(sizeof(ContentHeader));
+				    		header_a_coord_de_ESI->cantidad_a_leer = sizeof(t_esi_operacion_sin_puntero);
+				    		header_a_coord_de_ESI->operacion = 1401;
+				    		header_a_coord_de_ESI->proceso_tipo = 1;
+				    		printf("mandando header..: \n");
+				    		printf("op %d \n",header_a_coord_de_ESI->operacion);
+				    		printf("p tipo: %d \n",header_a_coord_de_ESI->proceso_tipo);
+				    		printf("cant: %d \n",header_a_coord_de_ESI->cantidad_a_leer);
+
+				    		int resultado = send(serverCoord, header_a_coord_de_ESI, sizeof(ContentHeader), 0);
+
+				    		printf("header: %d \n",resultado);
+
+				    		printf("mandando sentencia..: \n");
+				    		resultado = send(serverCoord, t, sizeof(t_esi_operacion_sin_puntero),0);
+				    	    printf("sentencia: %d \n",resultado);
+
+				    //recibo la rta del coord
+				            ContentHeader * header_a_ESI_de_coord = malloc(sizeof(ContentHeader));
+				            recv(serverCoord, &header_a_ESI_de_coord, sizeof(ContentHeader),0);
+				            if(header_a_ESI_de_coord->operacion == 4102){
+				            recv(serverCoord, rtaCoord, sizeof(rtaCoord),0);
+				            }
+
+				    //envio al planif lo que me mando el coord
+				    		ContentHeader * header_a_planif_de_ESI = malloc(sizeof(ContentHeader));
+				    		send(serverPlanif, &header_a_planif_de_ESI, sizeof(ContentHeader),0);
+				    		if(header_a_planif_de_ESI->operacion == 1302){
+				            send(serverPlanif, rtaCoord, sizeof(rtaCoord),0);
+				         	}
+
+
+				    destruir_operacion(parsed);
+				    }
 			}
+	}
 
-		    if (status != 0) {
-		    		if ((read = getline(&line, &len, fp)) != -1) {
-		            t_esi_operacion parsed = parse(line);
+	fclose(fp);
 
-		            if(parsed.valido){
-
-		            	   //le envio al coordinador la linea parseada
-                			ContentHeader * header_a_coord_de_ESI = malloc(sizeof(ContentHeader));
-                 			header_a_coord_de_ESI.cantidad_a_leer->sizeof(parsed);
-                			header_a_coord_de_ESI.operacion->1401;
-                			header_a_coord_de_ESI.proceso_tipo->1;
-                			int resultado = send(serverCoord, &header_a_coord_de_ESI, sizeof(ContentHeader), 0);
-                			send(serverCoord, parsed, sizeof(parsed),0);
-
-                			//recibo la rta del coord
-                			ContentHeader * header_a_ESI_de_coord = malloc(sizeof(ContentHeader));
-                		    recv(serverCoord, &header_a_ESI_de_coord, sizeof(ContentHeader),0);
-                			if(header_a_ESI_de_coord->operacion == 4102){
-                				recv(serverCoord, rtaCoord, sizeof(rtaCoord),0);
-                			}
-
-                			//envio al planif lo que me mando el coord
-                			ContentHeader * header_a_planif_de_ESI = malloc(sizeof(ContentHeader));
-                			send(serverPlanif, &header_a_planif_de_ESI, sizeof(ContentHeader),0);
-                			if(header_a_planif_de_ESI->operacion == 1302){
-                			   send(serverPlanif, rtaCoord, sizeof(rtaCoord),0);
-                			}
-
-			            }
-
-			            destruir_operacion(parsed);
-			        }
-			    }
-		}
-
-			    fclose(fp);
-			    if (line)
-			        free(line);
+    if (line)
+        free(line);
 
 	close(serverCoord);
 	close(serverPlanif);
