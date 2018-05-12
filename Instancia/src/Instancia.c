@@ -8,24 +8,7 @@
  ============================================================================
  */
 
-
-#include <stdlib.h>
-#include <stdio.h>
-#include <string.h>
-#include <arpa/inet.h>
-#include <sys/socket.h>
-
-#define IP "127.0.0.1"
-#define PUERTO 8080
-#define PACKAGESIZE 1024
-
-#define TYPE_INSTANCIA 2
-
-typedef struct {
-	int proceso_tipo;
-	int operacion;
-	int cantidad_a_leer;
-	} __attribute__((packed)) ContentHeader;
+#include  "Utilidades.h"
 
 int main(void) {
 	struct sockaddr_in direccionServidor;
@@ -40,8 +23,40 @@ int main(void) {
 		return 1;
 	}
 
+		//esta parte es para prueba. seguir con el dummyclient hasta que llegue a administrarSentencia. ahi borrar toda esta preuba pedorra y armar como se debe
+
+		int status_header = 1;		// Estructura que manjea el status de los receive.
+		printf("Esperando mensajes:\n");
+
+		ContentHeader * header = malloc(sizeof(ContentHeader));
+		status_header = recv(server, header, sizeof(ContentHeader), NULL);
+
+		int pt = header->proceso_tipo;
+		int po = header->operacion;
+
+		printf("status header: %d, p tipo %d, p op: %d \n", status_header, pt, po);
+
+		if (po == CORDINADOR_ENVIA_SENTENCIA_INSTANCIA) {
+
+			t_esi_operacion_sin_puntero * sentenciaRecibida = malloc(sizeof(t_esi_operacion_sin_puntero));
+
+			status_header = recv(server, sentenciaRecibida, sizeof(t_esi_operacion_sin_puntero), NULL);
+
+			printf("status header: %d \n", status_header);
+			printf("sentencia recibida: \n");
+			printf("\tKeyword: %i - Clave: %s - Valor: %s\n",sentenciaRecibida->keyword,sentenciaRecibida->clave,sentenciaRecibida->valor);
+
+			if (sentenciaRecibida->keyword == SET_KEYWORD) {
+				printf("TODO: Guardar clave y valor");
+			} else if (sentenciaRecibida->keyword == GET_KEYWORD) {
+				printf("TODO: Leer clave y devolver valor\n");
+			}
+
+		}
+
+/*
 	//Se envia mensaje al coordinador
-	/*	while (1) {
+		while (1) {
 		char mensaje[PACKAGESIZE];
 		scanf("%s", mensaje);
 		mensaje[strlen(mensaje)] = '\n';
@@ -49,26 +64,29 @@ int main(void) {
 		//diferencia entre fgets y scanf: fgets lee hasta un \n, scanf lee y pone \0.
 		send(server,mensaje,strlen(mensaje)+1,0);
 		}
-	*/
+*/
 
+/*
 	char mensaje[PACKAGESIZE];
 	scanf("%s", mensaje);
 	mensaje[strlen(mensaje)] = '\n';
 	
-	VariableCustom info = mensaje;
+	// char* info = mensaje;
 
 	ContentHeader * header = malloc(sizeof(ContentHeader));
 
-	header.operacion->0000;
-	header.proceso_tipo->TYPE_INSTANCIA;
-	header.cantidad_a_leer->sizeof(VariableCustom);
+	header->operacion = 0000;
+	header->proceso_tipo = TYPE_INSTANCIA;
+	header->cantidad_a_leer = sizeof(mensaje);
 
-	int resultado = send(server, &header, sizeof(ContentHeader), 0);
+	int resultado = send(server, &header, sizeof(mensaje), 0);
 
 	// a continuación, enviamos el contenido del paquete;
 	// Si el struct VariableCustom tiene campos tipo punteros, no será tan sencillo como hacer un sizeof
 
-	send(server, &info, sizeof(VariableCustom), 0));
+	send(server, &mensaje, sizeof(mensaje), 0);
+*/
+
 
 	return 0;
 }
