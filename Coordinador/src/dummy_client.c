@@ -37,7 +37,7 @@ int main(int argc, char **argv){
 	printf("sizeof header %d \n", sizeof(ContentHeader));
 
 	t_esi_operacion_sin_puntero * t = malloc(sizeof(t_esi_operacion_sin_puntero));
-	char *c = "GET";
+	char *c = "SET";
 	int k = 0;
 
 	memcpy(t->clave,c, strlen(c));

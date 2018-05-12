@@ -22,7 +22,9 @@ struct addrinfo* crear_addrinfo(){
 	return serverInfo;
 }
 
-void administrarSentencia(t_esi_operacion_sin_puntero * sentencia){
+void enviarSentenciaInstancia(t_esi_operacion_sin_puntero * sentencia){
+	//TODO implementar algoritmo de distribucion
+	//TODO enviar a una instancia
 	printf("setnencia recibida: %i - %s \n",sentencia->keyword,sentencia->clave);
 
 }
@@ -49,7 +51,7 @@ void interpretarOperacionESI(ContentHeader * hd, int socketCliente){
 		//Recibo de ESI sentencia parseada
 		t_esi_operacion_sin_puntero * sentencia = malloc(sizeof(t_esi_operacion_sin_puntero));
 		recv( socket, sentencia, hd->cantidad_a_leer, NULL);
-		administrarSentencia(sentencia);
+		enviarSentenciaInstancia(sentencia);
 		break;
 	default:
 		//TODO no se reconoció el tipo operación
