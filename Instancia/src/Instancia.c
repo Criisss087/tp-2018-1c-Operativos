@@ -13,8 +13,8 @@
 int main(void) {
 	struct sockaddr_in direccionServidor;
 	direccionServidor.sin_family = AF_INET;
-	direccionServidor.sin_addr.s_addr = inet_addr(IP);
-	direccionServidor.sin_port = htons(PUERTO);
+	direccionServidor.sin_addr.s_addr = inet_addr(IP_COORDINADOR);
+	direccionServidor.sin_port = htons(PUERTO_COORDINADOR);
 
 
 	int server = socket(AF_INET, SOCK_STREAM, 0);
@@ -23,36 +23,37 @@ int main(void) {
 		return 1;
 	}
 
-		//esta parte es para prueba. seguir con el dummyclient hasta que llegue a administrarSentencia. ahi borrar toda esta preuba pedorra y armar como se debe
+	// Recibe una sentencia del coordinador
 
-		int status_header = 1;		// Estructura que manjea el status de los receive.
-		printf("Esperando mensajes:\n");
+	int status_header = 1;		// Estructura que manjea el status de los receive.
+	printf("Esperando mensajes:\n");
 
-		ContentHeader * header = malloc(sizeof(ContentHeader));
-		status_header = recv(server, header, sizeof(ContentHeader), NULL);
+	ContentHeader * header = malloc(sizeof(ContentHeader));
+	status_header = recv(server, header, sizeof(ContentHeader), NULL);
 
-		int pt = header->proceso_tipo;
-		int po = header->operacion;
+	int pt = header->proceso_tipo;
+	int po = header->operacion;
 
-		printf("status header: %d, p tipo %d, p op: %d \n", status_header, pt, po);
+	printf("status header: %d, p tipo %d, p op: %d \n", status_header, pt, po);
 
-		if (po == CORDINADOR_ENVIA_SENTENCIA_INSTANCIA) {
+	if (po == CORDINADOR_ENVIA_SENTENCIA_INSTANCIA) {
 
-			t_esi_operacion_sin_puntero * sentenciaRecibida = malloc(sizeof(t_esi_operacion_sin_puntero));
+		t_esi_operacion_sin_puntero * sentenciaRecibida = malloc(sizeof(t_esi_operacion_sin_puntero));
 
-			status_header = recv(server, sentenciaRecibida, sizeof(t_esi_operacion_sin_puntero), NULL);
+		status_header = recv(server, sentenciaRecibida, sizeof(t_esi_operacion_sin_puntero), NULL);
 
-			printf("status header: %d \n", status_header);
-			printf("sentencia recibida: \n");
-			printf("\tKeyword: %i - Clave: %s - Valor: %s\n",sentenciaRecibida->keyword,sentenciaRecibida->clave,sentenciaRecibida->valor);
+		printf("status header: %d \n", status_header);
+		printf("sentencia recibida: \n");
+		printf("\tKeyword: %i - Clave: %s - Valor: %s\n",sentenciaRecibida->keyword,sentenciaRecibida->clave,sentenciaRecibida->valor);
 
-			if (sentenciaRecibida->keyword == SET_KEYWORD) {
-				printf("TODO: Guardar clave y valor");
-			} else if (sentenciaRecibida->keyword == GET_KEYWORD) {
-				printf("TODO: Leer clave y devolver valor\n");
-			}
+		if (sentenciaRecibida->keyword == SET_KEYWORD) {
+			printf("TODO: Guardar clave y valor\n");
 
+		} else if (sentenciaRecibida->keyword == GET_KEYWORD) {
+			printf("TODO: Leer clave y devolver valor\n");
 		}
+
+	}
 
 /*
 	//Se envia mensaje al coordinador
