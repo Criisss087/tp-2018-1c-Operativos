@@ -6,44 +6,29 @@
  Copyright   : Si nos copias nos desaprueban el coloquio
  ============================================================================
  */
+#include "Utilidades.h"
 
-#include <stdio.h>
-#include <string.h>
-#include <stdlib.h>
-#include <sys/types.h>
-#include <sys/socket.h>
-#include <netdb.h>
-#include <unistd.h>
+int total_hilos = 0;
+
+void *escucharMensajesEntrantes(int);
+//void crear_hilo_conexion(int,void(* f)(int));
+
+struct addrinfo* crear_addrinfo(){
+	struct addrinfo hints;
+	struct addrinfo *serverInfo;
+
+	memset(&hints, 0, sizeof(hints));
+	hints.ai_family = AF_UNSPEC;		// No importa si uso IPv4 o IPv6
+	hints.ai_socktype = SOCK_STREAM;	// Indica que usaremos el protocolo TCP
+
+	getaddrinfo(IP, PUERTO, &hints, &serverInfo);
 
 
-#define PUERTO "5050"
-#define BACKLOG 5			// Define cuantas conexiones vamos a mantener pendientes al mismo tiempo
-#define PACKAGESIZE 1024
+	return serverInfo;
+}
 
-int main()
-{
-    struct addrinfo hints;
-    struct addrinfo *serverInfo;
 
-    memset(&hints, 0, sizeof(hints));
-    hints.ai_family = AF_UNSPEC;		// No importa si uso IPv4 o IPv6
-    hints.ai_flags = AI_PASSIVE;		// Asigna el address del localhost: 127.0.0.1
-    hints.ai_socktype = SOCK_STREAM;	// Indica que usaremos el protocolo TCP
-
-    getaddrinfo(NULL, PUERTO, &hints, &serverInfo);
-
-    int listenningSocket;
-    listenningSocket = socket(serverInfo->ai_family, serverInfo->ai_socktype, serverInfo->ai_protocol);
-
-    bind(listenningSocket,serverInfo->ai_addr, serverInfo->ai_addrlen);
-    freeaddrinfo(serverInfo);
-
-    listen(listenningSocket, BACKLOG);
-
-    struct sockaddr_in addr;			// Esta estructura contendra los datos de la conexion del cliente. IP, puerto, etc.
-    socklen_t addrlen = sizeof(addr);
-
-    int socketCliente = accept(listenningSocket, (struct sockaddr *) &addr, &addrlen);
+void *escucharMensajesEntrantes(int socketCliente){
 
     char package[PACKAGESIZE];
     int status = 1;		// Estructura que manjea el status de los recieve.
@@ -52,16 +37,52 @@ int main()
 
     while (status != 0){
     	status = recv(socketCliente, (void*) package, PACKAGESIZE, 0);
-    	if (status != 0) printf("%s", package);
+    	if (status != 0) {
+    		printf("%s", package);
+    	}
+    	else {printf("desconectado\n"); total_hilos--;};
    	}
-
     close(socketCliente);
+}
+
+int main()
+{
+	struct addrinfo *serverInfo = crear_addrinfo();
+	int listenningSocket = socket(serverInfo->ai_family, serverInfo->ai_socktype, serverInfo->ai_protocol);
+	printf("socket creado \n");
+
+    // Las siguientes dos lineas sirven para no lockear el address
+	int activado = 1;
+	setsockopt(listenningSocket, SOL_SOCKET, SO_REUSEADDR, &activado, sizeof(activado));
+
+    bind(listenningSocket,serverInfo->ai_addr, serverInfo->ai_addrlen);
+    printf("socket bindeado \n");
+    freeaddrinfo(serverInfo);
+
+    printf("escuchando \n");
+    listen(listenningSocket, BACKLOG);
+
+    struct sockaddr_in addr;// Esta estructura contendra los datos de la conexion del cliente. IP, puerto, etc.
+    socklen_t addrlen = sizeof(addr);
+
+    while (1){
+    	printf("Esperando mensaje\n");
+    	int socketCliente = accept(listenningSocket, (struct sockaddr *) &addr, &addrlen);
+		printf("Escuchando? %d \n",socketCliente);
+
+		crear_hilo_conexion(socketCliente, escucharMensajesEntrantes);
+		total_hilos++;
+		printf("total hilos: %d\n",total_hilos);
+    }
+
     close(listenningSocket);
 
     return 0;
 
 
 }
+
+
 
 /*
 
