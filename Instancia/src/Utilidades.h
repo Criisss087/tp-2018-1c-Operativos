@@ -42,13 +42,13 @@ typedef struct{
 	int keyword;
 	char clave[40];
 	char valor[40];
-} __attribute__((packed)) t_esi_operacion_sin_puntero;
+} __attribute__((packed)) t_sentencia_sin_puntero;
 
 // Estructura de Tabla de Entradas
-/*	typedef struct{
-		char clave[40];
-		int numeroEntrada;
-		int tamanioEntrada;
-	} __attribute__((packed)) t_entrada;
-*/
+typedef struct{
+	char clave[40];
+	int numeroEntrada;
+	int tamanioEntrada;
+} __attribute__((packed)) t_entrada;
+
 #endif /* SRC_UTILIDADES_H_ */
