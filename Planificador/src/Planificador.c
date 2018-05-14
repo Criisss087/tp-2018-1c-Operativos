@@ -20,8 +20,9 @@ int main(void) {
 	int serv_socket = iniciar_servidor(PORT_ESCUCHA);
 
 	//Creo el socket cliente para conectarse al coordinador
-	// int coord_socket = conectar_coordinador(IP_COORD, PORT_COORD );
+	int coord_socket = conectar_coordinador(IP_COORD, PORT_COORD );
 
+	crear_listas_planificador();
 	inicializar_conexiones_esi();
 	stdin_no_bloqueante();
 
@@ -36,8 +37,9 @@ int main(void) {
 		FD_SET(serv_socket, &exepset);
 
 		//Agrega el fd del socket coordinador al set de lectura
-		//FD_SET(coord_socket, &readset);
-		//FD_SET(coord_socket, &exepset);
+		FD_SET(coord_socket, &readset);
+		//FD_SET(coord_socket, &writeset);
+		FD_SET(coord_socket, &exepset);
 
 		//Agrega el stdin para leer la consola
 		FD_SET(STDIN_FILENO, &readset);
@@ -61,16 +63,18 @@ int main(void) {
 
 		}
 
-		/* if(max_fd < coord_socket)
+		if(max_fd < coord_socket)
 			max_fd = coord_socket;
-		*/
 
 		int result = select(max_fd+1, &readset, &writeset, &exepset, NULL); //&time);
 
 		if(result == 0)
 			printf("Select time out\n");
-		else if(result < 0)
+		else if(result < 0){
 			printf("Error en select\n");
+			exit(EXIT_FAILURE);
+		}
+
 		else if(result > 0) //Hubo un cambio en algun fd
 		{
 
@@ -79,13 +83,31 @@ int main(void) {
 				int nuevo_esi = atender_nuevo_esi(serv_socket);
 
 			}
-/*
+
 			//Atender al coordinador
 			if(FD_ISSET(coord_socket, &readset))
 			{
-
+				if(recibir_mensaje_coordinador(coord_socket) == 0)
+				{
+					cerrar_conexion_coord(coord_socket);
+				}
 			}
-*/
+
+
+			/*if(FD_ISSET(coord_socket, &writeset))
+			{
+				printf("Entro al isset del coord WRITE\n");
+				recibir_mensaje_coordinador(coord_socket);
+			}
+			 */
+			if(FD_ISSET(coord_socket, &exepset))
+			{
+				if(recibir_mensaje_coordinador(coord_socket) == 0)
+				{
+					cerrar_conexion_coord(coord_socket);
+				}
+			}
+
 			//Se ingresó algo a la consola
 			if(FD_ISSET(STDIN_FILENO, &readset))
 			{
@@ -154,18 +176,18 @@ int conectar_coordinador(char * ip, char * port) {
 	setsockopt(coord_socket, SOL_SOCKET, SO_REUSEADDR, &activado, sizeof(activado));
 
 	//TODO probar accept en un servidor dummy
-/*	int res_connect = connect(coord_socket, coord_info->ai_addr, coord_info->ai_addrlen);
+	int res_connect = connect(coord_socket, coord_info->ai_addr, coord_info->ai_addrlen);
 	if (res_connect < 0)
 	{
 		printf("Error al intentar conectar al coordinador\n");
 		close(coord_socket);
-		pthread_exit(0);
+		exit(EXIT_FAILURE);
 	}
 	else
-		printf("Conectando con el coordinador...\n");
+		printf("Conectado con el coordinador! (%d) \n",coord_socket);
 
 	freeaddrinfo(coord_info);
-*/
+
 	return coord_socket;
 
 
@@ -199,7 +221,7 @@ int iniciar_servidor(unsigned short port)
 
 
 	printf("Socket servidor (%d) escuchando\n", server_socket);
-	listen(server_socket, 10);
+	listen(server_socket, MAX_CLIENTES);
 
 	return server_socket;
 
@@ -583,4 +605,38 @@ void stdin_no_bloqueante(void)
 	  flag |= O_NONBLOCK;
 	  fcntl(STDIN_FILENO, F_SETFL, flag);
 
+}
+
+void crear_listas_planificador(void)
+{
+	l_listos = list_create();
+	l_bloqueados = list_create();
+	l_terminados = list_create();
+}
+
+int recibir_mensaje_coordinador(int coord_socket)
+{
+
+	int read_size;
+	char client_message[2000];
+
+	read_size = recv(coord_socket , client_message , 2000 , 0);
+	if(read_size > 0)
+	{
+		printf("Coordinador %d dice: %s\n",coord_socket,client_message);
+		int res_send = send(coord_socket, client_message, sizeof(client_message), 0);
+	}
+
+
+	return read_size;
+
+}
+
+int cerrar_conexion_coord(int coord_socket)
+{
+
+	printf("Conexion con coordinador %d cerrada\n",coord_socket);
+	close(coord_socket);
+
+	return 0;
 }
