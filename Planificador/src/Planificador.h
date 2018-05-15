@@ -39,10 +39,15 @@
 #define MAX_CLIENTES 20
 #define MAX_LINEA 255
 #define NO_SOCKET -1
+#define ESTIMACION_INICIAL 5
+#define ALGORITMO_PLAN "FIFO"
 
 //Enumeracion de los comandos de la consola
-enum comandos { pausar, continuar, bloquear, desbloquear, listar, kill, status, deadlock, salir };
+enum comandos { pausar, continuar, bloquear, desbloquear, listar, kill, status, deadlock, salir,
+				mostrar};
 enum proceso_tipo { esi, instancia, planificador, coordinador };
+enum estados { ready, ejec, block, term };
+
 
 //TODO completar a medida que surjan operaciones
 //enum operacion { };
@@ -57,7 +62,7 @@ struct conexion_esi {
 };
 typedef struct conexion_esi t_conexion_esi;
 
-//TODO completar cuando sean necesarios nuevos campos
+//TODO completar cuando sean necesarios nuevos campos, OJO tambien completar al crear el esi
 struct klt_esi {
 	int pid;
 	int estado;
@@ -67,6 +72,13 @@ struct klt_esi {
 };
 typedef struct klt_esi t_klt_esi;
 
+struct content_header {
+	int proceso_tipo;
+	int operacion;
+	int cantidad_a_leer;
+};
+typedef struct __attribute__((packed)) content_header t_content_header  ;
+
 /**********************************************/
 /* DATOS GLOBALES							  */
 /**********************************************/
@@ -75,7 +87,9 @@ t_conexion_esi conexiones_esi[MAX_CLIENTES];
 t_list * l_listos;
 t_list * l_bloqueados;
 t_list * l_terminados;
-t_klt_esi l_ejecucion;
+t_klt_esi * l_ejecucion = NULL;
+
+int esi_pid = 0;
 
 /**********************************************/
 /* FUNCIONES								  */
@@ -83,8 +97,8 @@ t_klt_esi l_ejecucion;
 int conectar_coordinador(char * ip, char * port);
 int iniciar_servidor(unsigned short port);
 void stdin_no_bloqueante(void);
-void crear_listas_planificador();
-
+void crear_listas_planificador(void);
+void terminar_planificador(void);
 
 //Utilidades para la consola
 int comando_consola(char * buffer);
@@ -102,12 +116,17 @@ void listar_recurso(char* recurso);
 void kill_id(char* id);
 void status_clave(char* clave);
 void deadlock_consola(void);
+void mostrar_lista(char* lista);
 
 //Manejo de esi
 void inicializar_conexiones_esi(void);
 int atender_nuevo_esi(int serv_socket);
 int recibir_mensaje_esi(int esi_socket);
 int cerrar_conexion_esi(t_conexion_esi * esi);
+
+t_klt_esi * crear_esi(t_conexion_esi conexion);
+int destruir_esi(t_klt_esi * esi);
+void mostrar_esi(t_klt_esi * esi);
 
 //Manejo de coordinador
 int recibir_mensaje_coordinador(int coord_socket);

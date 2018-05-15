@@ -80,7 +80,8 @@ int main(void) {
 
 			//Aceptar nuevas conexiones de ESI
 			if (FD_ISSET(serv_socket, &readset)) {
-				int nuevo_esi = atender_nuevo_esi(serv_socket);
+
+				atender_nuevo_esi(serv_socket);
 
 			}
 
@@ -105,6 +106,7 @@ int main(void) {
 				if(recibir_mensaje_coordinador(coord_socket) == 0)
 				{
 					cerrar_conexion_coord(coord_socket);
+					terminar_planificador();
 				}
 			}
 
@@ -116,8 +118,10 @@ int main(void) {
 
 				int res = comando_consola(read_buffer);
 				if(res)
+				{
+					terminar_planificador();
 					break;
-
+				}
 			}
 
 			//Manejo de conexiones esi ya existentes
@@ -130,16 +134,16 @@ int main(void) {
 							cerrar_conexion_esi(&conexiones_esi[i]);
 							continue;
 						}
+					}
 
 					//Excepciones del esi, para la desconexion
-						if (FD_ISSET(conexiones_esi[i].socket, &exepset)) {
-							if(recibir_mensaje_esi(conexiones_esi[i].socket) == 0)
-							{
-								cerrar_conexion_esi(&conexiones_esi[i]);
-								continue;
-							}
+					if (FD_ISSET(conexiones_esi[i].socket, &exepset)) {
+						if(recibir_mensaje_esi(conexiones_esi[i].socket) == 0)
+						{
+							cerrar_conexion_esi(&conexiones_esi[i]);
+							continue;
 						}
-					} //if isset
+					}//if isset
 				} // if NO_SOCKET
 			} //for conexiones_esi
 		} //if result select
@@ -175,7 +179,6 @@ int conectar_coordinador(char * ip, char * port) {
 	int activado = 1;
 	setsockopt(coord_socket, SOL_SOCKET, SO_REUSEADDR, &activado, sizeof(activado));
 
-	//TODO probar accept en un servidor dummy
 	int res_connect = connect(coord_socket, coord_info->ai_addr, coord_info->ai_addrlen);
 	if (res_connect < 0)
 	{
@@ -189,7 +192,6 @@ int conectar_coordinador(char * ip, char * port) {
 	freeaddrinfo(coord_info);
 
 	return coord_socket;
-
 
 }
 
@@ -305,6 +307,9 @@ int obtener_key_comando(char* comando)
 	if(!strcmp(comando, "deadlock"))
 		key = deadlock;
 
+	if(!strcmp(comando, "mostrar"))
+			key = mostrar;
+
 	if(!strcmp(comando, "exit"))
 		key = salir;
 
@@ -417,6 +422,53 @@ void deadlock_consola(void)
 	return;
 }
 
+void mostrar_lista(char * name)
+{
+
+	t_list * lista;
+
+	if(name == NULL)
+		printf("Parametros incorrectos (mostrar <lista>)\n");
+	else
+	{
+		lista = list_create();
+
+		if(!strcmp(name, "ready"))
+		{
+			printf("copiando a l_ready a lista\n");
+			list_add_all(lista, l_listos);
+		}
+
+		else if(!strcmp(name, "block"))
+		{
+			list_add_all(lista,l_bloqueados);
+		}
+
+		else if(!strcmp(name, "term"))
+		{
+			list_add_all(lista, l_terminados);
+		}
+		else
+		{
+			printf("No existe la lista %s: \n",name);
+			return;
+		}
+
+		printf("\nEstado actual de la lista de %s: \n\n",name);
+
+		list_iterate(lista,(void*)mostrar_esi);
+
+		printf("\nTamaño: %d \n",list_size(lista));
+
+		list_destroy(lista);
+		printf("\n");
+	}
+
+	return;
+
+
+}
+
 int comando_consola(char * buffer){
 
 	int comando_key;
@@ -463,6 +515,9 @@ int comando_consola(char * buffer){
 			res = 1;
 			printf("Saliendo de la consola\n");
 			break;
+		case mostrar:
+			mostrar_lista(parametro1);
+			break;
 		default:
 			printf("No reconozco el comando vieja...\n");
 			break;
@@ -492,9 +547,12 @@ int comando_consola(char * buffer){
 int atender_nuevo_esi(int serv_socket)
 {
 	struct sockaddr_in client_addr;
+
+	//Setea la direccion en 0
 	memset(&client_addr, 0, sizeof(client_addr));
 	socklen_t client_len = sizeof(client_addr);
 
+	//Acepta la nueva conexion
 	int new_client_sock = accept(serv_socket, (struct sockaddr *)&client_addr, &client_len);
 	if (new_client_sock < 0) {
 	  perror("accept()");
@@ -503,13 +561,21 @@ int atender_nuevo_esi(int serv_socket)
 
 	printf("Acepté al esi:%d.\n", new_client_sock);
 
-	int i;
-	for (i = 0; i < MAX_CLIENTES; ++i) {
+
+	//Lo agrego a la lista de conexiones esi actuales
+	for (int i = 0; i < MAX_CLIENTES; ++i) {
 
 		if (conexiones_esi[i].socket == NO_SOCKET) {
 			conexiones_esi[i].socket = new_client_sock;
 			conexiones_esi[i].addres = client_addr;
-	        return new_client_sock;
+
+			//Creo el nuevo esi con su conexion
+			t_klt_esi * nuevo_esi = crear_esi(conexiones_esi[i]);
+
+			//Agrego el esi nuevo a la cola de listos
+			list_add(l_listos, nuevo_esi);
+
+	        return 0;
 	    }
 
 	 }
@@ -639,4 +705,46 @@ int cerrar_conexion_coord(int coord_socket)
 	close(coord_socket);
 
 	return 0;
+}
+
+t_klt_esi * crear_esi(t_conexion_esi conexion)
+{
+	t_klt_esi * esi;
+
+	esi = malloc(sizeof(t_klt_esi));
+
+	esi->pid = esi_pid;
+	esi->conexion = conexion;
+	esi->estado = ready;
+	esi->estimacion = ESTIMACION_INICIAL;
+	esi->estimacion_ant = ESTIMACION_INICIAL;
+	esi_pid++;
+
+	return esi;
+
+}
+
+int destruir_esi(t_klt_esi * esi)
+{
+	esi->conexion.socket = NO_SOCKET;
+	free(esi);
+	return 0;
+
+}
+void mostrar_esi(t_klt_esi * esi)
+{
+
+	printf("PID esi: %d\n", esi->pid);
+	printf("Estado: %d\n", esi->estado);
+	printf("\n");
+
+	return;
+
+}
+
+void terminar_planificador(void)
+{
+	list_destroy_and_destroy_elements(l_listos,(void*)destruir_esi);
+	list_destroy_and_destroy_elements(l_bloqueados,(void*)destruir_esi);
+	list_destroy_and_destroy_elements(l_terminados,(void*)destruir_esi);
 }
