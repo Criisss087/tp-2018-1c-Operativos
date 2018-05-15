@@ -40,11 +40,14 @@
 #define MAX_LINEA 255
 #define NO_SOCKET -1
 #define ESTIMACION_INICIAL 5
-#define ALGORITMO_PLAN "FIFO"
+#define ALGORITMO_PLAN_FIFO "FIFO"
+#define ALGORITMO_PLAN_SJFCD "SJF-CD"
+#define ALGORITMO_PLAN_SJFSD "SJF-SD"
+#define ALGORITMO_PLAN_HRRN "HRRN"
 
 //Enumeracion de los comandos de la consola
 enum comandos { pausar, continuar, bloquear, desbloquear, listar, kill, status, deadlock, salir,
-				mostrar};
+				mostrar, ejecucion};
 enum proceso_tipo { esi, instancia, planificador, coordinador };
 enum estados { ready, ejec, block, term };
 
@@ -79,6 +82,18 @@ struct content_header {
 };
 typedef struct __attribute__((packed)) content_header t_content_header  ;
 
+struct config{
+	char puerto_escucha[5];
+	char algoritmo[6];
+	int desalojo;
+	int alfa;
+	int estimacion_inicial;
+	char* ip_coordinador;
+	char puerto_coordinador[5];
+	char ** claves_bloqueadas;
+};
+
+
 /**********************************************/
 /* DATOS GLOBALES							  */
 /**********************************************/
@@ -87,9 +102,12 @@ t_conexion_esi conexiones_esi[MAX_CLIENTES];
 t_list * l_listos;
 t_list * l_bloqueados;
 t_list * l_terminados;
+t_list * claves_bloqueadas;
 t_klt_esi * l_ejecucion = NULL;
 
 int esi_pid = 0;
+
+struct config config;
 
 /**********************************************/
 /* FUNCIONES								  */
@@ -99,6 +117,9 @@ int iniciar_servidor(unsigned short port);
 void stdin_no_bloqueante(void);
 void crear_listas_planificador(void);
 void terminar_planificador(void);
+void planificar(void);
+void obtener_proximo_ejec(void);
+void desalojar_ejec(void);
 
 //Utilidades para la consola
 int comando_consola(char * buffer);
@@ -117,6 +138,7 @@ void kill_id(char* id);
 void status_clave(char* clave);
 void deadlock_consola(void);
 void mostrar_lista(char* lista);
+void mostrar_esi_en_ejecucion(void);
 
 //Manejo de esi
 void inicializar_conexiones_esi(void);

@@ -16,6 +16,8 @@ int main(void) {
 	int max_fd;
 	char read_buffer[MAX_LINEA];
 
+	//TODO Obtener datos del archivo de configuración
+
 	//Creo el socket servidor para recibir ESIs (ya bindeado y escuchando)
 	int serv_socket = iniciar_servidor(PORT_ESCUCHA);
 
@@ -80,9 +82,8 @@ int main(void) {
 
 			//Aceptar nuevas conexiones de ESI
 			if (FD_ISSET(serv_socket, &readset)) {
-
 				atender_nuevo_esi(serv_socket);
-
+				planificar();
 			}
 
 			//Atender al coordinador
@@ -227,21 +228,6 @@ int iniciar_servidor(unsigned short port)
 
 	return server_socket;
 
-	/*
-
-	struct sockaddr_in dir_cli_pl;
-
-	int cliente = accept(serv_pl, (void*)&dir_cli_pl, &dir_cli_size);
-	printf("Recibí una nueva coneccion (%d) \n", cliente);
-	send(cliente, "Te conectaste al planificador!\n",32,0);
-
-	//for(;;);
-
-
-	close(serv_pl);
-	pthread_exit(0);
-*/
-
 }
 
 /*	Consola preparada para funcionar en un hilo aparte
@@ -309,6 +295,9 @@ int obtener_key_comando(char* comando)
 
 	if(!strcmp(comando, "mostrar"))
 			key = mostrar;
+
+	if(!strcmp(comando, "ejec"))
+			key = ejecucion;
 
 	if(!strcmp(comando, "exit"))
 		key = salir;
@@ -469,6 +458,18 @@ void mostrar_lista(char * name)
 
 }
 
+void mostrar_esi_en_ejecucion(void)
+{
+
+	if(l_ejecucion!=NULL)
+		printf("\nPID Esi en ejecución actual: %d: \n",l_ejecucion->pid);
+	else
+		printf("No hay ningun esi en ejecucion\n");
+
+
+	return;
+}
+
 int comando_consola(char * buffer){
 
 	int comando_key;
@@ -518,6 +519,9 @@ int comando_consola(char * buffer){
 		case mostrar:
 			mostrar_lista(parametro1);
 			break;
+		case ejecucion:
+			mostrar_esi_en_ejecucion();
+			break;
 		default:
 			printf("No reconozco el comando vieja...\n");
 			break;
@@ -559,7 +563,7 @@ int atender_nuevo_esi(int serv_socket)
 	  return -1;
 	}
 
-	printf("Acepté al esi:%d.\n", new_client_sock);
+	printf("Acepté al esi con el fd: %d.\n", new_client_sock);
 
 
 	//Lo agrego a la lista de conexiones esi actuales
@@ -574,7 +578,7 @@ int atender_nuevo_esi(int serv_socket)
 
 			//Agrego el esi nuevo a la cola de listos
 			list_add(l_listos, nuevo_esi);
-
+			printf("Esi %d agregado a ready!\n",nuevo_esi->pid);
 	        return 0;
 	    }
 
@@ -747,4 +751,76 @@ void terminar_planificador(void)
 	list_destroy_and_destroy_elements(l_listos,(void*)destruir_esi);
 	list_destroy_and_destroy_elements(l_bloqueados,(void*)destruir_esi);
 	list_destroy_and_destroy_elements(l_terminados,(void*)destruir_esi);
+
+	if(l_ejecucion!=NULL)
+		destruir_esi(l_ejecucion);
+}
+
+void planificar(void)
+{
+
+	//TODO Obtener el algoritmo de planificacion de la config
+	printf("intento replanificar\n");
+	if(l_ejecucion == NULL)
+		obtener_proximo_ejec();
+
+	else if(config.desalojo)
+		desalojar_ejec();
+
+
+}
+void obtener_proximo_ejec(void)
+{
+
+	t_klt_esi * ejec_ant;
+
+	ejec_ant = l_ejecucion;
+	printf("Intento obtener el siguiente\n");
+	/*  TODO SJF debe copiar la lista de listos a una lista auxiliar,
+	 * ordenarla por estimacion mas corta, tomar el primero, destruir la lista auxiliar.
+	 * Eso para ambos casos
+	 */
+
+	if(!strcmp(config.algoritmo, "SJF-CD") )
+	{
+
+	}
+	else if(!strcmp(config.algoritmo, "SJF-SD") )
+	{
+
+	}
+
+	/* TODO HRRN: Similar al anterior, pero ordenar por ratio
+	 * Revisar como es ese ordenamiento
+	 */
+	else if(!strcmp(config.algoritmo, "HRRN") )
+	{
+
+	}
+
+	/* FIFO: Directamente saca el primer elemento de la lista y lo pone en ejecucion
+	 * Por default tambien hace fifo... ya fue
+	 */
+	else if(!strcmp(config.algoritmo, "FIFO") )
+	{
+		l_ejecucion = list_remove(l_listos,0);
+	}
+	else
+	{
+		l_ejecucion = list_remove(l_listos,0);
+	}
+
+	//TODO Enviar confirmacion al esi
+	//Si hubo un cambio en el esi en ejecucion, debo avisarle al nuevo esi en ejecucion que es su turno
+	if(ejec_ant != l_ejecucion)
+	{
+		printf("Aca le debo avisar al esi %d que es su turno\n",l_ejecucion->pid);
+	}
+
+	return;
+}
+
+void desalojar_ejec(void)
+{
+
 }
