@@ -93,6 +93,11 @@ struct config{
 	char ** claves_bloqueadas;
 };
 
+struct claves_bloqueadas{
+	char * clave;
+	int pid;
+};
+typedef struct clave_bloqueadas t_claves_bloqueadas;
 
 /**********************************************/
 /* DATOS GLOBALES							  */

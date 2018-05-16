@@ -605,6 +605,8 @@ int recibir_mensaje_esi(int esi_socket)
 	int read_size;
 	char client_message[2000];
 
+	//TODO Recibir confirmacion de sentencia del esi
+
 	read_size = recv(esi_socket , client_message , 2000 , 0);
 	if(read_size > 0)
 	{
@@ -687,6 +689,8 @@ void crear_listas_planificador(void)
 int recibir_mensaje_coordinador(int coord_socket)
 {
 
+	//TODO Recibir mensaje de "Puedo bloquear esta clave desde este esi?" (punto 4.3)
+	//TODO Recibir mensaje de "Puedo des-bloquear esta clave desde este esi?" (Punto 5.1)
 	int read_size;
 	char client_message[2000];
 
@@ -811,6 +815,7 @@ void obtener_proximo_ejec(void)
 	}
 
 	//TODO Enviar confirmacion al esi
+	// Punto 2
 	//Si hubo un cambio en el esi en ejecucion, debo avisarle al nuevo esi en ejecucion que es su turno
 	if(ejec_ant != l_ejecucion)
 	{
