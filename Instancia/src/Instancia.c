@@ -10,9 +10,10 @@
 
 #include  "Utilidades.h"
 
-bool existeClave(t_entrada * entrada) {
-				return entrada->clave == "deportes:messi";
-			}
+int existeClave(t_entrada * entrada) {
+	printf("TODO:Remove hardcoded key\n\n");
+	return (int) strcmp(entrada->clave, "deportessasaf:messi") != 1;
+}
 
 int main(void) {
 
@@ -22,7 +23,8 @@ int main(void) {
 	direccionServidor.sin_port = htons(PUERTO_COORDINADOR);
 
 	int server = socket(AF_INET, SOCK_STREAM, 0);
-	if (connect(server, (void*) &direccionServidor, sizeof(direccionServidor)) != 0) {
+	if (connect(server, (void*) &direccionServidor, sizeof(direccionServidor))
+			!= 0) {
 		perror("No se pudo conectar al Coordinador");
 		return 1;
 	}
@@ -33,11 +35,11 @@ int main(void) {
 
 	// Recibe una sentencia del coordinador
 
-	int statusHeader = 1;		// Estructura que manjea el status de los receive.
+	int statusHeader = 1;	// Estructura que manjea el status de los receive.
 	printf("Esperando mensajes:\n");
 
 	ContentHeader * header = malloc(sizeof(ContentHeader));
-	statusHeader = recv(server, header, sizeof(ContentHeader), NULL);
+	statusHeader = recv(server, header, sizeof(ContentHeader), (int) NULL);
 
 	int pt = header->proceso_tipo;
 	int po = header->operacion;
@@ -46,16 +48,21 @@ int main(void) {
 
 	if (po == CORDINADOR_ENVIA_SENTENCIA_INSTANCIA) {
 
-		t_sentencia_sin_puntero * sentenciaRecibida = malloc(sizeof(t_sentencia_sin_puntero));
+		t_sentencia_sin_puntero * sentenciaRecibida = malloc(
+				sizeof(t_sentencia_sin_puntero));
 
-		statusHeader = recv(server, sentenciaRecibida, sizeof(t_sentencia_sin_puntero), NULL);
+		statusHeader = recv(server, sentenciaRecibida,
+				sizeof(t_sentencia_sin_puntero), (int) NULL);
 
 		printf("status header: %d \n", statusHeader);
 		printf("sentencia recibida: \n");
-		printf("\tKeyword: %i - Clave: %s - Valor: %s\n",sentenciaRecibida->keyword,sentenciaRecibida->clave,sentenciaRecibida->valor);
+		printf("\tKeyword: %i - Clave: %s - Valor: %s\n",
+				sentenciaRecibida->keyword, sentenciaRecibida->clave,
+				sentenciaRecibida->valor);
 
 		if (sentenciaRecibida->keyword == SET_KEYWORD) {
-			printf("El tamaño de la lista de entradas es: %d\n", list_size(l_entradas));
+			printf("El tamaño de la lista de entradas es: %d\n",
+					list_size(l_entradas));
 
 			printf("TODO: Guardar valor en el Storage con mmap()\n");
 
@@ -69,70 +76,71 @@ int main(void) {
 				entrada->numeroEntrada = 0;
 				entrada->tamanioEntrada = sizeof(t_sentencia_sin_puntero);
 
-				list_add(l_entradas , entrada);
+				printf("La clave guardada es %s\n", entrada->clave);
 
-				printf("La clave guardada es %s\n",entrada->clave);
+				list_add(l_entradas, entrada);
 
-				printf("El tamaño de la lista de entradas es: %d\n", list_size(l_entradas));
+				printf("El tamaño de la lista de entradas es: %d\n",
+						list_size(l_entradas));
 
-				t_entrada * entradaBuscada; // = list_find(l_entradas, (void*)existeClave);
+				printf("\n\nConsulta de valor:\n\n");
 
-				entradaBuscada = malloc(sizeof(t_entrada));
+				t_entrada * entradaBuscada = malloc(sizeof(t_entrada));
+				entradaBuscada = list_find(l_entradas, (void*) existeClave);
 
-				printf("Recibido: %s\n", list_find(l_entradas, (void*)existeClave));
-				printf("La clave es: %s, el Numero de Entrada: %d, el tamaño de entrada: %d\n", entradaBuscada->clave, entradaBuscada->numeroEntrada, entradaBuscada->tamanioEntrada);
+				printf(
+						"La clave es: %s, el Numero de Entrada: %d, el tamaño de entrada: %d\n",
+						entradaBuscada->clave, entradaBuscada->numeroEntrada,
+						entradaBuscada->tamanioEntrada);
+				/*
+				 free(entrada);
 
-				free(entrada);
-
-				free(entradaBuscada);
-
+				 free(entradaBuscada);
+				 */
 			} else {
-				printf("TODO: Se supera la cantidad maxima de entradas definida por el coordinador");
+				printf(
+						"TODO: Se supera la cantidad maxima de entradas definida por el coordinador");
 			}
 
 		} else if (sentenciaRecibida->keyword == GET_KEYWORD) {
 			printf("TODO: Leer clave y devolver valor\n");
 
-			// t_entrada * entradaBuscada = list_find(l_entradas, (void*)existeClave);
-
-			// printf("La clave es: %s, el Numero de Entrada: %d, el tamaño de entrada: %d", entradaBuscada->clave, entradaBuscada->numeroEntrada, entradaBuscada->tamanioEntrada);
 		}
 
 	}
 
-/*
-	//Se envia mensaje al coordinador
-		while (1) {
-		char mensaje[PACKAGESIZE];
-		scanf("%s", mensaje);
-		mensaje[strlen(mensaje)] = '\n';
-		//fgets(mensaje, PACKAGESIZE, stdin);
-		//diferencia entre fgets y scanf: fgets lee hasta un \n, scanf lee y pone \0.
-		send(server,mensaje,strlen(mensaje)+1,0);
-		}
-*/
+	/*
+	 //Se envia mensaje al coordinador
+	 while (1) {
+	 char mensaje[PACKAGESIZE];
+	 scanf("%s", mensaje);
+	 mensaje[strlen(mensaje)] = '\n';
+	 //fgets(mensaje, PACKAGESIZE, stdin);
+	 //diferencia entre fgets y scanf: fgets lee hasta un \n, scanf lee y pone \0.
+	 send(server,mensaje,strlen(mensaje)+1,0);
+	 }
+	 */
 
-/*
-	char mensaje[PACKAGESIZE];
-	scanf("%s", mensaje);
-	mensaje[strlen(mensaje)] = '\n';
-	
-	// char* info = mensaje;
+	/*
+	 char mensaje[PACKAGESIZE];
+	 scanf("%s", mensaje);
+	 mensaje[strlen(mensaje)] = '\n';
 
-	ContentHeader * header = malloc(sizeof(ContentHeader));
+	 // char* info = mensaje;
 
-	header->operacion = 0000;
-	header->proceso_tipo = TYPE_INSTANCIA;
-	header->cantidad_a_leer = sizeof(mensaje);
+	 ContentHeader * header = malloc(sizeof(ContentHeader));
 
-	int resultado = send(server, &header, sizeof(mensaje), 0);
+	 header->operacion = 0000;
+	 header->proceso_tipo = TYPE_INSTANCIA;
+	 header->cantidad_a_leer = sizeof(mensaje);
 
-	// a continuación, enviamos el contenido del paquete;
-	// Si el struct VariableCustom tiene campos tipo punteros, no será tan sencillo como hacer un sizeof
+	 int resultado = send(server, &header, sizeof(mensaje), 0);
 
-	send(server, &mensaje, sizeof(mensaje), 0);
-*/
+	 // a continuación, enviamos el contenido del paquete;
+	 // Si el struct VariableCustom tiene campos tipo punteros, no será tan sencillo como hacer un sizeof
 
+	 send(server, &mensaje, sizeof(mensaje), 0);
+	 */
 
 	return 0;
 }
