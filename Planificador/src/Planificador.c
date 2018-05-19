@@ -10,6 +10,7 @@
 
 #include "Planificador.h"
 
+
 int main(void) {
 
 	fd_set readset, writeset, exepset;
@@ -574,7 +575,7 @@ int atender_nuevo_esi(int serv_socket)
 			conexiones_esi[i].addres = client_addr;
 
 			//Creo el nuevo esi con su conexion
-			t_klt_esi * nuevo_esi = crear_esi(conexiones_esi[i]);
+			t_pcb_esi * nuevo_esi = crear_esi(conexiones_esi[i]);
 
 			//Agrego el esi nuevo a la cola de listos
 			list_add(l_listos, nuevo_esi);
@@ -604,8 +605,45 @@ int recibir_mensaje_esi(int esi_socket)
 {
 	int read_size;
 	char client_message[2000];
+	t_pcb_esi *esi_aux;
 
-	//TODO Recibir confirmacion de sentencia del esi
+	//TODO Recibir confirmacion de sentencia del ESI
+	//Recibe 1302
+
+	t_content_header *content_header = malloc(sizeof(t_content_header));
+
+	read_size = recv(esi_socket, content_header, sizeof(t_content_header), NULL);
+
+	int content_info;
+
+	recv( socket, content_info, content_header->cantidad_a_leer, NULL);
+
+	if(content_header->operacion == 1302){
+		if(content_info == OPERACION_ESI_OK){
+			// TODO Ordenar ejecutar siguiente sentencia del ESI
+
+			//int res_send = send(esi_socket, client_message, sizeof(client_message), 0);
+
+		}
+		else if(content_info == OPERACION_ESI_OK_FINAL){
+			l_ejecucion->estado = finished;
+			esi_aux = l_ejecucion;
+
+			list_add(l_terminados, l_ejecucion);
+
+			l_ejecucion = NULL;
+		}
+		else if(content_info == OPERACION_ESI_BLOQUEADA){
+			l_ejecucion->estado = blocked;
+			esi_aux = l_ejecucion;
+
+			list_add(l_bloqueados, esi_aux);
+
+			l_ejecucion = NULL;
+		}
+	}
+
+	//--------------------//
 
 	read_size = recv(esi_socket , client_message , 2000 , 0);
 	if(read_size > 0)
@@ -715,11 +753,11 @@ int cerrar_conexion_coord(int coord_socket)
 	return 0;
 }
 
-t_klt_esi * crear_esi(t_conexion_esi conexion)
+t_pcb_esi * crear_esi(t_conexion_esi conexion)
 {
-	t_klt_esi * esi;
+	t_pcb_esi * esi;
 
-	esi = malloc(sizeof(t_klt_esi));
+	esi = malloc(sizeof(t_pcb_esi));
 
 	esi->pid = esi_pid;
 	esi->conexion = conexion;
@@ -732,14 +770,14 @@ t_klt_esi * crear_esi(t_conexion_esi conexion)
 
 }
 
-int destruir_esi(t_klt_esi * esi)
+int destruir_esi(t_pcb_esi * esi)
 {
 	esi->conexion.socket = NO_SOCKET;
 	free(esi);
 	return 0;
 
 }
-void mostrar_esi(t_klt_esi * esi)
+void mostrar_esi(t_pcb_esi * esi)
 {
 
 	printf("PID esi: %d\n", esi->pid);
@@ -776,7 +814,7 @@ void planificar(void)
 void obtener_proximo_ejec(void)
 {
 
-	t_klt_esi * ejec_ant;
+	t_pcb_esi * ejec_ant;
 
 	ejec_ant = l_ejecucion;
 	printf("Intento obtener el siguiente\n");

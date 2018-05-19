@@ -45,11 +45,15 @@
 #define ALGORITMO_PLAN_SJFSD "SJF-SD"
 #define ALGORITMO_PLAN_HRRN "HRRN"
 
+#define OPERACION_ESI_OK 1
+#define OPERACION_ESI_OK_FINAL 2
+#define OPERACION_ESI_BLOQUEADA -1
+
 //Enumeracion de los comandos de la consola
 enum comandos { pausar, continuar, bloquear, desbloquear, listar, kill, status, deadlock, salir,
 				mostrar, ejecucion};
 enum proceso_tipo { esi, instancia, planificador, coordinador };
-enum estados { ready, ejec, block, term };
+enum estados { ready, exec, blocked, finished };
 
 
 //TODO completar a medida que surjan operaciones
@@ -66,14 +70,14 @@ struct conexion_esi {
 typedef struct conexion_esi t_conexion_esi;
 
 //TODO completar cuando sean necesarios nuevos campos, OJO tambien completar al crear el esi
-struct klt_esi {
+struct pcb_esi {
 	int pid;
 	int estado;
 	int estimacion;
 	int estimacion_ant;
 	t_conexion_esi conexion;
 };
-typedef struct klt_esi t_klt_esi;
+typedef struct pcb_esi t_pcb_esi;
 
 struct content_header {
 	int proceso_tipo;
@@ -108,7 +112,7 @@ t_list * l_listos;
 t_list * l_bloqueados;
 t_list * l_terminados;
 t_list * claves_bloqueadas;
-t_klt_esi * l_ejecucion = NULL;
+t_pcb_esi * l_ejecucion = NULL;
 
 int esi_pid = 0;
 
@@ -151,9 +155,9 @@ int atender_nuevo_esi(int serv_socket);
 int recibir_mensaje_esi(int esi_socket);
 int cerrar_conexion_esi(t_conexion_esi * esi);
 
-t_klt_esi * crear_esi(t_conexion_esi conexion);
-int destruir_esi(t_klt_esi * esi);
-void mostrar_esi(t_klt_esi * esi);
+t_pcb_esi * crear_esi(t_conexion_esi conexion);
+int destruir_esi(t_pcb_esi * esi);
+void mostrar_esi(t_pcb_esi * esi);
 
 //Manejo de coordinador
 int recibir_mensaje_coordinador(int coord_socket);
