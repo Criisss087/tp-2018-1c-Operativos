@@ -607,9 +607,6 @@ int recibir_mensaje_esi(int esi_socket)
 	char client_message[2000];
 	t_pcb_esi *esi_aux;
 
-	//TODO Recibir confirmacion de sentencia del ESI
-	//Recibe 1302
-
 	t_content_header *content_header = malloc(sizeof(t_content_header));
 
 	read_size = recv(esi_socket, content_header, sizeof(t_content_header), NULL);
@@ -622,14 +619,19 @@ int recibir_mensaje_esi(int esi_socket)
 		if(content_info == OPERACION_ESI_OK){
 			// TODO Ordenar ejecutar siguiente sentencia del ESI
 
+			l_ejecucion->instruccion_actual++;
+
 			//int res_send = send(esi_socket, client_message, sizeof(client_message), 0);
+
 
 		}
 		else if(content_info == OPERACION_ESI_OK_FINAL){
 			l_ejecucion->estado = finished;
+			l_ejecucion->instruccion_actual++;
+
 			esi_aux = l_ejecucion;
 
-			list_add(l_terminados, l_ejecucion);
+			list_add(l_terminados, esi_aux);
 
 			l_ejecucion = NULL;
 		}
@@ -645,6 +647,7 @@ int recibir_mensaje_esi(int esi_socket)
 
 	//--------------------//
 
+	// TODO Eliminar el bloque de prueba
 	read_size = recv(esi_socket , client_message , 2000 , 0);
 	if(read_size > 0)
 	{
@@ -726,11 +729,16 @@ void crear_listas_planificador(void)
 
 int recibir_mensaje_coordinador(int coord_socket)
 {
-
-	//TODO Recibir mensaje de "Puedo bloquear esta clave desde este esi?" (punto 4.3)
-	//TODO Recibir mensaje de "Puedo des-bloquear esta clave desde este esi?" (Punto 5.1)
 	int read_size;
 	char client_message[2000];
+
+
+
+	//TODO Recibir mensaje de "Puedo bloquear esta clave desde este esi?" (punto 4.3)
+	read_size = recv(coord_socket , client_message, 2000 , 0);
+
+	//TODO Recibir mensaje de "Puedo des-bloquear esta clave desde este esi?" (Punto 5.1)
+
 
 	read_size = recv(coord_socket , client_message , 2000 , 0);
 	if(read_size > 0)
@@ -764,6 +772,7 @@ t_pcb_esi * crear_esi(t_conexion_esi conexion)
 	esi->estado = ready;
 	esi->estimacion = ESTIMACION_INICIAL;
 	esi->estimacion_ant = ESTIMACION_INICIAL;
+	esi->instruccion_actual = 0;
 	esi_pid++;
 
 	return esi;
@@ -857,8 +866,10 @@ void obtener_proximo_ejec(void)
 	//Si hubo un cambio en el esi en ejecucion, debo avisarle al nuevo esi en ejecucion que es su turno
 	if(ejec_ant != l_ejecucion)
 	{
+		// TODO Enviar PID asignado al ESI
 		printf("Aca le debo avisar al esi %d que es su turno\n",l_ejecucion->pid);
 	}
+
 
 	return;
 }

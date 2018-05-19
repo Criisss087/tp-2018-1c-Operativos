@@ -75,6 +75,7 @@ struct pcb_esi {
 	int estado;
 	int estimacion;
 	int estimacion_ant;
+	int instruccion_actual;
 	t_conexion_esi conexion;
 };
 typedef struct pcb_esi t_pcb_esi;
