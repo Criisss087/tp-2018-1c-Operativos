@@ -92,6 +92,7 @@ int main(void) {
 				if(recibir_mensaje_coordinador(coord_socket) == 0)
 				{
 					cerrar_conexion_coord(coord_socket);
+					terminar_planificador();
 				}
 			}
 
@@ -188,6 +189,7 @@ int conectar_coordinador(char * ip, char * port) {
 	if (res_connect < 0)
 	{
 		printf("Error al intentar conectar al coordinador\n");
+		freeaddrinfo(coord_info);
 		close(coord_socket);
 		exit(EXIT_FAILURE);
 	}
@@ -258,17 +260,25 @@ int recibir_mensaje_coordinador(int coord_socket)
 	char client_message[2000];
 
 	//TODO Recibir mensaje de "Puedo bloquear esta clave desde este esi?" (punto 4.3)
-	read_size = recv(coord_socket , client_message, 2000 , 0);
+
 
 	//TODO Recibir mensaje de "Puedo des-bloquear esta clave desde este esi?" (Punto 5.1)
 
-	read_size = recv(coord_socket , client_message , 2000 , 0);
+
+	//Recepcion de mensaje comun de texto, con la cabecera (para no bloquear) Borrar mas adelante
+	t_content_header *content_header = malloc(sizeof(t_content_header));
+
+	read_size = recv(coord_socket, content_header, sizeof(t_content_header), 0);
+
+
+	read_size = recv(coord_socket , client_message, content_header->cantidad_a_leer , 0);
 	if(read_size > 0)
 	{
 		printf("Coordinador %d dice: %s\n",coord_socket,client_message);
-		int res_send = send(coord_socket, client_message, sizeof(client_message), 0);
+		//int res_send = send(coord_socket, client_message, sizeof(client_message), (int)NULL);
 	}
 
+	free(content_header);
 
 	return read_size;
 
@@ -283,11 +293,12 @@ int recibir_mensaje_esi(int esi_socket)
 
 	t_content_header *content_header = malloc(sizeof(t_content_header));
 
-	read_size = recv(esi_socket, content_header, sizeof(t_content_header), NULL);
+	read_size = recv(esi_socket, content_header, sizeof(t_content_header), (int)NULL);
 
-	recv(esi_socket, content_info, content_header->cantidad_a_leer, NULL);
+	if(content_header->operacion == 1){
 
-	if(content_header->operacion == 1302){
+		recv(esi_socket, (void*)content_info, content_header->cantidad_a_leer,(int) NULL);
+
 		if(content_info == OPERACION_ESI_OK_SIG){
 			// TODO Ordenar ejecutar siguiente sentencia del ESI
 
@@ -316,17 +327,20 @@ int recibir_mensaje_esi(int esi_socket)
 			esi_en_ejecucion = NULL;
 		}
 	}
+	else if(content_header->operacion == 10){
 
-	//--------------------//
+		// TODO Eliminar el bloque de prueba
+		read_size = recv(esi_socket , client_message , content_header->cantidad_a_leer, 0);
+		if(read_size > 0)
+		{
+			printf("Esi %d dice: %s\n",esi_socket,client_message);
+			//int res_send = send(esi_socket, client_message, sizeof(client_message), 0);
+		}
 
-	// TODO Eliminar el bloque de prueba
-	read_size = recv(esi_socket , client_message , 2000 , 0);
-	if(read_size > 0)
-	{
-		printf("Esi %d dice: %s\n",esi_socket,client_message);
-		int res_send = send(esi_socket, client_message, sizeof(client_message), 0);
 	}
 
+
+	free(content_header);
 
 	return read_size;
 }
@@ -627,13 +641,29 @@ void consola_continuar(void)
 }
 
 void consola_bloquear_clave(char* clave , char* id){
-	bloquear_clave(clave, id);
+
+	if(clave == NULL || id == NULL){
+		printf("Parametros incorrectos (bloquear <clave> <id>)\n");
+	}
+	else{
+		printf("Bloquear clave: %s id: %s\n",clave, id);
+		bloquear_clave(clave, id);
+	}
+
 
 	return;
 }
 
 void consola_desbloquear_clave(char* clave, char* id){
-	desbloquear_clave(clave, id);
+
+	if(clave == NULL || id == NULL)
+		printf("Parametros incorrectos (desbloquear <clave> <id>)\n");
+	else
+	{
+		printf("Desbloquear clave: %s id: %s\n",clave, id);
+		desbloquear_clave(clave, id);
+	}
+
 
 	return;
 }
@@ -686,7 +716,6 @@ void mostrar_lista(char * name)
 
 		if(!strcmp(name, "ready"))
 		{
-			printf("copiando a l_ready a lista\n");
 			list_add_all(lista, esi_listos);
 		}
 
@@ -702,6 +731,7 @@ void mostrar_lista(char * name)
 		else
 		{
 			printf("No existe la lista %s: \n",name);
+			list_destroy(lista);
 			return;
 		}
 
@@ -861,12 +891,6 @@ int destruir_esi(t_pcb_esi * esi)
 // TODO Implementar
 void bloquear_clave(char* clave , char* id)
 {
-	if(clave == NULL || id == NULL){
-		printf("Parametros incorrectos (bloquear <clave> <id>)\n");
-	}
-	else{
-		printf("Bloquear clave: %s id: %s\n",clave, id);
-	}
 
 	return;
 }
@@ -874,10 +898,6 @@ void bloquear_clave(char* clave , char* id)
 // TODO Implementar
 void desbloquear_clave(char* clave, char* id)
 {
-	if(clave == NULL || id == NULL)
-		printf("Parametros incorrectos (desbloquear <clave> <id>)\n");
-	else
-		printf("Desbloquear clave: %s id: %s\n",clave, id);
 
 	return;
 }

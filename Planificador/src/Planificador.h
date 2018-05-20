@@ -21,7 +21,7 @@
 #include <readline/readline.h> // Para usar readline
 #include <readline/history.h> // Para usar readline
 #include <commons/string.h> // Para manejo de strings
-#include <commons/collections/list.h> // Para manejo de strings
+#include <commons/collections/list.h> // Para manejo de listas
 #include <errno.h>			//errorno
 #include <fcntl.h>			// std no block
 
@@ -51,7 +51,7 @@
 //Enumeracion de los comandos de la consola
 enum comandos { pausar, continuar, bloquear, desbloquear, listar, kill, status, deadlock, salir,
 				mostrar, ejecucion};
-enum proceso_tipo { esi, instancia, planificador, coordinador };
+enum procesos { esi, instancia, planificador, coordinador };
 enum estados { listo, ejecut, bloqueado, terminado };
 
 
@@ -78,9 +78,10 @@ struct pcb_esi {
 typedef struct pcb_esi t_pcb_esi;
 
 struct content_header {
-	int proceso_tipo;
+	int proceso_origen;
+	int proceso_receptor;
 	int operacion;
-	int cantidad_a_leer;
+	size_t cantidad_a_leer;
 };
 typedef struct __attribute__((packed)) content_header t_content_header  ;
 
@@ -142,9 +143,9 @@ void consola_continuar(void);
 void consola_bloquear_clave(char* clave , char* id);
 void consola_desbloquear_clave(char* clave, char* id);
 void consola_listar_recurso(char* recurso);
-void consola_kill_id(char* id);
+void consola_matar_proceso(char* id);
 void consola_consultar_status_clave(char* clave);
-void consola_consultar_deadlocks(void);
+void consola_consultar_deadlock(void);
 void mostrar_lista(char* lista);
 void mostrar_esi_en_ejecucion(void);
 
