@@ -18,14 +18,12 @@
 #include <sys/time.h>		//timeval en select
 #include <netdb.h> 			// Para getaddrinfo
 #include <unistd.h> 		// Para close(socket)
-#include <pthread.h>		// Manejo de hilos
 #include <readline/readline.h> // Para usar readline
 #include <readline/history.h> // Para usar readline
 #include <commons/string.h> // Para manejo de strings
 #include <commons/collections/list.h> // Para manejo de strings
 #include <errno.h>			//errorno
 #include <fcntl.h>			// std no block
-
 
 /**********************************************/
 /* DEFINES									  */
@@ -40,12 +38,13 @@
 #define MAX_LINEA 255
 #define NO_SOCKET -1
 #define ESTIMACION_INICIAL 5
+
 #define ALGORITMO_PLAN_FIFO "FIFO"
 #define ALGORITMO_PLAN_SJFCD "SJF-CD"
 #define ALGORITMO_PLAN_SJFSD "SJF-SD"
 #define ALGORITMO_PLAN_HRRN "HRRN"
 
-#define OPERACION_ESI_OK 1
+#define OPERACION_ESI_OK_SIG 1
 #define OPERACION_ESI_OK_FINAL 2
 #define OPERACION_ESI_BLOQUEADA -1
 
@@ -53,23 +52,21 @@
 enum comandos { pausar, continuar, bloquear, desbloquear, listar, kill, status, deadlock, salir,
 				mostrar, ejecucion};
 enum proceso_tipo { esi, instancia, planificador, coordinador };
-enum estados { ready, exec, blocked, finished };
+enum estados { listo, ejecut, bloqueado, terminado };
 
 
 //TODO completar a medida que surjan operaciones
 //enum operacion { };
 
 /**********************************************/
-/* STRUCTS									  */
+/* ESTUCTURAS								  */
 /**********************************************/
 struct conexion_esi {
   int socket;
   struct sockaddr_in addres;
-
 };
 typedef struct conexion_esi t_conexion_esi;
 
-//TODO completar cuando sean necesarios nuevos campos, OJO tambien completar al crear el esi
 struct pcb_esi {
 	int pid;
 	int estado;
@@ -109,48 +106,49 @@ typedef struct clave_bloqueadas t_claves_bloqueadas;
 /**********************************************/
 t_conexion_esi conexiones_esi[MAX_CLIENTES];
 
-t_list * l_listos;
-t_list * l_bloqueados;
-t_list * l_terminados;
+t_list * esi_listos;
+t_list * esi_bloqueados;
+t_list * esi_terminados;
 t_list * claves_bloqueadas;
-t_pcb_esi * l_ejecucion = NULL;
+t_pcb_esi * esi_en_ejecucion = NULL;
 
-int esi_pid = 0;
+int esi_seq_pid = 0;
 
 struct config config;
 
 /**********************************************/
 /* FUNCIONES								  */
 /**********************************************/
+
 int conectar_coordinador(char * ip, char * port);
 int iniciar_servidor(unsigned short port);
+void *consola();
 void stdin_no_bloqueante(void);
 void crear_listas_planificador(void);
 void terminar_planificador(void);
 void planificar(void);
-void obtener_proximo_ejec(void);
-void desalojar_ejec(void);
+void obtener_proximo_ejecucion(void);
+void desalojar_ejecucion(void);
 
 //Utilidades para la consola
-int comando_consola(char * buffer);
-int obtener_key_comando(char* comando);
-void obtener_parametros(char* buffer, char** comando, char** parametro1, char** parametro2);//Falta implementarla
-int read_from_stdin(char *read_buffer, size_t max_len);
-void *consola();
+int consola_derivar_comando(char * buffer);
+int consola_obtener_key_comando(char* comando);
+void consola_obtener_parametros(char* buffer, char** comando, char** parametro1, char** parametro2);//Falta implementarla
+int consola_leer_stdin(char *read_buffer, size_t max_len);
 
 //Funciones de la consola
-void pausar_consola(void);
-void continuar_consola(void);
-void bloquear_clave(char* clave , char* id);
-void desbloquear_clave(char* clave, char* id);
-void listar_recurso(char* recurso);
-void kill_id(char* id);
-void status_clave(char* clave);
-void deadlock_consola(void);
+void consola_pausar(void);
+void consola_continuar(void);
+void consola_bloquear_clave(char* clave , char* id);
+void consola_desbloquear_clave(char* clave, char* id);
+void consola_listar_recurso(char* recurso);
+void consola_kill_id(char* id);
+void consola_consultar_status_clave(char* clave);
+void consola_consultar_deadlocks(void);
 void mostrar_lista(char* lista);
 void mostrar_esi_en_ejecucion(void);
 
-//Manejo de esi
+//Manejo de ESI
 void inicializar_conexiones_esi(void);
 int atender_nuevo_esi(int serv_socket);
 int recibir_mensaje_esi(int esi_socket);
@@ -160,6 +158,10 @@ t_pcb_esi * crear_esi(t_conexion_esi conexion);
 int destruir_esi(t_pcb_esi * esi);
 void mostrar_esi(t_pcb_esi * esi);
 
-//Manejo de coordinador
+//Manejo de Coordinador
 int recibir_mensaje_coordinador(int coord_socket);
 int cerrar_conexion_coord(int coord_socket);
+
+//Manejo de claves
+void bloquear_clave(char* clave , char* id);
+void desbloquear_clave(char* clave, char* id);
