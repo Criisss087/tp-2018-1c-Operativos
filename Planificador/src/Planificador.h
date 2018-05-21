@@ -24,13 +24,14 @@
 #include <commons/collections/list.h> // Para manejo de listas
 #include <errno.h>			//errorno
 #include <fcntl.h>			// std no block
+#include <redis_lib.h>		// Commons para el TP
 
 /**********************************************/
 /* DEFINES									  */
 /**********************************************/
 #define IP_COORD "127.0.0.1"
 #define PORT_COORD "8888"
-#define PORT_ESCUCHA 8080
+#define PORT_ESCUCHA "8080"
 #define STDIN 0
 #define TRUE 1
 #define FALSE 0
@@ -51,7 +52,7 @@
 //Enumeracion de los comandos de la consola
 enum comandos { pausar, continuar, bloquear, desbloquear, listar, kill, status, deadlock, salir,
 				mostrar, ejecucion};
-enum procesos { esi, instancia, planificador, coordinador };
+//enum procesos { esi, instancia, planificador, coordinador };
 enum estados { listo, ejecut, bloqueado, terminado };
 
 
@@ -76,7 +77,7 @@ struct pcb_esi {
 	t_conexion_esi conexion;
 };
 typedef struct pcb_esi t_pcb_esi;
-
+/*
 struct content_header {
 	int proceso_origen;
 	int proceso_receptor;
@@ -84,7 +85,7 @@ struct content_header {
 	size_t cantidad_a_leer;
 };
 typedef struct __attribute__((packed)) content_header t_content_header  ;
-
+*/
 struct config{
 	char puerto_escucha[5];
 	char algoritmo[6];
@@ -122,7 +123,7 @@ struct config config;
 /**********************************************/
 
 int conectar_coordinador(char * ip, char * port);
-int iniciar_servidor(unsigned short port);
+int iniciar_servidor(char *port);
 void *consola();
 void stdin_no_bloqueante(void);
 void crear_listas_planificador(void);

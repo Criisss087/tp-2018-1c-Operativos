@@ -23,7 +23,7 @@ int main(void) {
 	int serv_socket = iniciar_servidor(PORT_ESCUCHA);
 
 	//Creo el socket cliente para conectarse al coordinador
-	int coord_socket = conectar_coordinador(IP_COORD, PORT_COORD );
+	int coord_socket = conectar_coordinador(IP_COORD, PORT_COORD);
 
 	crear_listas_planificador();
 	inicializar_conexiones_esi();
@@ -160,43 +160,14 @@ int main(void) {
 
 int conectar_coordinador(char * ip, char * port) {
 
-	int familiaProt = PF_INET;
-	int tipo_socket = SOCK_STREAM;
-	int protocolo = 0; //ROTO_TCP;
-
-	struct addrinfo hints;
-	struct addrinfo *coord_info;
-
-	memset(&hints, 0, sizeof(hints));
-	hints.ai_family = AF_UNSPEC; // Permite que la maquina se encargue de verificar si usamos IPv4 o IPv6
-	hints.ai_socktype = SOCK_STREAM;  // Indica que usaremos el protocolo TCP
-
-	getaddrinfo(ip, port, &hints, &coord_info); // Carga en server_info los datos de la conexion
-
-
-	printf("\nIniciando como cliente hacia el coordinador...\n");
-
-	int coord_socket = socket(coord_info->ai_family, coord_info->ai_socktype, coord_info->ai_protocol);
-	if (coord_socket != -1)
-		printf("Socket creado correctamente!\n");
-	else
-		printf("Error al crear el socket\n");
-
-	int activado = 1;
-	setsockopt(coord_socket, SOL_SOCKET, SO_REUSEADDR, &activado, sizeof(activado));
-
-	int res_connect = connect(coord_socket, coord_info->ai_addr, coord_info->ai_addrlen);
-	if (res_connect < 0)
+	int coord_socket = conectar_a_server(IP_COORD, PORT_COORD);
+	if (coord_socket < 0)
 	{
 		printf("Error al intentar conectar al coordinador\n");
-		freeaddrinfo(coord_info);
-		close(coord_socket);
 		exit(EXIT_FAILURE);
 	}
 	else
 		printf("Conectado con el coordinador! (%d) \n",coord_socket);
-
-	freeaddrinfo(coord_info);
 
 	return coord_socket;
 
@@ -289,7 +260,7 @@ int recibir_mensaje_esi(int esi_socket)
 	int read_size;
 	char client_message[2000];
 	t_pcb_esi *esi_aux;
-	int content_info;
+	int content_info = 0;
 
 	t_content_header *content_header = malloc(sizeof(t_content_header));
 
@@ -329,7 +300,7 @@ int recibir_mensaje_esi(int esi_socket)
 	}
 	else if(content_header->operacion == 10){
 
-		// TODO Eliminar el bloque de prueba
+		// TODO Eliminar el bloque de operacion de prueba
 		read_size = recv(esi_socket , client_message , content_header->cantidad_a_leer, 0);
 		if(read_size > 0)
 		{
@@ -364,34 +335,20 @@ int cerrar_conexion_esi(t_conexion_esi * esi)
 	return 0;
 }
 
-int iniciar_servidor(unsigned short port)
+int iniciar_servidor(char * port)
 {
-
-	struct sockaddr_in dir_serv_sock;
-
-	unsigned int dir_cli_size;
-
-	dir_serv_sock.sin_family = AF_INET;
-	dir_serv_sock.sin_addr.s_addr = INADDR_ANY;
-	dir_serv_sock.sin_port = htons(port);
-
-	printf("Creando socket servidor...\n");
-
-	int server_socket = socket(AF_INET, SOCK_STREAM, 0);
-
-	int activado = 1;
-	setsockopt(server_socket,SOL_SOCKET,SO_REUSEADDR, &activado, sizeof(activado));
+	int server_socket = crear_listen_socket(port,MAX_CLIENTES);
 
 
-	if(bind(server_socket, (void*)&dir_serv_sock, sizeof(dir_serv_sock)) != 0)
+	if(server_socket < 0)
 	{
-		printf("Falló el bind del socket servidor\n");
+		printf("Falló la creacion del socket servidor\n");
 		exit(1);
 	}
-
-
-	printf("Socket servidor (%d) escuchando\n", server_socket);
-	listen(server_socket, MAX_CLIENTES);
+	else
+	{
+		printf("Socket servidor (%d) escuchando\n", server_socket);
+	}
 
 	return server_socket;
 
