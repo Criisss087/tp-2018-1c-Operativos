@@ -11,12 +11,11 @@
 #include  "Utilidades.h"
 
 int existeClave(t_entrada * entrada) {
-	printf("TODO:Remove hardcoded key\n\n");
+	printf("TODO:Remover claver hardcodeada\n\n");
 	return (int) strcmp(entrada->clave, "deportessasaf:messi") != 1;
 }
 
-int main(void) {
-
+int conexionConCoordinador() {
 	struct sockaddr_in direccionServidor;
 	direccionServidor.sin_family = AF_INET;
 	direccionServidor.sin_addr.s_addr = inet_addr(IP_COORDINADOR);
@@ -27,14 +26,11 @@ int main(void) {
 			!= 0) {
 		perror("No se pudo conectar al Coordinador");
 		return 1;
-	}
+	} else
+		return server;
+}
 
-	// Definicion de Tabla de Entradas
-	// l_entradas = crearListaEntradas();
-	l_entradas = list_create();
-
-	// Recibe una sentencia del coordinador
-
+int recepcionDeSentencia(int server) {
 	int statusHeader = 1;	// Estructura que manjea el status de los receive.
 	printf("Esperando mensajes:\n");
 
@@ -46,12 +42,45 @@ int main(void) {
 
 	printf("status header: %d, p tipo %d, p op: %d \n", statusHeader, pt, po);
 
-	if (po == CORDINADOR_ENVIA_SENTENCIA_INSTANCIA) {
+	return po;
+
+}
+
+/*t_configTablaEntradas getConfigTablaEntradas() {
+	// Pedir configuracion inicial de tabla de entradas
+
+	t_configTablaEntradas * config;
+
+	config = malloc(sizeof(t_configTablaEntradas));
+
+	printf("Configuracion inicial de la Tabla de Entradas:\n");
+	printf("Cantidad total de entradas: %d\tTamaño de entradas:%d\n",config-> cantTotalEntradas, config->tamanioEntradas);
+	config->cantTotalEntradas = CANT_MAX_ENTRADAS;
+	config->tamanioEntradas = TAMANIO_ENTRADAS;
+
+	return config;
+
+}
+*/
+int main(void) {
+
+	int server = conexionConCoordinador();
+
+	// t_configTablaEntradas configTablaEntradas = getConfigTablaEntradas();
+
+	// Definicion de Tabla de Entradas
+	l_entradas = list_create();
+
+	// Recibe una sentencia del coordinador
+
+	int po = recepcionDeSentencia(server);
+
+	if (po == COORDINADOR_ENVIA_SENTENCIA_INSTANCIA) {
 
 		t_sentencia_sin_puntero * sentenciaRecibida = malloc(
 				sizeof(t_sentencia_sin_puntero));
 
-		statusHeader = recv(server, sentenciaRecibida,
+		int statusHeader = recv(server, sentenciaRecibida,
 				sizeof(t_sentencia_sin_puntero), (int) NULL);
 
 		printf("status header: %d \n", statusHeader);
@@ -66,7 +95,7 @@ int main(void) {
 
 			printf("TODO: Guardar valor en el Storage con mmap()\n");
 
-			if (list_size(l_entradas) <= CANT_MAX_ENTRADAS) {
+			if (list_size(l_entradas) < CANT_MAX_ENTRADAS) {
 
 				t_entrada * entrada;
 

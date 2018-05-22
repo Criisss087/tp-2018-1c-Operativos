@@ -27,8 +27,11 @@
 #define TYPE_INSTANCIA 2
 
 // Codigos de operaciones:
-#define CORDINADOR_ENVIA_SENTENCIA_INSTANCIA 4201
-#define INSTANCIA_ENVIA_RESULTADO_COORDINADOR 2401
+#define COORDINADOR_ENVIA_SENTENCIA_INSTANCIA 4201
+#define COORDINADOR_ENVIA_CONFIG_TABLA_ENTRADAS_INSTANCIA 4202
+
+#define INSTANCIA_SOLICITA_CONFIG_TABLA_ENTRADAS_COORDINADOR 2401
+#define INSTANCIA_ENVIA_RESULTADO_COORDINADOR 2402
 
 #define GET_KEYWORD 0
 #define SET_KEYWORD 1
@@ -50,11 +53,18 @@ typedef struct{
 
 t_list * l_entradas;
 
+// Struct para la configuracion inicial de Tabla de Entradas
+typedef struct {
+	int cantTotalEntradas;
+	int tamanioEntradas;
+} __attribute__((packed)) t_configTablaEntradas;
+
 // Estructura de Entradas
 typedef struct{
 	char clave[40];
 	int numeroEntrada;
 	int tamanioEntrada;
 } __attribute__((packed)) t_entrada;
+
 
 #endif /* SRC_UTILIDADES_H_ */
