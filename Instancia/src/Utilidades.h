@@ -54,10 +54,13 @@ typedef struct{
 t_list * l_entradas;
 
 // Struct para la configuracion inicial de Tabla de Entradas
+
 typedef struct {
 	int cantTotalEntradas;
 	int tamanioEntradas;
 } __attribute__((packed)) t_configTablaEntradas;
+
+t_configTablaEntradas * configTablaEntradas;
 
 // Estructura de Entradas
 typedef struct{
