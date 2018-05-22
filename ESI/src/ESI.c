@@ -7,9 +7,7 @@
  ============================================================================
  */
 
-#include <Utilidades.h>
-#include <Funciones.c>
-t_esi_operacion_sin_puntero transformarSinPuntero(t_esi_operacion t);
+#include "Utilidades.h"
 
 struct addrinfo* crear_addrinfo(ip, puerto){
 	struct addrinfo hints;
@@ -23,14 +21,6 @@ struct addrinfo* crear_addrinfo(ip, puerto){
 
 	return serverInfo;
 }
-
-typedef struct {
-	int proceso_tipo;
-	int operacion;
-	int cantidad_a_leer;
-} __attribute__((packed)) ContentHeader;
-
-
 
 int main(int argc, char **argv){
 	FILE * archivo_a_leer_por_el_ESI;
@@ -67,7 +57,7 @@ int main(int argc, char **argv){
 	//recibo orden del planif
 
 	ContentHeader * header_a_ESI_de_planif = malloc(sizeof(ContentHeader));
-	recv(serverPlanif, &header_a_ESI_de_planif, sizeof(ContentHeader),0);
+	recv(serverPlanif, header_a_ESI_de_planif, sizeof(ContentHeader),0);
 
 	if(header_a_ESI_de_planif->operacion == PLANIFICADOR_ENVIA_ORDEN_ESI){
 		recv(serverPlanif, ordenDeLectura, sizeof(ordenDeLectura),0);
@@ -76,8 +66,8 @@ int main(int argc, char **argv){
 			     t_esi_operacion parsed = parse(linea_a_parsear);
                     //transformo el t_esi_operacion a un tipo que se pueda enviar correctamente
 				    if(parsed.valido){
-				    t_esi_operacion_sin_puntero * struct_de_operacion_sin_punteros = malloc(sizeof(t_esi_operacion_sin_puntero));
-				    struct_de_operacion_sin_punteros = transformarSinPuntero(parsed);
+				    t_esi_operacion_sin_puntero * parse_sin_punteros;
+				    * parse_sin_punteros = transformarSinPuntero(parsed);
 
 				    //le envio al coordinador la linea parseada
                             ContentHeader * header_a_coord_de_ESI = malloc(sizeof(ContentHeader));
@@ -86,7 +76,7 @@ int main(int argc, char **argv){
 				    		header_a_coord_de_ESI->proceso_tipo = 1;
 
 				    		int resultado = send(serverCoord, header_a_coord_de_ESI, sizeof(ContentHeader), 0);
-                            resultado = send(serverCoord, struct_de_operacion_sin_punteros, sizeof(t_esi_operacion_sin_puntero),0);
+                            resultado = send(serverCoord, parse_sin_punteros, sizeof(t_esi_operacion_sin_puntero),0);
 
 
 				    //recibo la rta del coord
@@ -98,7 +88,7 @@ int main(int argc, char **argv){
 
 				    //envio al planif lo que me mando el coord
 				    		ContentHeader * header_a_planif_de_ESI = malloc(sizeof(ContentHeader));
-				    		send(serverPlanif, &header_a_planif_de_ESI, sizeof(ContentHeader),0);
+				    		send(serverPlanif, header_a_planif_de_ESI, sizeof(ContentHeader),0);
 				    		if(header_a_planif_de_ESI->operacion == ESI_ENVIA_PLANIFICADOR_RESULTADO_EJECUCION_SENTENCIA){
 				            send(serverPlanif, rtaCoord, sizeof(rtaCoord),0);
 				         	}

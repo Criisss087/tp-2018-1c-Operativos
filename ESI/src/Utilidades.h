@@ -16,7 +16,6 @@
 #include <netdb.h>
 #include <unistd.h>
 #include <parsi/parser.h>
-#include "Funciones.c"
 
 #define PACKAGESIZE 1024
 #define HEADER_LENGTH 10
@@ -41,12 +40,11 @@ typedef struct {
 	int cantidad_a_leer;
 	} __attribute__((packed)) ContentHeader;
 
-
 typedef struct{
 	int keyword;
 	char clave[40];
 	char valor[40];
 } __attribute__((packed)) t_esi_operacion_sin_puntero;
 
-
+#include "Funciones.c"
 #endif /* SRC_UTILIDADES_H_ */
