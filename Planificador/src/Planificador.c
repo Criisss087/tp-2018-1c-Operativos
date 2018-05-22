@@ -260,26 +260,34 @@ int recibir_mensaje_esi(int esi_socket)
 	int read_size;
 	char client_message[2000];
 	t_pcb_esi *esi_aux;
-	int content_info = 0;
+	t_confirmacion_sentencia * confirmacion;
 
 	t_content_header *content_header = malloc(sizeof(t_content_header));
 
+	printf("Llego algo desde esi con fd %d! \n",esi_socket);
+
 	read_size = recv(esi_socket, content_header, sizeof(t_content_header), (int)NULL);
 
-	if(content_header->operacion == 1){
+	printf("Llego la operacion %d  debo leer %d bytes\n",content_header->operacion,content_header->cantidad_a_leer );
 
-		recv(esi_socket, (void*)content_info, content_header->cantidad_a_leer,(int) NULL);
+	if(content_header->operacion == OPERACION_RES_SENTENCIA){
 
-		if(content_info == OPERACION_ESI_OK_SIG){
-			// TODO Ordenar ejecutar siguiente sentencia del ESI
+		confirmacion = malloc(sizeof(t_confirmacion_sentencia));
+
+		recv(esi_socket, confirmacion, content_header->cantidad_a_leer,(int) NULL);
+
+		printf("Resultado de (%d) = %d\n",esi_socket,confirmacion->resultado);
+
+		if(confirmacion->resultado == RESULTADO_ESI_OK_SIG){
 
 			esi_en_ejecucion->instruccion_actual++;
+			esi_en_ejecucion->ejec_anterior = 0;
 
-			//int res_send = send(esi_socket, client_message, sizeof(client_message), 0);
-
+			// Ordenar ejecutar siguiente sentencia del ESI
+			enviar_confirmacion_sentencia(esi_en_ejecucion);
 
 		}
-		else if(content_info == OPERACION_ESI_OK_FINAL){
+		else if(confirmacion->resultado == RESULTADO_ESI_OK_FINAL){
 			esi_en_ejecucion->estado = terminado;
 			esi_en_ejecucion->instruccion_actual++;
 
@@ -288,16 +296,22 @@ int recibir_mensaje_esi(int esi_socket)
 			list_add(esi_terminados, esi_aux);
 
 			esi_en_ejecucion = NULL;
+			planificar();
 		}
-		else if(content_info == OPERACION_ESI_BLOQUEADA){
+		else if(confirmacion->resultado == RESULTADO_ESI_BLOQUEADA){
 			esi_en_ejecucion->estado = bloqueado;
+			esi_en_ejecucion->ejec_anterior = 1;
 			esi_aux = esi_en_ejecucion;
 
 			list_add(esi_bloqueados, esi_aux);
 
 			esi_en_ejecucion = NULL;
+			planificar();
 		}
+
+		free(confirmacion);
 	}
+
 	else if(content_header->operacion == 10){
 
 		// TODO Eliminar el bloque de operacion de prueba
@@ -310,8 +324,8 @@ int recibir_mensaje_esi(int esi_socket)
 
 	}
 
-
-	free(content_header);
+	destruir_cabecera_mensaje(content_header);
+	//free(content_header);
 
 	return read_size;
 }
@@ -587,6 +601,12 @@ int consola_leer_stdin(char *read_buffer, size_t max_len)
 
 void consola_pausar(void)
 {
+	/* Pausar/Continuar planificación(^2): El Planificador no le dará nuevas órdenes de
+	 * ejecución a ningún ESI mientras se encuentre pausado.
+	 *
+	 * ^2: Esto se puede lograr ejecutando una sycall bloqueante que espere la entrada de un humano.
+	 */
+
 	printf("Estas intentando pausar...\n");
 	return;
 }
@@ -598,6 +618,18 @@ void consola_continuar(void)
 }
 
 void consola_bloquear_clave(char* clave , char* id){
+
+	/* Se bloqueará el proceso ESI hasta ser desbloqueado (ver más adelante),
+	 * especificado por dicho ID(^3) en la cola del recurso clave. Vale recordar
+	 * que cada línea del script a ejecutar es atómica, y no podrá ser interrumpida;
+	 * si no que se bloqueará en la próxima oportunidad posible. Solo se podrán bloquear
+	 * de esta manera ESIs que estén en el estado de listo o ejecutando.
+	 *
+	 * ^3: El Planificador empezará con una serie de claves bloqueadas de esta manera.
+	 *
+	 * Entiendo que este comando debe pasar a bloqueado un esi, e indicar por cual clave llego
+	 * a bloqueados en su pcb, o lista (como hagamos para listar recurso)
+	 */
 
 	if(clave == NULL || id == NULL){
 		printf("Parametros incorrectos (bloquear <clave> <id>)\n");
@@ -613,6 +645,11 @@ void consola_bloquear_clave(char* clave , char* id){
 
 void consola_desbloquear_clave(char* clave, char* id){
 
+	/* desbloquear clave: Se desbloqueara el primer proceso ESI bloquedo por la clave
+	 * especificada.
+	 *
+	 */
+
 	if(clave == NULL || id == NULL)
 		printf("Parametros incorrectos (desbloquear <clave> <id>)\n");
 	else
@@ -627,6 +664,15 @@ void consola_desbloquear_clave(char* clave, char* id){
 
 void consola_listar_recurso(char* recurso)
 {
+	/* listar recurso: Lista los procesos encolados esperando al recurso.
+	 *
+	 * 	Entiendo que un recurso es una clave, osea que deberiamos tener un control en alguna
+	 * 	lista, cuando un esi intenta acceder a una clave bloqueada, ponerlo en esa lista
+	 * 	para mostrarlos con este comando. O sino, agregar en el pcb, si tiene status blocked
+	 * 	agregar un campo clave_block con la clave que lo llevó a estar bloqueado
+	 *
+	 */
+
 	if(recurso == NULL)
 		printf("Parametros incorrectos (listar <recurso>)\n");
 	else
@@ -637,6 +683,11 @@ void consola_listar_recurso(char* recurso)
 
 void consola_matar_proceso(char* id)
 {
+	/* kill ID: finaliza el proceso. Recordando la atomicidad mencionada en “bloquear”.
+	 * Al momento de eliminar el ESI, se debloquearan las claves que tenga tomadas.
+	 *
+	 */
+
 	if(id == NULL)
 		printf("Parametros incorrectos (kill <id>)\n");
 	else
@@ -647,6 +698,22 @@ void consola_matar_proceso(char* id)
 
 void consola_consultar_status_clave(char* clave)
 {
+
+	/* status clave: Con el objetivo de conocer el estado de una clave y de probar la
+	 * correcta distribución de las mismas se deberan obtener los siguientes valores:
+	 * (Este comando se utilizara para probar el sistema)
+
+    -Valor, en caso de no poseer valor un mensaje que lo indique.
+    -Instancia actual en la cual se encuentra la clave. (En caso de que la clave no exista,
+    	la Instancia actual debería )
+    -Instancia en la cual se guardaría actualmente la clave (Calcular este valor mediante
+    	el algoritmo de distribución(^4), pero sin afectar la distribución actual de las claves).
+    -ESIs bloqueados a la espera de dicha clave.
+
+	 *
+	 * ^4: Estos algoritmos se detallarán más adelante.
+	 */
+
 	if(clave == NULL)
 		printf("Parametros incorrectos (status <clave>)\n");
 	else
@@ -657,6 +724,11 @@ void consola_consultar_status_clave(char* clave)
 
 void consola_consultar_deadlock(void)
 {
+	/* deadlock: Esta consola también permitirá analizar los deadlocks que existan en el
+	 * sistema y a que ESI están asociados.
+	 * Pudiendo resolverlos manualmente con la sentencia de kill previamente descrita.
+	 */
+
 	printf("Si tan solo supiera que es...\n");
 	return;
 }
@@ -728,13 +800,13 @@ void stdin_no_bloqueante(void)
 void planificar(void)
 {
 	//TODO Obtener el algoritmo de planificacion de la config
-	printf("intento replanificar\n");
+	printf("intento replanificar\n\n");
 	if(esi_en_ejecucion == NULL){
 		obtener_proximo_ejecucion();
 	}
-	else if(config.desalojo){
+	/*else if(config.desalojo){
 		desalojar_ejecucion();
-	}
+	}*/
 }
 
 void obtener_proximo_ejecucion(void)
@@ -777,16 +849,51 @@ void obtener_proximo_ejecucion(void)
 		esi_en_ejecucion = list_remove(esi_listos,0);
 	}
 
-	//TODO Enviar confirmacion al esi
 	// Punto 2
 	//Si hubo un cambio en el esi en ejecucion, debo avisarle al nuevo esi en ejecucion que es su turno
 	if(ejec_ant != esi_en_ejecucion)
 	{
-		// TODO Enviar PID asignado al ESI
-		printf("Aca le debo avisar al esi %d que es su turno\n", esi_en_ejecucion->pid);
+
+		//printf("Aca le debo avisar al esi %d que es su turno\n", esi_en_ejecucion->pid);
+		int res = enviar_confirmacion_sentencia(esi_en_ejecucion);
+		if(!res)
+		{
+			//Validar resultado del envio
+		}
+
 	}
 
 	return;
+}
+
+int enviar_confirmacion_sentencia(t_pcb_esi * pcb_esi)
+{
+
+	t_content_header * header = crear_cabecera_mensaje(planificador,esi,OPERACION_CONF_SENTENCIA,sizeof(t_confirmacion_sentencia));
+
+	t_confirmacion_sentencia * conf = malloc(sizeof(t_confirmacion_sentencia));
+
+	conf->pid 			= pcb_esi->pid;
+	conf->ejec_anterior = pcb_esi->ejec_anterior;
+
+	printf("Aviso al esi %d que es su turno\n\n",pcb_esi->pid);
+
+	int res_send = send(pcb_esi->conexion.socket, header, sizeof(t_content_header), 0);
+	if(res_send < 0)
+	{
+		printf("Error send header \n");
+	}
+
+	res_send = send(pcb_esi->conexion.socket, conf, sizeof(t_confirmacion_sentencia), 0);
+	if(res_send < 0)
+	{
+		printf("Error send ejec \n");
+	}
+
+	free(conf);
+	destruir_cabecera_mensaje(header);
+	return res_send;
+
 }
 
 void crear_listas_planificador(void)
@@ -824,6 +931,7 @@ t_pcb_esi * crear_esi(t_conexion_esi conexion)
 	esi->estimacion = ESTIMACION_INICIAL;
 	esi->estimacion_ant = ESTIMACION_INICIAL;
 	esi->instruccion_actual = 0;
+	esi->ejec_anterior = 0;
 	esi_seq_pid++;
 
 	return esi;

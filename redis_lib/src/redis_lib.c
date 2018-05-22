@@ -80,3 +80,21 @@ int conectar_a_server(char* ip, char* puerto)
 	return new_socket;
 
 }
+
+t_content_header* crear_cabecera_mensaje(int origen, int receptor, int operacion, size_t tamanio)
+{
+	t_content_header* header = malloc(sizeof(t_content_header));
+
+	header->proceso_origen = origen;
+	header->proceso_receptor = receptor;
+	header->operacion = operacion;
+	header->cantidad_a_leer = tamanio;
+
+	return header;
+}
+
+void destruir_cabecera_mensaje(t_content_header* header)
+{
+	free(header);
+	return;
+}

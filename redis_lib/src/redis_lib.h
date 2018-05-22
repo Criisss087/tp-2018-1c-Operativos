@@ -48,8 +48,17 @@ int crear_listen_socket(char* puerto, int max_conexiones);
 */
 int conectar_a_server(char* ip, char* puerto);
 
+/**
+* @NAME: crear_cabebera_mensaje
+* @DESC: Crea la cabecera para un nuevo mensaje y la devuelve
+*/
+t_content_header* crear_cabecera_mensaje(int origen, int receptor, int operacion, size_t tamanio);
 
-
+/**
+* @NAME: destruir_cabebera_mensaje
+* @DESC: Libera la memoria de la cabecera creada
+*/
+void destruir_cabecera_mensaje(t_content_header* header);
 
 
 

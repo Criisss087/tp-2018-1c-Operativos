@@ -45,9 +45,11 @@
 #define ALGORITMO_PLAN_SJFSD "SJF-SD"
 #define ALGORITMO_PLAN_HRRN "HRRN"
 
-#define OPERACION_ESI_OK_SIG 1
-#define OPERACION_ESI_OK_FINAL 2
-#define OPERACION_ESI_BLOQUEADA -1
+#define RESULTADO_ESI_OK_SIG 1
+#define RESULTADO_ESI_OK_FINAL 2
+#define RESULTADO_ESI_BLOQUEADA -1
+#define OPERACION_CONF_SENTENCIA 1
+#define OPERACION_RES_SENTENCIA 2
 
 //Enumeracion de los comandos de la consola
 enum comandos { pausar, continuar, bloquear, desbloquear, listar, kill, status, deadlock, salir,
@@ -74,6 +76,7 @@ struct pcb_esi {
 	int estimacion;
 	int estimacion_ant;
 	int instruccion_actual;
+	int ejec_anterior;			// 1 Si en la siguiente corrida debe ejectar denuevo la ultima instruccion
 	t_conexion_esi conexion;
 };
 typedef struct pcb_esi t_pcb_esi;
@@ -101,7 +104,14 @@ struct claves_bloqueadas{
 	char * clave;
 	int pid;
 };
-typedef struct clave_bloqueadas t_claves_bloqueadas;
+typedef struct claves_bloqueadas t_claves_bloqueadas;
+
+struct confirmacion_sentencia{
+	int pid;
+	int ejec_anterior;
+	int resultado;
+};
+typedef struct confirmacion_sentencia t_confirmacion_sentencia;
 
 /**********************************************/
 /* DATOS GLOBALES							  */
@@ -155,7 +165,7 @@ void inicializar_conexiones_esi(void);
 int atender_nuevo_esi(int serv_socket);
 int recibir_mensaje_esi(int esi_socket);
 int cerrar_conexion_esi(t_conexion_esi * esi);
-
+int enviar_confirmacion_sentencia(t_pcb_esi * pcb_esi);
 t_pcb_esi * crear_esi(t_conexion_esi conexion);
 int destruir_esi(t_pcb_esi * esi);
 void mostrar_esi(t_pcb_esi * esi);
