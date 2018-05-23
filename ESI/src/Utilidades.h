@@ -27,23 +27,35 @@
 #define PUERTO_PLANIFICADOR "8082"
 
 //Codigos de las operaciones:
-#define PLANIFICADOR_ENVIA_ORDEN_ESI 3101
-#define ESI_ENVIA_COORDINADOR_SENTENCIA 1401
-#define COORDINADOR_ENVIA_ESI_RESULTADO_EJECUCION_SENTENCIA 4102
-#define ESI_ENVIA_PLANIFICADOR_RESULTADO_EJECUCION_SENTENCIA 1302
+#define ENVIA_ORDEN 1
+#define ENVIA_SENTENCIA 1
+#define RESULTADO_EJECUCION_SENTENCIA 2
+#define RESPUESTA_EJECUCION_SENTENCIA 2
 
 
-
-typedef struct {
-	int proceso_tipo;
+struct content_header {
+	int proceso_origen;
+	int proceso_receptor;
 	int operacion;
-	int cantidad_a_leer;
-	} __attribute__((packed)) ContentHeader;
+	size_t cantidad_a_leer;
+};
+typedef struct __attribute__((packed)) content_header t_content_header  ;
+enum procesos { esi, instancia, planificador, coordinador };
+
+
+struct confirmacion_sentencia{
+	int pid;
+	int ejec_anterior;
+	int resultado;
+};
+typedef struct confirmacion_sentencia t_confirmacion_sentencia;
+
 
 typedef struct{
 	int keyword;
 	char clave[40];
 	char valor[40];
+	int pid;
 } __attribute__((packed)) t_esi_operacion_sin_puntero;
 
 #include "Funciones.c"

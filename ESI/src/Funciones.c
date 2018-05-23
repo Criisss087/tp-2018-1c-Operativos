@@ -5,13 +5,14 @@
  *      Author: utnso
  */
 
-t_esi_operacion_sin_puntero transformarSinPuntero(t_esi_operacion t){
+t_esi_operacion_sin_puntero transformarSinPunteroYagregarpID(t_esi_operacion t, int id){
 	t_esi_operacion_sin_puntero tsp;
 	int keyword = t.keyword;
 	char * valorp = NULL;
 	char * clavep;
 	char valor[40];
 	char clave[40];
+	int pid = id;
 
 	/*
 	get 0

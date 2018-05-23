@@ -27,6 +27,7 @@ int main(int argc, char **argv){
 	char * linea_a_parsear = NULL;
 	size_t direccion_de_la_linea_a_parsear = 0;
 	ssize_t read;
+	int rtaCoord;
 
 	struct addrinfo *serverInfoCoord = crear_addrinfo(IP_COORDINADOR, PUERTO_COORDINADOR);
 	struct addrinfo *serverInfoPlanif = crear_addrinfo(IP_PLANIFICADOR, PUERTO_PLANIFICADOR);
@@ -50,59 +51,60 @@ int main(int argc, char **argv){
 
 	archivo_a_leer_por_el_ESI = fopen(argv[1], "r");
 
-	char package[PACKAGESIZE];
-	char rtaCoord[PACKAGESIZE];
-	char ordenDeLectura[PACKAGESIZE];
-
 	//recibo orden del planif
+	t_content_header *content_header = malloc(sizeof(t_content_header));
+	int read_size = recv(serverPlanif, content_header, sizeof(t_content_header), (int)NULL);
+	t_confirmacion_sentencia *conf = malloc(sizeof(t_confirmacion_sentencia));
+	read_size = recv(serverPlanif, conf, sizeof(t_confirmacion_sentencia), 0);
 
-	ContentHeader * header_a_ESI_de_planif = malloc(sizeof(ContentHeader));
-	recv(serverPlanif, header_a_ESI_de_planif, sizeof(ContentHeader),0);
+	//leo el archivo y parseo
+	if ((read = getline(&linea_a_parsear, &direccion_de_la_linea_a_parsear, archivo_a_leer_por_el_ESI)) != -1){
+		t_esi_operacion parsed = parse(linea_a_parsear);
 
-	if(header_a_ESI_de_planif->operacion == PLANIFICADOR_ENVIA_ORDEN_ESI){
-		recv(serverPlanif, ordenDeLectura, sizeof(ordenDeLectura),0);
-		//leo el archivo y parseo
-		if ((read = getline(&linea_a_parsear, &direccion_de_la_linea_a_parsear, archivo_a_leer_por_el_ESI)) != -1) {
-			     t_esi_operacion parsed = parse(linea_a_parsear);
-                    //transformo el t_esi_operacion a un tipo que se pueda enviar correctamente
-				    if(parsed.valido){
-				    t_esi_operacion_sin_puntero * parse_sin_punteros;
-				    * parse_sin_punteros = transformarSinPuntero(parsed);
+	//transformo el t_esi_operacion a un tipo que se pueda enviar correctamente
+		if(parsed.valido){
+			t_esi_operacion_sin_puntero * parse_sin_punteros;
+			parse_sin_punteros = transformarSinPunteroYagregarpID(parsed, conf->pid);
 
-				    //le envio al coordinador la linea parseada
-                            ContentHeader * header_a_coord_de_ESI = malloc(sizeof(ContentHeader));
-				    		header_a_coord_de_ESI->cantidad_a_leer = sizeof(t_esi_operacion_sin_puntero);
-				    		header_a_coord_de_ESI->operacion = ESI_ENVIA_COORDINADOR_SENTENCIA;
-				    		header_a_coord_de_ESI->proceso_tipo = 1;
+			content_header = malloc(sizeof(t_content_header));
+			content_header->proceso_origen = esi;
+			content_header->proceso_receptor = coordinador;
+			content_header->operacion = 1;
+			content_header->cantidad_a_leer = sizeof(t_esi_operacion_sin_puntero);
 
-				    		int resultado = send(serverCoord, header_a_coord_de_ESI, sizeof(ContentHeader), 0);
-                            resultado = send(serverCoord, parse_sin_punteros, sizeof(t_esi_operacion_sin_puntero),0);
+			 int resultado = send(serverCoord, content_header, sizeof(ContentHeader), 0);
+			 resultado = send(serverCoord, parse_sin_punteros, sizeof(t_esi_operacion_sin_puntero),0);
 
+			 free(content_header);
 
-				    //recibo la rta del coord
-				            ContentHeader * header_a_ESI_de_coord = malloc(sizeof(ContentHeader));
-				            recv(serverCoord, &header_a_ESI_de_coord, sizeof(ContentHeader),0);
-				            if(header_a_ESI_de_coord->operacion == COORDINADOR_ENVIA_ESI_RESULTADO_EJECUCION_SENTENCIA){
-				            recv(serverCoord, rtaCoord, sizeof(rtaCoord),0);
-				            }
+			 //recibo la rta del coord
+			 ContentHeader * content_header = malloc(sizeof(ContentHeader));
+			 recv(serverCoord, content_header, sizeof(ContentHeader),0);
+			 if(content_header->operacion == RESULTADO_EJECUCION_SENTENCIA){
+				 recv(serverCoord, rtaCoord, sizeof(rtaCoord),0);
+				 conf->resultado = rtaCoord;
+			 }
 
-				    //envio al planif lo que me mando el coord
-				    		ContentHeader * header_a_planif_de_ESI = malloc(sizeof(ContentHeader));
-				    		send(serverPlanif, header_a_planif_de_ESI, sizeof(ContentHeader),0);
-				    		if(header_a_planif_de_ESI->operacion == ESI_ENVIA_PLANIFICADOR_RESULTADO_EJECUCION_SENTENCIA){
-				            send(serverPlanif, rtaCoord, sizeof(rtaCoord),0);
-				         	}
+			 free(content_header);
 
+		 //envio al planif lo que me mando el coord
+			 ContentHeader * content_header = malloc(sizeof(ContentHeader));
+			 send(serverPlanif, content_header, sizeof(ContentHeader),0);
+			 if(content_header->operacion == RESPUESTA_EJECUCION_SENTENCIA){
+				 send(serverPlanif, conf, sizeof(t_confirmacion_sentencia),0);
+			 }
 
-				    destruir_operacion(parsed);
-				    }
-			}
+			 free(content_header);
+			 free(conf);
+			 destruir_operacion(parsed);
+		}
 	}
 
 	fclose(archivo_a_leer_por_el_ESI);
 
-    if (linea_a_parsear)
+    if(linea_a_parsear){
         free(linea_a_parsear);
+    }
 
 	close(serverCoord);
 	close(serverPlanif);
