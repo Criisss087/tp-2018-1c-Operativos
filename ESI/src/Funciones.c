@@ -5,8 +5,8 @@
  *      Author: utnso
  */
 
-t_esi_operacion_sin_puntero transformarSinPunteroYagregarpID(t_esi_operacion t, int id){
-	t_esi_operacion_sin_puntero tsp;
+t_esi_operacion_sin_puntero  *transformarSinPunteroYagregarpID(t_esi_operacion t, int id){
+	t_esi_operacion_sin_puntero  *tsp;
 	int keyword = t.keyword;
 	char * valorp = NULL;
 	char * clavep;
@@ -34,15 +34,17 @@ t_esi_operacion_sin_puntero transformarSinPunteroYagregarpID(t_esi_operacion t, 
 	default: break;
 	}
 
-	tsp.keyword = keyword;
+	tsp->keyword = keyword;
 
-	strncpy(tsp.clave, clavep, sizeof clave - 1);
-	tsp.clave[strlen(clavep)-1] = '\0';
+	strncpy(tsp->clave, clavep, sizeof clave - 1);
+	tsp->clave[strlen(clavep)-1] = '\0';
 
 	if (keyword == 1 ) {
-		strncpy(tsp.valor, valorp, sizeof valor - 1);
-		tsp.valor[strlen(valorp)-1] = '\0';
+		strncpy(tsp->valor, valorp, sizeof valor - 1);
+		tsp->valor[strlen(valorp)-1] = '\0';
 	};
+
+	tsp->pid = id;
 
 	return tsp;
 }

@@ -63,7 +63,7 @@ int main(int argc, char **argv){
 
 	//transformo el t_esi_operacion a un tipo que se pueda enviar correctamente
 		if(parsed.valido){
-			t_esi_operacion_sin_puntero * parse_sin_punteros;
+			t_esi_operacion_sin_puntero  *parse_sin_punteros;
 			parse_sin_punteros = transformarSinPunteroYagregarpID(parsed, conf->pid);
 
 			content_header = malloc(sizeof(t_content_header));
@@ -72,14 +72,14 @@ int main(int argc, char **argv){
 			content_header->operacion = 1;
 			content_header->cantidad_a_leer = sizeof(t_esi_operacion_sin_puntero);
 
-			 int resultado = send(serverCoord, content_header, sizeof(ContentHeader), 0);
+			 int resultado = send(serverCoord, content_header, sizeof(t_content_header), 0);
 			 resultado = send(serverCoord, parse_sin_punteros, sizeof(t_esi_operacion_sin_puntero),0);
 
 			 free(content_header);
 
 			 //recibo la rta del coord
-			 ContentHeader * content_header = malloc(sizeof(ContentHeader));
-			 recv(serverCoord, content_header, sizeof(ContentHeader),0);
+			 content_header = malloc(sizeof(t_content_header));
+			 recv(serverCoord, content_header, sizeof(t_content_header),0);
 			 if(content_header->operacion == RESULTADO_EJECUCION_SENTENCIA){
 				 recv(serverCoord, rtaCoord, sizeof(rtaCoord),0);
 				 conf->resultado = rtaCoord;
@@ -88,8 +88,8 @@ int main(int argc, char **argv){
 			 free(content_header);
 
 		 //envio al planif lo que me mando el coord
-			 ContentHeader * content_header = malloc(sizeof(ContentHeader));
-			 send(serverPlanif, content_header, sizeof(ContentHeader),0);
+			 content_header = malloc(sizeof(t_content_header));
+			 send(serverPlanif, content_header, sizeof(t_content_header),0);
 			 if(content_header->operacion == RESPUESTA_EJECUCION_SENTENCIA){
 				 send(serverPlanif, conf, sizeof(t_confirmacion_sentencia),0);
 			 }
