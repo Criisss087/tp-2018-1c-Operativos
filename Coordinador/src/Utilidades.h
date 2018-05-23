@@ -36,9 +36,11 @@
 //***
 
 //***Cod ops
-#define ESI_COORDINADOR_SENTENCIA 1401
-#define COORDINADOR_ESI_RESULTADO_EJECUCION_SENTENCIA 4102
-#define INSTANCIA_COORDINADOR_CONEXION 2402
+#define ESI_COORDINADOR_SENTENCIA 1
+#define COORDINADOR_ESI_RESULTADO_EJECUCION_SENTENCIA 2
+#define INSTANCIA_COORDINADOR_CONEXION 1
+#define COORDINADOR_INSTANCIA_CONFIG_INICIAL 2;
+
 //***
 
 struct content_header {
@@ -60,12 +62,20 @@ typedef struct{
 	int id;
 } t_instancia;
 
-typedef struct{
-	int tamanio;
-	int cantidad;
-} configuracion_inicial;
+typedef struct {
+	int cantTotalEntradas;
+	int tamanioEntradas;
+} __attribute__((packed)) t_configTablaEntradas;
 
+//*** Estructuras internas de Coordinador
+#define EqLoad 1
 t_log * logger;
+t_list * lista_instancias;
+int id_counter = 0;
+int ALGORITMO;
+signed int indice_actual_lista; //que item de la lista fue el ultimo al que se asigno trabajo
+int total_hilos = 0; //borrable
+//***
 
 #include "Utilidades.c"
 #endif /* SRC_UTILIDADES_H_ */

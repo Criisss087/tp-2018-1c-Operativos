@@ -12,9 +12,6 @@
 #define TAMANIO_ENTRADAS 8
 #define CANT_MAX_ENTRADAS 5
 
-int total_hilos = 0;
-//t_list * lista_instancias = list_create();
-
 struct addrinfo* crear_addrinfo(){
 	struct addrinfo hints;
 	struct addrinfo *serverInfo;
@@ -26,31 +23,57 @@ struct addrinfo* crear_addrinfo(){
 	return serverInfo;
 }
 
+int nuevoIDInstancia(){
+	id_counter++;
+	return id_counter;
+}
+
 void enviarConfiguracionInicial(int socketInstancia){
 
-	configuracion_inicial * config = malloc(sizeof(configuracion_inicial));
-	config->cantidad = CANT_MAX_ENTRADAS;
-	config->tamanio = TAMANIO_ENTRADAS;
+	t_configTablaEntradas * config = malloc(sizeof(t_configTablaEntradas));
+	config->cantTotalEntradas = CANT_MAX_ENTRADAS;
+	config->tamanioEntradas= TAMANIO_ENTRADAS;
 
-	int sent = send(socketInstancia, config, sizeof(configuracion_inicial),NULL);
+	t_content_header * header = malloc(sizeof(t_content_header));
+	header->cantidad_a_leer = sizeof(t_configTablaEntradas);
+	header->proceso_origen = 4;
+	header->proceso_receptor = 2;
+	header->operacion = COORDINADOR_INSTANCIA_CONFIG_INICIAL;
+	int sent_header = send(socketInstancia, header, sizeof(t_content_header),NULL);
+	log_info(logger,"enviada header config inicial %d", sent_header);
+
+	int sent = send(socketInstancia, config, sizeof(t_configTablaEntradas),NULL);
 	log_info(logger,"enviada config inicial %d", sent);
 }
 
 void guardarEnListaDeInstancias(int socketInstancia){
-
+	t_instancia * nueva = malloc(sizeof(t_instancia));
+	nueva->id= nuevoIDInstancia();
+	nueva->socket = socketInstancia;
+	list_add(lista_instancias, nueva);
 }
 
-t_instancia siguienteInstanciaSegunAlgoritmo(){
-
+t_instancia * siguienteEqLoad(){
+	int cant = list_size(lista_instancias);
+	indice_actual_lista++;
+	int siguiente = indice_actual_lista % cant;
+	return list_get(lista_instancias, siguiente);
 }
 
-void enviarAInstancia(t_instancia proxima, t_esi_operacion_sin_puntero * sentencia){
-
+t_instancia * siguienteInstanciaSegunAlgoritmo(){
+	switch(ALGORITMO){
+	case EqLoad:
+		return siguienteEqLoad();
+		break;
+	default:
+		return siguienteEqLoad();
+	}
 }
 
 void enviarSentenciaInstancia(t_esi_operacion_sin_puntero * sentencia){
-	t_instancia proxima = siguienteInstanciaSegunAlgoritmo();
-	enviarAInstancia(proxima,sentencia);
+	t_instancia * proxima = siguienteInstanciaSegunAlgoritmo();
+
+
 }
 
 void interpretarOperacionInstancia(t_content_header * hd, int socketInstancia){
@@ -147,7 +170,11 @@ void *escucharMensajesEntrantes(int socketCliente){
 
 int main()
 {
+	ALGORITMO = EqLoad;
 	logger = log_create("log_coordinador.txt","Coordinador",true, LOG_LEVEL_INFO);
+	t_list * lista_instancias = list_create();
+	indice_actual_lista = 0;
+
 	struct addrinfo *serverInfo = crear_addrinfo();
 	int listenningSocket = socket(serverInfo->ai_family, serverInfo->ai_socktype, serverInfo->ai_protocol);
 	log_info(logger,"socket creado %d", listenningSocket);
