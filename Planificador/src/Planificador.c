@@ -169,6 +169,20 @@ int conectar_coordinador(char * ip, char * port) {
 	else
 		printf("Conectado con el coordinador! (%d) \n",coord_socket);
 
+
+	/* Handshake necesario para que el coordinador identifique que la
+	 * conexion recibida fue del planificador. Solo se envia el header con la operacion
+	 */
+	t_content_header * header = crear_cabecera_mensaje(planificador,coordinador,OPERACION_HANDSHAKE_COORD,sizeof(int));
+
+	int res_send = send(coord_socket, header, sizeof(t_content_header), 0);
+	if(res_send < 0)
+	{
+		printf("Error send header \n");
+	}
+
+	destruir_cabecera_mensaje(header);
+
 	return coord_socket;
 
 }
@@ -871,10 +885,13 @@ int enviar_confirmacion_sentencia(t_pcb_esi * pcb_esi)
 
 	t_content_header * header = crear_cabecera_mensaje(planificador,esi,OPERACION_CONF_SENTENCIA,sizeof(t_confirmacion_sentencia));
 
-	t_confirmacion_sentencia * conf = malloc(sizeof(t_confirmacion_sentencia));
+	t_confirmacion_sentencia * conf = NULL;
+
+	conf = malloc(sizeof(t_confirmacion_sentencia));
 
 	conf->pid 			= pcb_esi->pid;
 	conf->ejec_anterior = pcb_esi->ejec_anterior;
+	conf->resultado		= -1;
 
 	printf("Aviso al esi %d que es su turno\n\n",pcb_esi->pid);
 

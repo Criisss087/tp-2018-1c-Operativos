@@ -50,6 +50,7 @@
 #define RESULTADO_ESI_BLOQUEADA -1
 #define OPERACION_CONF_SENTENCIA 1
 #define OPERACION_RES_SENTENCIA 2
+#define OPERACION_HANDSHAKE_COORD 0
 
 //Enumeracion de los comandos de la consola
 enum comandos { pausar, continuar, bloquear, desbloquear, listar, kill, status, deadlock, salir,
