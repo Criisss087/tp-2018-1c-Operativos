@@ -39,7 +39,9 @@
 #define ESI_COORDINADOR_SENTENCIA 1
 #define COORDINADOR_ESI_RESULTADO_EJECUCION_SENTENCIA 2
 #define INSTANCIA_COORDINADOR_CONEXION 1
-#define COORDINADOR_INSTANCIA_CONFIG_INICIAL 2;
+#define COORDINADOR_INSTANCIA_CONFIG_INICIAL 2
+#define PLANIFICADOR_COORDINADOR_HEADER_IDENTIFICACION 1
+
 
 //***
 
@@ -55,12 +57,14 @@ typedef struct{
 	int keyword;
 	char clave[40];
 	char valor[40];
+	int pid;
 } __attribute__((packed)) t_esi_operacion_sin_puntero;
 
 typedef struct{
 	int socket;
 	int id;
 } t_instancia;
+
 
 typedef struct {
 	int cantTotalEntradas;
@@ -74,6 +78,7 @@ t_list * lista_instancias;
 int id_counter = 0;
 int ALGORITMO;
 signed int indice_actual_lista; //que item de la lista fue el ultimo al que se asigno trabajo
+t_instancia PROCESO_PLANIFICADOR;
 int total_hilos = 0; //borrable
 //***
 

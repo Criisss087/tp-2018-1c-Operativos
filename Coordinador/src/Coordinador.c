@@ -89,7 +89,11 @@ void interpretarOperacionInstancia(t_content_header * hd, int socketInstancia){
 }
 
 void interpretarOperacionPlanificador(t_content_header * hd, int socketCliente){
-
+	switch(hd->operacion){
+	case PLANIFICADOR_COORDINADOR_HEADER_IDENTIFICACION:
+		PROCESO_PLANIFICADOR.id = nuevoIDInstancia();
+		PROCESO_PLANIFICADOR.socket = socketCliente;
+	}
 }
 
 void interpretarOperacionESI(t_content_header * hd, int socketCliente){
@@ -173,7 +177,7 @@ int main()
 	ALGORITMO = EqLoad;
 	logger = log_create("log_coordinador.txt","Coordinador",true, LOG_LEVEL_INFO);
 	t_list * lista_instancias = list_create();
-	indice_actual_lista = 0;
+	indice_actual_lista = -1;
 
 	struct addrinfo *serverInfo = crear_addrinfo();
 	int listenningSocket = socket(serverInfo->ai_family, serverInfo->ai_socktype, serverInfo->ai_protocol);
