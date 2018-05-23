@@ -12,8 +12,8 @@ void crear_hilo_conexion(int socket, void(*funcion_a_ejecutar)(int)){
 }
 
 void administrarSentencia(t_esi_operacion_sin_puntero *);
-void interpretarOperacionInstancia(ContentHeader *, int);
-void interpretarOperacionPlanificador(ContentHeader *, int);
-void interpretarOperacionESI(ContentHeader *, int);
-void interpretarHeader(ContentHeader * , int);
+void interpretarOperacionInstancia(t_content_header *, int);
+void interpretarOperacionPlanificador(t_content_header *, int);
+void interpretarOperacionESI(t_content_header *, int);
+void interpretarHeader(t_content_header * , int);
 void *escucharMensajesEntrantes(int);
