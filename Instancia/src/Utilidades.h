@@ -62,13 +62,11 @@ struct content_header {
 };
 typedef struct __attribute__((packed)) content_header t_content_header  ;
 
-/*
-typedef struct {
-	int proceso_tipo;
-	int operacion;
-	int cantidad_a_leer;
-	} __attribute__((packed)) ContentHeader;
-*/
+// struct para el envio de nombre de Instancia al Coordinador
+typedef struct{
+	char nombreInstancia[40];
+} __attribute__((packed)) t_info_instancia;
+
 typedef struct{
 	int keyword;
 	char clave[40];

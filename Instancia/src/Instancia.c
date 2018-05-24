@@ -15,6 +15,39 @@ int existeClave(t_entrada * entrada) {
 	return (int) strcmp(entrada->clave, "deportessasaf:messi") != 1;
 }
 
+void enviarNombreInstanciaACoordinador(int coordinador) {
+	t_content_header * header_a_coord_de_instancia = malloc(
+			sizeof(t_content_header));
+	header_a_coord_de_instancia->cantidad_a_leer = sizeof(t_info_instancia);
+	header_a_coord_de_instancia->operacion = INSTANCIA_COORDINADOR_CONEXION;
+	header_a_coord_de_instancia->proceso_origen = INSTANCIA;
+	header_a_coord_de_instancia->proceso_receptor = COORDINADOR;
+
+	printf("Enviando header..: \n");
+	printf("Operacion: %d \n", header_a_coord_de_instancia->operacion);
+	printf("Proceso origen: %d \n", header_a_coord_de_instancia->proceso_origen);
+	printf("Proceso destino: %d \n", header_a_coord_de_instancia->proceso_receptor);
+	printf("Cant a leer: %d \n", header_a_coord_de_instancia->cantidad_a_leer);
+
+	int resultado = send(coordinador, header_a_coord_de_instancia,
+			sizeof(t_content_header), 0);
+
+	printf("header: %d \n", resultado);
+
+	// Envio de Informacion inicial de Instancia (nombre)
+
+	t_info_instancia * infoInstancia = malloc(
+					sizeof(t_info_instancia));
+
+	// t_info_instancia infoInstancia;
+	memcpy(infoInstancia->nombreInstancia, NOMBRE_INSTANCIA, strlen(NOMBRE_INSTANCIA));
+
+	printf("Enviando Informacion inicial de Instancia..: \n");
+	resultado = send(coordinador, infoInstancia, sizeof(t_info_instancia), 0);
+	printf("Resultado de envio: %d \n", resultado);
+
+}
+
 int conexionConCoordinador() {
 	struct sockaddr_in direccionServidor;
 	direccionServidor.sin_family = AF_INET;
@@ -22,8 +55,8 @@ int conexionConCoordinador() {
 	direccionServidor.sin_port = htons(PUERTO_COORDINADOR);
 
 	int socketCoordinador = socket(AF_INET, SOCK_STREAM, 0);
-	if (connect(socketCoordinador, (void*) &direccionServidor, sizeof(direccionServidor))
-			!= 0) {
+	if (connect(socketCoordinador, (void*) &direccionServidor,
+			sizeof(direccionServidor)) != 0) {
 		perror("No se pudo conectar al Coordinador");
 		return 1;
 	} else
@@ -125,12 +158,15 @@ void guardarEntrada(t_sentencia_sin_puntero * sentenciaRecibida) {
 
 }
 
-void interpretarOperacionCoordinador(t_content_header * header, int socketCoordinador) {
+void interpretarOperacionCoordinador(t_content_header * header,
+		int socketCoordinador) {
+	t_sentencia_sin_puntero * sentenciaRecibida;
+
 	switch (header->operacion) {
 
 	case COORDINADOR_INSTANCIA_SENTENCIA:
 
-		t_sentencia_sin_puntero * sentenciaRecibida = recibirSentencia(socketCoordinador);
+		sentenciaRecibida = recibirSentencia(socketCoordinador);
 
 		if (sentenciaRecibida->keyword == SET_KEYWORD) {
 
@@ -138,6 +174,8 @@ void interpretarOperacionCoordinador(t_content_header * header, int socketCoordi
 
 		} else if (sentenciaRecibida->keyword == GET_KEYWORD) {
 			printf("TODO: Leer clave y devolver valor\n");
+
+			// leerEntrada(sentenciaRecibida);
 
 		}
 
@@ -149,6 +187,8 @@ int main(void) {
 
 	int socketCoordinador = conexionConCoordinador();
 
+	enviarNombreInstanciaACoordinador(socketCoordinador);
+
 	configTablaEntradas = obtenerConfigTablaEntradas();
 
 	// Definicion de Tabla de Entradas
@@ -156,7 +196,7 @@ int main(void) {
 
 	// Recibe una sentencia del coordinador
 
-	t_content_header header = interpretarHeader(socketCoordinador);
+	t_content_header * header = interpretarHeader(socketCoordinador);
 
 	switch (header->proceso_origen) {
 
