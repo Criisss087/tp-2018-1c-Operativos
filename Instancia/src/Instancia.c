@@ -21,29 +21,28 @@ int conexionConCoordinador() {
 	direccionServidor.sin_addr.s_addr = inet_addr(IP_COORDINADOR);
 	direccionServidor.sin_port = htons(PUERTO_COORDINADOR);
 
-	int server = socket(AF_INET, SOCK_STREAM, 0);
-	if (connect(server, (void*) &direccionServidor, sizeof(direccionServidor))
+	int socketCoordinador = socket(AF_INET, SOCK_STREAM, 0);
+	if (connect(socketCoordinador, (void*) &direccionServidor, sizeof(direccionServidor))
 			!= 0) {
 		perror("No se pudo conectar al Coordinador");
 		return 1;
 	} else
-		return server;
+		return socketCoordinador;
 }
 
-int recibirOperacion(int server) {
-	int statusHeader = 1;	// Estructura que manjea el status de los receive.
+t_content_header * interpretarHeader(int socketCoordinador) {
 	printf("Esperando mensajes:\n");
 
-	ContentHeader * header = malloc(sizeof(ContentHeader));
-	statusHeader = recv(server, header, sizeof(ContentHeader), (int) NULL);
+	t_content_header * header = malloc(sizeof(t_content_header));
+	int statusHeader = recv(socketCoordinador, header, sizeof(t_content_header),
+			(int) NULL);
 
-	int pt = header->proceso_tipo;
-	int po = header->operacion;
+	printf(
+			"\tstatus header: %d, proceso origen %d, proceso receptor: %d, operacion: %d \n",
+			statusHeader, header->proceso_origen, header->proceso_receptor,
+			header->operacion);
 
-	printf("status header: %d, p tipo %d, p op: %d \n", statusHeader, pt, po);
-
-	return po;
-
+	return header;
 }
 
 t_configTablaEntradas * obtenerConfigTablaEntradas() {
@@ -66,11 +65,11 @@ t_configTablaEntradas * obtenerConfigTablaEntradas() {
 	return config;
 }
 
-t_sentencia_sin_puntero * recibirSentencia(int server) {
+t_sentencia_sin_puntero * recibirSentencia(int socketCoordinador) {
 	t_sentencia_sin_puntero * sentenciaRecibida = malloc(
 			sizeof(t_sentencia_sin_puntero));
 
-	int statusHeader = recv(server, sentenciaRecibida,
+	int statusHeader = recv(socketCoordinador, sentenciaRecibida,
 			sizeof(t_sentencia_sin_puntero), (int) NULL);
 
 	printf("status header: %d \n", statusHeader);
@@ -126,38 +125,12 @@ void guardarEntrada(t_sentencia_sin_puntero * sentenciaRecibida) {
 
 }
 
-/*t_entrada * buscarEntrada() {
- printf("\n\nConsulta de valor:\n");
+void interpretarOperacionCoordinador(t_content_header * header, int socketCoordinador) {
+	switch (header->operacion) {
 
- t_entrada * entradaBuscada = malloc(sizeof(t_entrada));
+	case COORDINADOR_INSTANCIA_SENTENCIA:
 
- entradaBuscada = list_find(l_entradas, (void*) existeClave);
-
- printf(
- "La clave es: %s, el Numero de Entrada: %d, el tamaño de entrada: %d\n",
- entradaBuscada->clave, entradaBuscada->numeroEntrada,
- entradaBuscada->tamanioEntrada);
-
- return entradaBuscada;
-
- }*/
-
-int main(void) {
-
-	int server = conexionConCoordinador();
-
-	configTablaEntradas = obtenerConfigTablaEntradas();
-
-	// Definicion de Tabla de Entradas
-	l_entradas = list_create();
-
-	// Recibe una sentencia del coordinador
-
-	int po = recibirOperacion(server);
-
-	if (po == COORDINADOR_ENVIA_SENTENCIA_INSTANCIA) {
-
-		t_sentencia_sin_puntero * sentenciaRecibida = recibirSentencia(server);
+		t_sentencia_sin_puntero * sentenciaRecibida = recibirSentencia(socketCoordinador);
 
 		if (sentenciaRecibida->keyword == SET_KEYWORD) {
 
@@ -168,40 +141,35 @@ int main(void) {
 
 		}
 
+		break;
 	}
+}
 
-	/*
-	 //Se envia mensaje al coordinador
-	 while (1) {
-	 char mensaje[PACKAGESIZE];
-	 scanf("%s", mensaje);
-	 mensaje[strlen(mensaje)] = '\n';
-	 //fgets(mensaje, PACKAGESIZE, stdin);
-	 //diferencia entre fgets y scanf: fgets lee hasta un \n, scanf lee y pone \0.
-	 send(server,mensaje,strlen(mensaje)+1,0);
-	 }
-	 */
+int main(void) {
 
-	/*
-	 char mensaje[PACKAGESIZE];
-	 scanf("%s", mensaje);
-	 mensaje[strlen(mensaje)] = '\n';
+	int socketCoordinador = conexionConCoordinador();
 
-	 // char* info = mensaje;
+	configTablaEntradas = obtenerConfigTablaEntradas();
 
-	 ContentHeader * header = malloc(sizeof(ContentHeader));
+	// Definicion de Tabla de Entradas
+	l_entradas = list_create();
 
-	 header->operacion = 0000;
-	 header->proceso_tipo = TYPE_INSTANCIA;
-	 header->cantidad_a_leer = sizeof(mensaje);
+	// Recibe una sentencia del coordinador
 
-	 int resultado = send(server, &header, sizeof(mensaje), 0);
+	t_content_header header = interpretarHeader(socketCoordinador);
 
-	 // a continuación, enviamos el contenido del paquete;
-	 // Si el struct VariableCustom tiene campos tipo punteros, no será tan sencillo como hacer un sizeof
+	switch (header->proceso_origen) {
 
-	 send(server, &mensaje, sizeof(mensaje), 0);
-	 */
+	case COORDINADOR:
+
+		interpretarOperacionCoordinador(header, socketCoordinador);
+		break;
+
+	default:
+		// TODO: No se reconoce el proceso
+		break;
+
+	}
 
 	return 0;
 }

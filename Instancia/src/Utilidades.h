@@ -36,13 +36,39 @@
 #define GET_KEYWORD 0
 #define SET_KEYWORD 1
 
+//***Cod Procesos
+#define ESI 1
+#define INSTANCIA 2
+#define PLANIFICADOR 3
+#define COORDINADOR 4
 
+//***
+
+//***Cod ops
+#define INSTANCIA_COORDINADOR_CONEXION 1
+#define COORDINADOR_INSTANCIA_CONFIG_INICIAL 2
+#define COORDINADOR_INSTANCIA_SENTENCIA 3
+#define INSTANCIA_COORDINADOR_RESPUESTA_SENTENCIA 4
+
+
+
+//***
+
+struct content_header {
+	int proceso_origen;
+	int proceso_receptor;
+	int operacion;
+	size_t cantidad_a_leer;
+};
+typedef struct __attribute__((packed)) content_header t_content_header  ;
+
+/*
 typedef struct {
 	int proceso_tipo;
 	int operacion;
 	int cantidad_a_leer;
 	} __attribute__((packed)) ContentHeader;
-
+*/
 typedef struct{
 	int keyword;
 	char clave[40];
