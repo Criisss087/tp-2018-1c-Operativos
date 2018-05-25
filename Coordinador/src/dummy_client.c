@@ -34,7 +34,7 @@ int main(int argc, char **argv){
 	int coord = connect(serverCoord, serverInfoCoord->ai_addr, serverInfoCoord->ai_addrlen);
 	freeaddrinfo(serverInfoCoord);
 	printf("Conectado al servidor: %d \n",coord);
-	printf("sizeof header %d \n", sizeof(ContentHeader));
+	printf("sizeof header %d \n", sizeof(t_content_header));
 
 	t_esi_operacion_sin_puntero * t = malloc(sizeof(t_esi_operacion_sin_puntero));
 	char *c = "SET";
@@ -44,16 +44,19 @@ int main(int argc, char **argv){
 	t->clave[3] = '\0';
 
    //le envio al coordinador la linea parseada
-	ContentHeader * header_a_coord_de_ESI = malloc(sizeof(ContentHeader));
+	t_content_header * header_a_coord_de_ESI = malloc(sizeof(t_content_header));
 	header_a_coord_de_ESI->cantidad_a_leer = sizeof(t_esi_operacion_sin_puntero);
-	header_a_coord_de_ESI->operacion = 1401;
-	header_a_coord_de_ESI->proceso_tipo = 1;
+	header_a_coord_de_ESI->operacion = 1;
+	header_a_coord_de_ESI->proceso_origen = ESI;
+	header_a_coord_de_ESI->proceso_receptor = COORDINADOR;
+
 	printf("mandando header..: \n");
 	printf("op %d \n",header_a_coord_de_ESI->operacion);
-	printf("p tipo: %d \n",header_a_coord_de_ESI->proceso_tipo);
+	printf("p tipo: %d \n",header_a_coord_de_ESI->proceso_origen);
+	printf("p tipo: %d \n",header_a_coord_de_ESI->proceso_receptor);
 	printf("cant: %d \n",header_a_coord_de_ESI->cantidad_a_leer);
 
-	int resultado = send(serverCoord, header_a_coord_de_ESI, sizeof(ContentHeader), 0);
+	int resultado = send(serverCoord, header_a_coord_de_ESI, sizeof(t_content_header), 0);
 
 	printf("header: %d \n",resultado);
 

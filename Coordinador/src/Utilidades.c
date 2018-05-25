@@ -38,4 +38,3 @@ t_esi_operacion_sin_puntero transformarSinPuntero(t_esi_operacion t){
 
 	return tsp;
 }
-
