@@ -23,7 +23,7 @@
 
 #define IP "127.0.0.1"
 #define PUERTO "8080"
-#define BACKLOG 5			// Define cuantas conexiones vamos a mantener pendientes al mismo tiempo
+#define BACKLOG 10			// Define cuantas conexiones vamos a mantener pendientes al mismo tiempo
 #define PACKAGESIZE 1024
 #define HEADER_LENGTH 10
 

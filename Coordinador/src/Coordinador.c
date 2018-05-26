@@ -46,6 +46,10 @@ void enviarConfiguracionInicial(int socketInstancia){
 	int sent = send(socketInstancia, config, sizeof(t_configTablaEntradas),NULL);
 
 	log_info(logger,"Enviado configuración inicial a Instancia - send: %d",sent);
+
+	free(config);
+	free(header);
+
 }
 
 void guardarEnListaDeInstancias(int socketInstancia, char nombre[40]){
@@ -88,11 +92,12 @@ void enviarSentenciaInstancia(t_esi_operacion_sin_puntero * sentencia){
 	t_instancia * proxima = siguienteInstanciaSegunAlgoritmo();
 
 	if (string_equals_ignore_case(proxima->nombre, "ERROR")){
+		free(proxima);
 		return;
 	}
 
 	t_content_header * header = malloc(sizeof(t_content_header));
-	header->cantidad_a_leer = malloc(sizeof(t_content_header));
+	header->cantidad_a_leer = sizeof(t_content_header);
 	header->operacion = COORDINADOR_INSTANCIA_SENTENCIA;
 	header->proceso_origen = COORDINADOR;
 	header->proceso_receptor = INSTANCIA;
@@ -100,6 +105,9 @@ void enviarSentenciaInstancia(t_esi_operacion_sin_puntero * sentencia){
 	int header_envio = send(proxima->socket,header,sizeof(t_content_header),NULL);
 
 	int sentencia_envio = send(proxima->socket, sentencia, sizeof(t_esi_operacion_sin_puntero),NULL);
+
+	free(header);
+
 }
 
 void interpretarOperacionInstancia(t_content_header * hd, int socketInstancia){
@@ -154,6 +162,7 @@ void interpretarOperacionESI(t_content_header * hd, int socketCliente){
 			default:
 				break;
 		}
+		free(sentencia);
 		break;
 	default:
 		//TODO no se reconoció el tipo operación
@@ -204,31 +213,27 @@ void *escucharMensajesEntrantes(int socketCliente){
     		interpretarHeader(header, socketCliente);
     	};
    	}
+    free(header);
     close(socketCliente);
 }
 
 int main()
 {
-	ALGORITMO = EQUITATIVE_LOAD;
-	logger = log_create("log_coordinador.txt","Coordinador",true, LOG_LEVEL_INFO);
-	t_list * lista_instancias = list_create();
-	indice_actual_lista = -1;
-	t_instancia inst;
-
+	seteosIniciales();
 
 	struct addrinfo *serverInfo = crear_addrinfo();
 	int listenningSocket = socket(serverInfo->ai_family, serverInfo->ai_socktype, serverInfo->ai_protocol);
-	log_info(logger,"socket creado %d", listenningSocket);
+	log_info(logger,"Socket de escucha creado %d", listenningSocket);
 
     // Las siguientes dos lineas sirven para no lockear el address
 	int activado = 1;
 	setsockopt(listenningSocket, SOL_SOCKET, SO_REUSEADDR, &activado, sizeof(activado));
 
     bind(listenningSocket,serverInfo->ai_addr, serverInfo->ai_addrlen);
-    log_info(logger, "socket bindeado ");
+    log_info(logger, "Socket de escucha bindeado");
     freeaddrinfo(serverInfo);
 
-    log_info(logger, "escuchando ");
+    log_info(logger, "Escuchando...");
     listen(listenningSocket, BACKLOG);
 
     struct sockaddr_in addr;// Esta estructura contendra los datos de la conexion del cliente. IP, puerto, etc.
@@ -240,34 +245,6 @@ int main()
 		log_info(logger, "Conexión recibida - Accept: %d ",socketCliente);
 
 		crear_hilo_conexion(socketCliente, escucharMensajesEntrantes);
-
-
-		/////////////////////////////////////
-		//TODO
-		//esta parte es para prueba. seguir con el dummyclient hasta que llegue a administrarSentencia. ahi borrar toda esta preuba pedorra y armar como se debe
-/*
-		int status_header = 1;		// Estructura que manjea el status de los recieve.
-		log_info(logger, "Cliente conectado. Esperando mensajes:");
-
-		t_content_header * header = malloc(sizeof(t_content_header));
-		status_header = recv(socketCliente, header, sizeof(t_content_header), NULL);
-
-		log_info(logger, "status header: %d ", status_header);
-		int pt = header->proceso_origen;
-		log_info(logger, "p tipo %d ",pt);
-		int po = header->operacion;
-		log_info(logger, "p op: %d ",po);
-
-		t_esi_operacion_sin_puntero * sentencia = malloc(sizeof(t_esi_operacion_sin_puntero));
-		sentencia->keyword = 9;
-
-		status_header = recv(socketCliente, sentencia, sizeof(t_esi_operacion_sin_puntero), NULL);
-
-		log_info(logger, "status header: %d ", status_header);
-		log_info(logger, "setnencia recibida: %i - %s ",sentencia->keyword,sentencia->clave);
-		////////////////////////////////////
-		 * */
-
     }
     close(listenningSocket);
     log_destroy(logger);
@@ -275,28 +252,3 @@ int main()
 
 
 }
-
-
-
-/*
-
-
- inicializar() ----> 1. leerArchivoDeConfiguracion();
-                     2. inicializarEstructurasAdministrativas();
-
- registrarEjecucion(); en el log de operaciones
-
-void *elegirYutilizarInstancia(void*); // o gestionarInstancia (algoritmo de distribucion)
-
-
-
-
-
-
- Para trabajar con hilos:
- ------------------------
- pthread_create(direccion de memoria del thread que se va a crear, NULL, nombre de la funcion que va a usar, direccion de memoria del argumento que va a recibir);
- pthread_join(thread que se creo, donde se guarda el resultado tras ejecutar la funcion);
-
-
- */
