@@ -132,7 +132,7 @@ void interpretarOperacionPlanificador(t_content_header * hd, int socketCliente){
 	}
 }
 
-int puedoEnviarSentencia(t_esi_operacion_sin_puntero * sentencia){
+int puedoEnviarSentencia(t_sentencia * sentencia){
 	//TODO Preguntarle a Planificador si la clave no esta bloqueada.
 	return CORRECTO;
 }
@@ -151,7 +151,18 @@ void interpretarOperacionESI(t_content_header * hd, int socketCliente){
 		//Recibo de ESI sentencia parseada
 		t_esi_operacion_sin_puntero * sentencia = malloc(sizeof(t_esi_operacion_sin_puntero));
 		int cantleida = recv( socketCliente, sentencia, hd->cantidad_a_leer, NULL);
-		int puedoEnviar = puedoEnviarSentencia(sentencia);
+
+		//Recibo el valor - El esi me lo manda "pelado", directamente el string, ningún struct
+		char * valor = malloc(sentencia->tam_valor);
+		int valor_status = recv(socketCliente, valor, sentencia->tam_valor,NULL);
+
+		//Armo una variable interna para manejar la sentencia
+		t_sentencia * sentencia_con_punteros = malloc(sizeof(t_sentencia));
+		strncpy(sentencia_con_punteros->clave, sentencia->clave,40);
+		sentencia_con_punteros->valor = valor;
+		sentencia_con_punteros->keyword = sentencia->keyword;
+
+		int puedoEnviar = puedoEnviarSentencia(sentencia_con_punteros);
 		switch(puedoEnviar){
 			case CORRECTO:
 				enviarSentenciaInstancia(sentencia);
@@ -174,14 +185,13 @@ void interpretarHeader(t_content_header * hd, int socketCliente){
 	log_info(logger, "Interpretando header - Origen: %d, Receptor: %d, Operación: %d, Cantidad: %d",hd->proceso_origen,hd->proceso_receptor,hd->operacion,hd->cantidad_a_leer);
 
 	switch(hd->proceso_origen){
-	case 1:
-		//ESI
+	case ESI:
 		interpretarOperacionESI(hd,socketCliente);
 		break;
-	case 2:
+	case INSTANCIA:
 		interpretarOperacionInstancia(hd,socketCliente);
 		break;
-	case 3:
+	case PLANIFICADOR:
 		interpretarOperacionPlanificador(hd,socketCliente);
 		break;
 	default:
@@ -239,13 +249,14 @@ int main()
     struct sockaddr_in addr;// Esta estructura contendra los datos de la conexion del cliente. IP, puerto, etc.
     socklen_t addrlen = sizeof(addr);
 
-    while (1){
+	while (1){
     	log_info(logger, "Esperando conexiones...");
     	int socketCliente = accept(listenningSocket, (struct sockaddr *) &addr, &addrlen);
 		log_info(logger, "Conexión recibida - Accept: %d ",socketCliente);
 
 		crear_hilo_conexion(socketCliente, escucharMensajesEntrantes);
-    }
+	}
+
     close(listenningSocket);
     log_destroy(logger);
     return 0;

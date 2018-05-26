@@ -67,7 +67,7 @@ typedef struct __attribute__((packed)) content_header t_content_header  ;
 typedef struct{
 	int keyword;
 	char clave[40];
-	char valor[40];
+	int tam_valor;
 	int pid;
 } __attribute__((packed)) t_esi_operacion_sin_puntero;
 
@@ -77,6 +77,11 @@ typedef struct{
 	char nombre[40];
 } t_instancia;
 
+typedef struct{
+	char * valor;
+	char clave[40];
+	int keyword;
+} t_sentencia;
 
 typedef struct {
 	int cantTotalEntradas;
