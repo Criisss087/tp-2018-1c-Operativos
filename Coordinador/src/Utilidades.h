@@ -81,6 +81,7 @@ typedef struct{
 	char * valor;
 	char clave[40];
 	int keyword;
+	int pid;
 } t_sentencia;
 
 typedef struct {

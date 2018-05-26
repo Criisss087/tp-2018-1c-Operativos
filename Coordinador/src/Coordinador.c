@@ -88,7 +88,7 @@ t_instancia * siguienteInstanciaSegunAlgoritmo(){
 	}
 }
 
-void enviarSentenciaInstancia(t_esi_operacion_sin_puntero * sentencia){
+void enviarSentenciaInstancia(t_sentencia * sentencia){
 	t_instancia * proxima = siguienteInstanciaSegunAlgoritmo();
 
 	if (string_equals_ignore_case(proxima->nombre, "ERROR")){
@@ -102,12 +102,18 @@ void enviarSentenciaInstancia(t_esi_operacion_sin_puntero * sentencia){
 	header->proceso_origen = COORDINADOR;
 	header->proceso_receptor = INSTANCIA;
 
-	int header_envio = send(proxima->socket,header,sizeof(t_content_header),NULL);
+	t_esi_operacion_sin_puntero * s_sin_p = malloc(sizeof(t_esi_operacion_sin_puntero));
+	strncpy(s_sin_p->clave, sentencia->clave,40);
+	s_sin_p->keyword = sentencia->keyword;
+	s_sin_p->tam_valor = sizeof(sentencia->valor);
+	s_sin_p->pid = sentencia->pid;
 
+	int header_envio = send(proxima->socket,header,sizeof(t_content_header),NULL);
 	int sentencia_envio = send(proxima->socket, sentencia, sizeof(t_esi_operacion_sin_puntero),NULL);
+	int valor_envio = send(proxima->socket,sentencia->valor,sizeof(sentencia->valor),NULL);
 
 	free(header);
-
+	free(s_sin_p);
 }
 
 void interpretarOperacionInstancia(t_content_header * hd, int socketInstancia){
@@ -161,11 +167,12 @@ void interpretarOperacionESI(t_content_header * hd, int socketCliente){
 		strncpy(sentencia_con_punteros->clave, sentencia->clave,40);
 		sentencia_con_punteros->valor = valor;
 		sentencia_con_punteros->keyword = sentencia->keyword;
+		sentencia_con_punteros->pid = sentencia->pid;
 
 		int puedoEnviar = puedoEnviarSentencia(sentencia_con_punteros);
 		switch(puedoEnviar){
 			case CORRECTO:
-				enviarSentenciaInstancia(sentencia);
+				enviarSentenciaInstancia(sentencia_con_punteros);
 				break;
 			case CLAVE_BLOQUEADA:
 				devolverErrorAESI(socketCliente);

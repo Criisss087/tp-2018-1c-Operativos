@@ -32,8 +32,7 @@ t_esi_operacion_sin_puntero transformarSinPuntero(t_esi_operacion t){
 	tsp.clave[strlen(clavep)-1] = '\0';
 
 	if (keyword == 1 ) {
-		strncpy(tsp.valor, valorp, sizeof valor - 1);
-		tsp.valor[strlen(valorp)-1] = '\0';
+		tsp.tam_valor = sizeof(valorp);
 	};
 
 	return tsp;

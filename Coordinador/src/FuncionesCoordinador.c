@@ -24,4 +24,5 @@ void seteosIniciales(){
 	t_list * lista_instancias = list_create();
 	indice_actual_lista = -1;
 	t_instancia inst;
+
 }

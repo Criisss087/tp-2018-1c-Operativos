@@ -39,9 +39,13 @@ int main(int argc, char **argv){
 	t_esi_operacion_sin_puntero * t = malloc(sizeof(t_esi_operacion_sin_puntero));
 	char *c = "SET";
 	int k = 0;
+	char * valor = "este es un ejemplo de valor de clave supongo";
+
 
 	memcpy(t->clave,c, strlen(c));
 	t->clave[3] = '\0';
+	t->tam_valor = sizeof(valor);
+
 
    //le envio al coordinador la linea parseada
 	t_content_header * header_a_coord_de_ESI = malloc(sizeof(t_content_header));
@@ -64,6 +68,8 @@ int main(int argc, char **argv){
 	resultado = send(serverCoord, t, sizeof(t_esi_operacion_sin_puntero),0);
 	printf("sentencia: %d \n",resultado);
 
+	resultado = send(serverCoord, valor, sizeof(valor),NULL);
+	printf("valor: %d \n",resultado);
 	printf("closing..\n");
 	close(serverCoord);
 	return 0;
