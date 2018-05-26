@@ -19,19 +19,10 @@
 #define IP_COORDINADOR "127.0.0.1"
 #define PUERTO_COORDINADOR 8080
 #define PACKAGESIZE 1024
-#define TAMANIO_ENTRADAS 8
-#define CANT_MAX_ENTRADAS 5 // Cantidad maxima de entradas que puede tener la instancia
+// #define TAMANIO_ENTRADAS 8
+// #define CANT_MAX_ENTRADAS 5 // Cantidad maxima de entradas que puede tener la instancia
 #define INTERVALO_DUMP 10 // Intervalo dado en segundos para guardar la tabla de entradas en archivo de texto plano
 #define PUNTO_DE_MONTAJE "home/utnso/instanciaX"
-
-#define TYPE_INSTANCIA 2
-
-// Codigos de operaciones:
-#define COORDINADOR_ENVIA_SENTENCIA_INSTANCIA 4201
-#define COORDINADOR_ENVIA_CONFIG_TABLA_ENTRADAS_INSTANCIA 4202
-
-#define INSTANCIA_SOLICITA_CONFIG_TABLA_ENTRADAS_COORDINADOR 2401
-#define INSTANCIA_ENVIA_RESULTADO_COORDINADOR 2402
 
 #define GET_KEYWORD 0
 #define SET_KEYWORD 1
@@ -49,8 +40,6 @@
 #define COORDINADOR_INSTANCIA_CONFIG_INICIAL 2
 #define COORDINADOR_INSTANCIA_SENTENCIA 3
 #define INSTANCIA_COORDINADOR_RESPUESTA_SENTENCIA 4
-
-
 
 //***
 
@@ -82,9 +71,9 @@ t_list * l_entradas;
 typedef struct {
 	int cantTotalEntradas;
 	int tamanioEntradas;
-} __attribute__((packed)) t_configTablaEntradas;
+} __attribute__((packed)) t_config_tabla_entradas;
 
-t_configTablaEntradas * configTablaEntradas;
+t_config_tabla_entradas * configTablaEntradas;
 
 // Estructura de Entradas
 typedef struct{
