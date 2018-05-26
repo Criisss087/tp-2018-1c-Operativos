@@ -30,6 +30,8 @@ int nuevoIDInstancia(){
 
 void enviarConfiguracionInicial(int socketInstancia){
 
+	log_info(logger,"Enviando configuracion inicial a Instancia");
+
 	t_configTablaEntradas * config = malloc(sizeof(t_configTablaEntradas));
 	config->cantTotalEntradas = CANT_MAX_ENTRADAS;
 	config->tamanioEntradas= TAMANIO_ENTRADAS;
@@ -39,30 +41,42 @@ void enviarConfiguracionInicial(int socketInstancia){
 	header->proceso_origen = 4;
 	header->proceso_receptor = 2;
 	header->operacion = COORDINADOR_INSTANCIA_CONFIG_INICIAL;
-	int sent_header = send(socketInstancia, header, sizeof(t_content_header),NULL);
-	log_info(logger,"enviada header config inicial %d", sent_header);
 
+	int sent_header = send(socketInstancia, header, sizeof(t_content_header),NULL);
 	int sent = send(socketInstancia, config, sizeof(t_configTablaEntradas),NULL);
-	log_info(logger,"enviada config inicial %d", sent);
+
+	log_info(logger,"Enviado configuración inicial a Instancia - send: %d",sent);
 }
 
-void guardarEnListaDeInstancias(int socketInstancia){
+void guardarEnListaDeInstancias(int socketInstancia, char nombre[40]){
+	hay_instancias = 1;
 	t_instancia * nueva = malloc(sizeof(t_instancia));
 	nueva->id= nuevoIDInstancia();
 	nueva->socket = socketInstancia;
+	strncpy(nueva->nombre, nombre, 40);
 	list_add(lista_instancias, nueva);
 }
 
 t_instancia * siguienteEqLoad(){
+	//Quizá convenga hacer que recorra la lista de atrás para adelante,
+	//para no estar siempre con las nuevas dejando las viejas para lo último.
+	//Como no va a haber la misma cantidad de conexiones con instancias como con esis por ejemplo, no creo que sea tan necesario.
 	int cant = list_size(lista_instancias);
 	indice_actual_lista++;
+	if (indice_actual_lista>cant){indice_actual_lista = indice_actual_lista - cant;}
 	int siguiente = indice_actual_lista % cant;
 	return list_get(lista_instancias, siguiente);
 }
 
 t_instancia * siguienteInstanciaSegunAlgoritmo(){
+	if(	hay_instancias == 0){
+			log_error(logger,"No hay Instancias conectadas");
+			t_instancia * instancia_error = malloc(sizeof(t_instancia));
+			strncpy(instancia_error->nombre,"ERROR",5);
+			return instancia_error;
+	}
 	switch(ALGORITMO){
-	case EqLoad:
+	case EQUITATIVE_LOAD:
 		return siguienteEqLoad();
 		break;
 	default:
@@ -73,15 +87,29 @@ t_instancia * siguienteInstanciaSegunAlgoritmo(){
 void enviarSentenciaInstancia(t_esi_operacion_sin_puntero * sentencia){
 	t_instancia * proxima = siguienteInstanciaSegunAlgoritmo();
 
+	if (string_equals_ignore_case(proxima->nombre, "ERROR")){
+		return;
+	}
 
+	t_content_header * header = malloc(sizeof(t_content_header));
+	header->cantidad_a_leer = malloc(sizeof(t_content_header));
+	header->operacion = COORDINADOR_INSTANCIA_SENTENCIA;
+	header->proceso_origen = COORDINADOR;
+	header->proceso_receptor = INSTANCIA;
+
+	int header_envio = send(proxima->socket,header,sizeof(t_content_header),NULL);
+
+	int sentencia_envio = send(proxima->socket, sentencia, sizeof(t_esi_operacion_sin_puntero),NULL);
 }
 
 void interpretarOperacionInstancia(t_content_header * hd, int socketInstancia){
 	switch(hd->operacion){
 		case INSTANCIA_COORDINADOR_CONEXION:
 			;
+			//TODO leer packete para obtener nombre.
+			char nombre[40];// = recv(...... Hablarlo con Sebastián
 			enviarConfiguracionInicial(socketInstancia);
-			guardarEnListaDeInstancias(socketInstancia);
+			guardarEnListaDeInstancias(socketInstancia, nombre);
 			break;
 		default:
 			break;
@@ -96,24 +124,36 @@ void interpretarOperacionPlanificador(t_content_header * hd, int socketCliente){
 	}
 }
 
-void interpretarOperacionESI(t_content_header * hd, int socketCliente){
-	log_info(logger, "interpretando op esi\n");
+int puedoEnviarSentencia(t_esi_operacion_sin_puntero * sentencia){
+	//TODO Preguntarle a Planificador si la clave no esta bloqueada.
+	return CORRECTO;
+}
 
-	int po = hd->operacion;
-	log_info(logger, "p op: %d",po);
-	log_info(logger, " cant: %d \n",hd->cantidad_a_leer);
+void devolverErrorAESI(socketCliente){
+	//TODO Devolver resultado de error a ESI
+}
+
+
+void interpretarOperacionESI(t_content_header * hd, int socketCliente){
+	log_info(logger, "Interpretando operación ESI - Origen: %d, Receptor: %d, Operación: %d, Cantidad: %d",hd->proceso_origen,hd->proceso_receptor,hd->operacion,hd->cantidad_a_leer);
+
 	switch(hd->operacion){
 	case ESI_COORDINADOR_SENTENCIA:
-		log_info(logger, "interpretando op esi correcta\n");
 		;
-		//C no permite hacer declaraciones inmediatamente después de un label.. wtf
 		//Recibo de ESI sentencia parseada
 		t_esi_operacion_sin_puntero * sentencia = malloc(sizeof(t_esi_operacion_sin_puntero));
-		log_info(logger,"hd cantidad %d", hd->cantidad_a_leer);
-		log_info(logger,"sizeof %d", sizeof(t_esi_operacion_sin_puntero));
 		int cantleida = recv( socketCliente, sentencia, hd->cantidad_a_leer, NULL);
-		log_info(logger, "cant leida %d\n",cantleida);
-		//enviarSentenciaInstancia(sentencia);
+		int puedoEnviar = puedoEnviarSentencia(sentencia);
+		switch(puedoEnviar){
+			case CORRECTO:
+				enviarSentenciaInstancia(sentencia);
+				break;
+			case CLAVE_BLOQUEADA:
+				devolverErrorAESI(socketCliente);
+				break;
+			default:
+				break;
+		}
 		break;
 	default:
 		//TODO no se reconoció el tipo operación
@@ -122,14 +162,7 @@ void interpretarOperacionESI(t_content_header * hd, int socketCliente){
 }
 
 void interpretarHeader(t_content_header * hd, int socketCliente){
-	log_info(logger, "interpretando header\n");
-
-	//TODO: log_operacion();
-
-	int pt = hd->proceso_origen;
-	log_info(logger, "p tipo %d \n",pt);
-	int po = hd->operacion;
-	log_info(logger, "p op: %d \n",po);
+	log_info(logger, "Interpretando header - Origen: %d, Receptor: %d, Operación: %d, Cantidad: %d",hd->proceso_origen,hd->proceso_receptor,hd->operacion,hd->cantidad_a_leer);
 
 	switch(hd->proceso_origen){
 	case 1:
@@ -153,21 +186,21 @@ void *escucharMensajesEntrantes(int socketCliente){
 
     int status_header = 1;		// Estructura que manjea el status de los recieve.
 
-    log_info(logger, "Cliente conectado. Esperando mensajes:\n");
+    log_info(logger, "Cliente conectado. Esperando mensajes:");
     total_hilos++;
-    log_info(logger, "total hilos: %d\n",total_hilos);
+    log_info(logger, "total hilos: %d",total_hilos);
 
     t_content_header * header = malloc(sizeof(t_content_header));
 
     while (status_header != 0){
-    	memset(&status_header, 0, sizeof(status_header));
+
     	status_header = recv(socketCliente, header, sizeof(t_content_header), NULL);
-    	log_info(logger, "status header: %d \n", status_header);
+    	log_info(logger, "Recv - Status Header: %d", status_header);
     	if (status_header == 0) {
-    		log_info(logger, "desconectado\n"); total_hilos--;
+    		log_info(logger, "Desconectado"); total_hilos--;
     	}
     	else {
-    		log_info(logger, "llamando funcion interpretarHeader\n");
+    		log_info(logger, "Interpretando header...");
     		interpretarHeader(header, socketCliente);
     	};
    	}
@@ -176,10 +209,12 @@ void *escucharMensajesEntrantes(int socketCliente){
 
 int main()
 {
-	ALGORITMO = EqLoad;
+	ALGORITMO = EQUITATIVE_LOAD;
 	logger = log_create("log_coordinador.txt","Coordinador",true, LOG_LEVEL_INFO);
 	t_list * lista_instancias = list_create();
 	indice_actual_lista = -1;
+	t_instancia inst;
+
 
 	struct addrinfo *serverInfo = crear_addrinfo();
 	int listenningSocket = socket(serverInfo->ai_family, serverInfo->ai_socktype, serverInfo->ai_protocol);
@@ -190,19 +225,19 @@ int main()
 	setsockopt(listenningSocket, SOL_SOCKET, SO_REUSEADDR, &activado, sizeof(activado));
 
     bind(listenningSocket,serverInfo->ai_addr, serverInfo->ai_addrlen);
-    log_info(logger, "socket bindeado \n");
+    log_info(logger, "socket bindeado ");
     freeaddrinfo(serverInfo);
 
-    log_info(logger, "escuchando \n");
+    log_info(logger, "escuchando ");
     listen(listenningSocket, BACKLOG);
 
     struct sockaddr_in addr;// Esta estructura contendra los datos de la conexion del cliente. IP, puerto, etc.
     socklen_t addrlen = sizeof(addr);
 
     while (1){
-    	log_info(logger, "Esperando mensaje\n");
+    	log_info(logger, "Esperando conexiones...");
     	int socketCliente = accept(listenningSocket, (struct sockaddr *) &addr, &addrlen);
-		log_info(logger, "Escuchando? %d \n",socketCliente);
+		log_info(logger, "Conexión recibida - Accept: %d ",socketCliente);
 
 		crear_hilo_conexion(socketCliente, escucharMensajesEntrantes);
 
@@ -212,24 +247,24 @@ int main()
 		//esta parte es para prueba. seguir con el dummyclient hasta que llegue a administrarSentencia. ahi borrar toda esta preuba pedorra y armar como se debe
 /*
 		int status_header = 1;		// Estructura que manjea el status de los recieve.
-		log_info(logger, "Cliente conectado. Esperando mensajes:\n");
+		log_info(logger, "Cliente conectado. Esperando mensajes:");
 
 		t_content_header * header = malloc(sizeof(t_content_header));
 		status_header = recv(socketCliente, header, sizeof(t_content_header), NULL);
 
-		log_info(logger, "status header: %d \n", status_header);
+		log_info(logger, "status header: %d ", status_header);
 		int pt = header->proceso_origen;
-		log_info(logger, "p tipo %d \n",pt);
+		log_info(logger, "p tipo %d ",pt);
 		int po = header->operacion;
-		log_info(logger, "p op: %d \n",po);
+		log_info(logger, "p op: %d ",po);
 
 		t_esi_operacion_sin_puntero * sentencia = malloc(sizeof(t_esi_operacion_sin_puntero));
 		sentencia->keyword = 9;
 
 		status_header = recv(socketCliente, sentencia, sizeof(t_esi_operacion_sin_puntero), NULL);
 
-		log_info(logger, "status header: %d \n", status_header);
-		log_info(logger, "setnencia recibida: %i - %s \n",sentencia->keyword,sentencia->clave);
+		log_info(logger, "status header: %d ", status_header);
+		log_info(logger, "setnencia recibida: %i - %s ",sentencia->keyword,sentencia->clave);
 		////////////////////////////////////
 		 * */
 

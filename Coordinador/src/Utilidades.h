@@ -38,11 +38,22 @@
 //***Cod ops
 #define ESI_COORDINADOR_SENTENCIA 1
 #define COORDINADOR_ESI_RESULTADO_EJECUCION_SENTENCIA 2
+
 #define INSTANCIA_COORDINADOR_CONEXION 1
 #define COORDINADOR_INSTANCIA_CONFIG_INICIAL 2
+#define COORDINADOR_INSTANCIA_SENTENCIA 3
+
 #define PLANIFICADOR_COORDINADOR_HEADER_IDENTIFICACION 1
 
 
+//***
+
+//*** Enums
+	//Para rta de planificador sobre estado de clave
+enum{
+	CORRECTO,
+	CLAVE_BLOQUEADA
+};
 //***
 
 struct content_header {
@@ -63,6 +74,7 @@ typedef struct{
 typedef struct{
 	int socket;
 	int id;
+	char nombre[40];
 } t_instancia;
 
 
@@ -72,7 +84,7 @@ typedef struct {
 } __attribute__((packed)) t_configTablaEntradas;
 
 //*** Estructuras internas de Coordinador
-#define EqLoad 1
+#define EQUITATIVE_LOAD 1
 t_log * logger;
 t_list * lista_instancias;
 int id_counter = 0;
@@ -80,6 +92,7 @@ int ALGORITMO;
 signed int indice_actual_lista; //que item de la lista fue el ultimo al que se asigno trabajo
 t_instancia PROCESO_PLANIFICADOR;
 int total_hilos = 0; //borrable
+int hay_instancias = 0; //No se porque si uso lista.element_count tira segmentation fault. que mierda pasa la concha de la lora.
 //***
 
 #include "Utilidades.c""
