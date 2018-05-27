@@ -101,6 +101,11 @@ int main(int argc, char **argv){
 				 destruir_operacion(parsed);
 			}
 		}
+		//recibo la siguiente orden del planif
+			t_content_header *content_header = malloc(sizeof(t_content_header));
+			int read_size = recv(serverPlanif, content_header, sizeof(t_content_header), (int)NULL);
+			t_confirmacion_sentencia *conf = malloc(sizeof(t_confirmacion_sentencia));
+			read_size = recv(serverPlanif, conf, sizeof(t_confirmacion_sentencia), 0);
 	}
 
 	fclose(archivo_a_leer_por_el_ESI);
