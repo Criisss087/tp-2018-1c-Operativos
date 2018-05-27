@@ -28,7 +28,7 @@ int conexionConCoordinador() {
 	return socketCoordinador;
 }
 
-int existeClave(t_entrada * entrada) {
+int existeClave(t_indice_entrada * entrada) {
 	printf("TODO:Remover claver hardcodeada\n\n");
 	return (int) strcmp(entrada->clave, "deportessasaf:messi") != 1;
 }
@@ -70,6 +70,7 @@ void enviarNombreInstanciaACoordinador(int socketCoordinador) {
 	int resultado = send(socketCoordinador, infoInstancia,
 			sizeof(t_info_instancia), 0);
 	printf("\tResultado: %d\n", resultado);
+	printf("\tNombre enviado: %s\n", infoInstancia->nombreInstancia);
 
 }
 
@@ -111,13 +112,15 @@ t_sentencia * recibirSentencia(int socketCoordinador) {
 	t_esi_operacion_sin_puntero * sentenciaPreliminarRecibida = malloc(
 			sizeof(t_esi_operacion_sin_puntero));
 
-	int statusSentenciaPreliminar = recv(socketCoordinador, sentenciaPreliminarRecibida,
-			sizeof(t_esi_operacion_sin_puntero), (int) NULL);
+	int statusSentenciaPreliminar = recv(socketCoordinador,
+			sentenciaPreliminarRecibida, sizeof(t_esi_operacion_sin_puntero),
+			(int) NULL);
 
 	printf("Status Sentencia Preliminar: %d \n", statusSentenciaPreliminar);
 	printf("Sentencia preliminar recibida: \n");
 	printf("\tKeyword: %d - Clave: %s - Tamanio del Valor: %d\n",
-			sentenciaPreliminarRecibida->keyword, sentenciaPreliminarRecibida->clave,
+			sentenciaPreliminarRecibida->keyword,
+			sentenciaPreliminarRecibida->clave,
 			sentenciaPreliminarRecibida->tam_valor);
 
 	// Ahora se recibe el VALOR real de la sentencia
@@ -125,12 +128,11 @@ t_sentencia * recibirSentencia(int socketCoordinador) {
 	char * valorRecibido = malloc(sentenciaPreliminarRecibida->tam_valor);
 
 	int statusValorSentencia = recv(socketCoordinador, valorRecibido,
-				sizeof(sentenciaPreliminarRecibida->tam_valor), (int) NULL);
+			sizeof(sentenciaPreliminarRecibida->tam_valor), (int) NULL);
 
-		printf("status header: %d \n", statusValorSentencia);
-		printf("Valor de Sentencia recibido: \n");
-		printf("\tValor: %s\n",
-				valorRecibido);
+	printf("status header: %d \n", statusValorSentencia);
+	printf("Valor de Sentencia recibido: \n");
+	printf("\tValor: %s\n", valorRecibido);
 
 	// Armado de sentencia definitiva
 
@@ -144,41 +146,48 @@ t_sentencia * recibirSentencia(int socketCoordinador) {
 }
 
 void guardarEntrada(t_sentencia * sentenciaRecibida) {
-	printf("TODO: Guardar valor en el Storage con mmap()\n");
 
-	if (list_size(l_entradas) < configTablaEntradas->cantTotalEntradas) {
+	// TODO: Verificar si aun hay espacio disponible contiguo para almacenar valores
+	if (true) {
+
+		// TODO: verificar el menor indice disponible para almacenar el valor
+		const int indice = 0;
+
+		printf("El tamaño de la lista de entradas es: %d, el maximo es: %d\n",
+				list_size(l_indice_entradas),
+				configTablaEntradas->cantTotalEntradas);
+
+		t_indice_entrada * indiceEntrada;
+
+		indiceEntrada = malloc(sizeof(t_indice_entrada));
+
+		strcpy(indiceEntrada->clave, sentenciaRecibida->clave);
+		indiceEntrada->numeroEntrada = indice;
+		indiceEntrada->tamanioEntrada = sizeof(t_sentencia);
+
+		printf("Guardando indice de entrada:\n");
+		printf("\tLa clave guardada es %s", indiceEntrada->clave);
+		printf("\ten la posicion %d", indiceEntrada->numeroEntrada);
+		printf("\ty su tamanio es: %d", indiceEntrada->tamanioEntrada);
+
+		list_add(l_indice_entradas, indiceEntrada);
 
 		printf("El tamaño de la lista de entradas es: %d\n",
-				list_size(l_entradas));
-		printf("\nGuardar Entrada:\n");
-		t_entrada * entrada;
+				list_size(l_indice_entradas));
 
-		entrada = malloc(sizeof(t_entrada));
+		////////////////////////////////////////////////////////////////////
+		// guardar Entrada en el array de entradas
 
-		strcpy(entrada->clave, sentenciaRecibida->clave);
-		entrada->numeroEntrada = 0;
-		entrada->tamanioEntrada = sizeof(t_sentencia);
+		t_entrada entradas[configTablaEntradas->cantTotalEntradas];
 
-		printf("La clave guardada es %s\n", entrada->clave);
-
-		list_add(l_entradas, entrada);
-
-		printf("El tamaño de la lista de entradas es: %d\n",
-				list_size(l_entradas));
-		// t_entrada * valorBuscado = buscarEntrada();
-
-		//////////////////////////////////////////////////////
-
-		printf("\n\nConsulta de valor:\n");
-
-		t_entrada * entradaBuscada = malloc(sizeof(t_entrada));
-
-		entradaBuscada = list_find(l_entradas, (void*) existeClave);
-
-		printf(
-				"La clave es: %s, el Numero de Entrada: %d, el tamaño de entrada: %d\n",
-				entradaBuscada->clave, entradaBuscada->numeroEntrada,
-				entradaBuscada->tamanioEntrada);
+		if (sizeof(sentenciaRecibida->valor)
+				> configTablaEntradas->tamanioEntradas) {
+			printf("Es necesario guardar el valor en mas de una entrada\n");
+		} else {
+			strcpy(entradas[indice].valor, sentenciaRecibida->valor);
+			entradas[indice].superaTamanioEntrada = false;
+			// entradas[indice].siguienteEntrada = null;
+		}
 
 	} else {
 		printf(
@@ -199,7 +208,7 @@ void interpretarOperacionCoordinador(t_content_header * header,
 
 		configTablaEntradas = obtenerConfigTablaEntradas(socketCoordinador);
 
-		l_entradas = list_create();
+		l_indice_entradas = list_create();
 
 		break;
 
@@ -215,6 +224,19 @@ void interpretarOperacionCoordinador(t_content_header * header,
 			printf("TODO: Leer clave y devolver valor\n");
 
 			// leerEntrada(sentenciaRecibida);
+			//////////////////////////////////////////////////////
+
+			printf("\n\nConsulta de valor:\n");
+
+			t_indice_entrada * entradaBuscada = malloc(
+					sizeof(t_indice_entrada));
+
+			entradaBuscada = list_find(l_indice_entradas, (void*) existeClave);
+
+			printf(
+					"La clave es: %s, el Numero de Entrada: %d, el tamaño de entrada: %d\n",
+					entradaBuscada->clave, entradaBuscada->numeroEntrada,
+					entradaBuscada->tamanioEntrada);
 
 		}
 

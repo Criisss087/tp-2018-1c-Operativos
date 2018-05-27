@@ -67,10 +67,6 @@ typedef struct{
 		char * valor;
 	} t_sentencia;
 
-// Lista de Entradas
-
-t_list * l_entradas;
-
 // Struct para la configuracion inicial de Tabla de Entradas
 
 typedef struct {
@@ -80,12 +76,21 @@ typedef struct {
 
 t_config_tabla_entradas * configTablaEntradas;
 
-// Estructura de Entradas
+// Lista de Entradas
+
+t_list * l_indice_entradas;
+
+// Estructura de Tabla de Entradas
 typedef struct{
 	char clave[40];
 	int numeroEntrada;
 	int tamanioEntrada;
-} __attribute__((packed)) t_entrada;
+} __attribute__((packed)) t_indice_entrada;
 
+typedef struct {
+	char * valor;
+	bool superaTamanioEntrada;
+	int siguienteEntrada;
+} __attribute__((packed)) t_entrada;
 
 #endif /* SRC_UTILIDADES_H_ */
