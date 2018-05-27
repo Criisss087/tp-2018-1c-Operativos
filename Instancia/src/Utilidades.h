@@ -19,8 +19,6 @@
 #define IP_COORDINADOR "127.0.0.1"
 #define PUERTO_COORDINADOR 8080
 #define PACKAGESIZE 1024
-// #define TAMANIO_ENTRADAS 8
-// #define CANT_MAX_ENTRADAS 5 // Cantidad maxima de entradas que puede tener la instancia
 #define INTERVALO_DUMP 10 // Intervalo dado en segundos para guardar la tabla de entradas en archivo de texto plano
 #define PUNTO_DE_MONTAJE "home/utnso/instanciaX"
 

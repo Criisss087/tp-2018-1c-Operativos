@@ -17,12 +17,15 @@ int conexionConCoordinador() {
 	direccionServidor.sin_port = htons(PUERTO_COORDINADOR);
 
 	int socketCoordinador = socket(AF_INET, SOCK_STREAM, 0);
+
+	printf("Conectando con Coordinador...\n");
 	if (connect(socketCoordinador, (void*) &direccionServidor,
 			sizeof(direccionServidor)) != 0) {
-		perror("No se pudo conectar al Coordinador");
+		perror("No se pudo conectar al Coordinador\n");
 		return 1;
 	} else
-		return socketCoordinador;
+		printf("Conectado correctamente.\n\n");
+	return socketCoordinador;
 }
 
 int existeClave(t_entrada * entrada) {
@@ -30,8 +33,8 @@ int existeClave(t_entrada * entrada) {
 	return (int) strcmp(entrada->clave, "deportessasaf:messi") != 1;
 }
 
-void enviarHeader(int socketCoordinador, int procesoOrigen,
-		int procesoReceptor, int operacion, int cantidadALeer) {
+void enviarHeader(int socketCoordinador, int procesoOrigen, int procesoReceptor,
+		int operacion, int cantidadALeer) {
 	t_content_header * header = malloc(sizeof(t_content_header));
 	header->cantidad_a_leer = cantidadALeer;
 	header->operacion = operacion;
@@ -56,7 +59,7 @@ void enviarNombreInstanciaACoordinador(int socketCoordinador) {
 	printf("Envio de header para info inicial de Instancia...\n");
 
 	enviarHeader(socketCoordinador, INSTANCIA,
-			COORDINADOR, INSTANCIA_COORDINADOR_CONEXION, sizeof(t_info_instancia));
+	COORDINADOR, INSTANCIA_COORDINADOR_CONEXION, sizeof(t_info_instancia));
 
 	t_info_instancia * infoInstancia = malloc(sizeof(t_info_instancia));
 
@@ -64,8 +67,8 @@ void enviarNombreInstanciaACoordinador(int socketCoordinador) {
 			strlen(NOMBRE_INSTANCIA));
 
 	printf("Enviando Informacion inicial de Instancia...\n");
-	int resultado = send(socketCoordinador, infoInstancia, sizeof(t_info_instancia),
-			0);
+	int resultado = send(socketCoordinador, infoInstancia,
+			sizeof(t_info_instancia), 0);
 	printf("\tResultado: %d\n", resultado);
 
 }
@@ -205,24 +208,24 @@ int main(void) {
 
 	enviarNombreInstanciaACoordinador(socketCoordinador);
 
-	// Recibe una sentencia del coordinador
-	while (true) {
-		t_content_header * header = interpretarHeader(socketCoordinador);
+	// while (true) {
+	t_content_header * header = interpretarHeader(socketCoordinador);
 
-		switch (header->proceso_origen) {
+	switch (header->proceso_origen) {
 
-		case COORDINADOR:
+	// Recibir sentencias del coordinador
+	case COORDINADOR:
 
-			interpretarOperacionCoordinador(header, socketCoordinador);
-			break;
+		interpretarOperacionCoordinador(header, socketCoordinador);
+		break;
 
-		default:
-			// TODO: No se reconoce el proceso
-			break;
-
-		}
+	default:
+		printf("El codigo de proceso no es correcto o no esta identificado.\n");
+		break;
 
 	}
+
+	// }
 
 	return 0;
 }
