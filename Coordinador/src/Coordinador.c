@@ -38,27 +38,31 @@ void enviarConfiguracionInicial(int socketInstancia){
 
 	t_content_header * header = malloc(sizeof(t_content_header));
 	header->cantidad_a_leer = sizeof(t_configTablaEntradas);
-	header->proceso_origen = 4;
-	header->proceso_receptor = 2;
+	header->proceso_origen = COORDINADOR;
+	header->proceso_receptor = INSTANCIA;
 	header->operacion = COORDINADOR_INSTANCIA_CONFIG_INICIAL;
 
 	int sent_header = send(socketInstancia, header, sizeof(t_content_header),NULL);
 	int sent = send(socketInstancia, config, sizeof(t_configTablaEntradas),NULL);
 
-	log_info(logger,"Enviado configuración inicial a Instancia - send: %d",sent);
+	log_info(logger,"Enviada configuración inicial a Instancia - send: %d",sent);
 
 	free(config);
 	free(header);
 
 }
 
-void guardarEnListaDeInstancias(int socketInstancia, char nombre[40]){
-	hay_instancias = 1;
+void guardarEnListaDeInstancias(int socketInstancia, char *nombre){
+	hay_instancias++;
 	t_instancia * nueva = malloc(sizeof(t_instancia));
+	log_info(logger,"agregando instancia ne lista");
 	nueva->id= nuevoIDInstancia();
 	nueva->socket = socketInstancia;
-	strncpy(nueva->nombre, nombre, 40);
+	nueva->nombre = nombre;
+	log_info(logger,"agregando instancia ne lista");
 	list_add(lista_instancias, nueva);
+	log_info(logger,"guardada");
+
 }
 
 t_instancia * siguienteEqLoad(){
@@ -109,7 +113,7 @@ void enviarSentenciaInstancia(t_sentencia * sentencia){
 	s_sin_p->pid = sentencia->pid;
 
 	int header_envio = send(proxima->socket,header,sizeof(t_content_header),NULL);
-	int sentencia_envio = send(proxima->socket, sentencia, sizeof(t_esi_operacion_sin_puntero),NULL);
+	int sentencia_envio = send(proxima->socket, s_sin_p, sizeof(t_esi_operacion_sin_puntero),NULL);
 	int valor_envio = send(proxima->socket,sentencia->valor,sizeof(sentencia->valor),NULL);
 
 	free(header);
@@ -117,13 +121,17 @@ void enviarSentenciaInstancia(t_sentencia * sentencia){
 }
 
 void interpretarOperacionInstancia(t_content_header * hd, int socketInstancia){
+	log_info(logger,"%d",debug_var); debug_var++;
 	switch(hd->operacion){
 		case INSTANCIA_COORDINADOR_CONEXION:
 			;
 			//TODO leer packete para obtener nombre.
-			char nombre[40];// = recv(...... Hablarlo con Sebastián
+			char * nombre = malloc(hd->cantidad_a_leer);
+			int status_recv = recv(socketInstancia, nombre, hd->cantidad_a_leer, NULL);
 			enviarConfiguracionInicial(socketInstancia);
 			guardarEnListaDeInstancias(socketInstancia, nombre);
+
+			free(nombre);
 			break;
 		default:
 			break;
