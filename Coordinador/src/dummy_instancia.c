@@ -38,10 +38,12 @@ int main(int argc, char **argv){
 	printf("sizeof header %d \n", sizeof(t_content_header));
 
 	char * nombre = "Prueba Nombre Instancia";
+	log_info(logger, "Nombre: %s",nombre);
+	log_info(logger, "Tamaño: %d",strlen(nombre));
 
 	//Envío header
 	t_content_header * header = malloc(sizeof(t_content_header));
-	header->cantidad_a_leer = sizeof(nombre);
+	header->cantidad_a_leer = strlen(nombre);
 	header->proceso_origen = INSTANCIA;
 	header->proceso_receptor = COORDINADOR;
 	header->operacion = INSTANCIA_COORDINADOR_CONEXION;
@@ -50,13 +52,14 @@ int main(int argc, char **argv){
 	printf("enviado header %d \n",status_header);
 
 	//Envío nombre
-	int status_nombre = send(serverCoord, nombre, sizeof(nombre), NULL);
+	int status_nombre = send(serverCoord, nombre, strlen(nombre), NULL);
 	printf("enviado header %d \n",status_header);
 	log_info(logger, "Enviado header y nombre");
 
 	//Recibo header
 	int status_recv_header = recv(serverCoord, header, sizeof(t_content_header), NULL);
 	log_info(logger, "Recibido header");
+	log_info(logger, "Origen: %d - Receptor: %d - Operación: %d - Cantidad: %d", header->proceso_origen,header->proceso_receptor,header->operacion,header->cantidad_a_leer);
 	//Recibo config
 	t_configTablaEntradas * config = malloc(sizeof(t_configTablaEntradas));
 	int status_recv_config = recv(serverCoord, config, sizeof(t_configTablaEntradas),NULL);

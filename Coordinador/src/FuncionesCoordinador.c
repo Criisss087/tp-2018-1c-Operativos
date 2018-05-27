@@ -21,7 +21,7 @@ void *escucharMensajesEntrantes(int);
 void seteosIniciales(){
 	ALGORITMO = EQUITATIVE_LOAD;
 	logger = log_create("log_coordinador.txt","Coordinador",true, LOG_LEVEL_INFO);
-	t_list * lista_instancias = list_create();
+	lista_instancias = list_create();
 	indice_actual_lista = -1;
 	t_instancia inst;
 

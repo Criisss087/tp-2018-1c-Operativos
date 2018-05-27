@@ -55,13 +55,11 @@ void enviarConfiguracionInicial(int socketInstancia){
 void guardarEnListaDeInstancias(int socketInstancia, char *nombre){
 	hay_instancias++;
 	t_instancia * nueva = malloc(sizeof(t_instancia));
-	log_info(logger,"agregando instancia ne lista");
 	nueva->id= nuevoIDInstancia();
 	nueva->socket = socketInstancia;
 	nueva->nombre = nombre;
-	log_info(logger,"agregando instancia ne lista");
 	list_add(lista_instancias, nueva);
-	log_info(logger,"guardada");
+	log_info(logger,"Guardada Instancia: %s", nombre);
 
 }
 
@@ -128,6 +126,7 @@ void interpretarOperacionInstancia(t_content_header * hd, int socketInstancia){
 			//TODO leer packete para obtener nombre.
 			char * nombre = malloc(hd->cantidad_a_leer);
 			int status_recv = recv(socketInstancia, nombre, hd->cantidad_a_leer, NULL);
+			log_info(logger,"Tamaño nombre: %d - Nombre: %s",sizeof(nombre),nombre);
 			enviarConfiguracionInicial(socketInstancia);
 			guardarEnListaDeInstancias(socketInstancia, nombre);
 
