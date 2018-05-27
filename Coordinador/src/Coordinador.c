@@ -75,6 +75,7 @@ t_instancia * siguienteEqLoad(){
 }
 
 t_instancia * siguienteInstanciaSegunAlgoritmo(){
+	//TODO usar la funcion list_size para ver si mostrar o no el error
 	if(	hay_instancias == 0){
 			log_error(logger,"No hay Instancias conectadas");
 			t_instancia * instancia_error = malloc(sizeof(t_instancia));

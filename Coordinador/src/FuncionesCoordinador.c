@@ -22,7 +22,7 @@ void seteosIniciales(){
 	ALGORITMO = EQUITATIVE_LOAD;
 	logger = log_create("log_coordinador.txt","Coordinador",true, LOG_LEVEL_INFO);
 	lista_instancias = list_create();
-	indice_actual_lista = -1;
+	indice_actual_lista = -1; //TODO usar la funcion list_size para ver si mostrar o no el error
 	t_instancia inst;
 
 }
