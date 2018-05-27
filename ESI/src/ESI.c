@@ -58,45 +58,48 @@ int main(int argc, char **argv){
 	read_size = recv(serverPlanif, conf, sizeof(t_confirmacion_sentencia), 0);
 
 	//leo el archivo y parseo
-	if ((read = getline(&linea_a_parsear, &direccion_de_la_linea_a_parsear, archivo_a_leer_por_el_ESI)) != -1){
-		t_esi_operacion parsed = parse(linea_a_parsear);
+	while(!feof(archivo_a_leer_por_el_ESI)){
+		if ((read = getline(&linea_a_parsear, &direccion_de_la_linea_a_parsear, archivo_a_leer_por_el_ESI)) != -1){
+			t_esi_operacion parsed = parse(linea_a_parsear);
 
-	//transformo el t_esi_operacion a un tipo que se pueda enviar correctamente
-		if(parsed.valido){
-			t_esi_operacion_sin_puntero  *parse_sin_punteros;
-			parse_sin_punteros = transformarSinPunteroYagregarpID(parsed, conf->pid);
+		//transformo el t_esi_operacion a un tipo que se pueda enviar correctamente
+			if(parsed.valido){
+				t_esi_operacion_sin_puntero  *parse_sin_punteros;
+				parse_sin_punteros = transformarSinPunteroYagregarpID(parsed, conf->pid);
 
-			content_header = malloc(sizeof(t_content_header));
-			content_header->proceso_origen = esi;
-			content_header->proceso_receptor = coordinador;
-			content_header->operacion = 1;
-			content_header->cantidad_a_leer = sizeof(t_esi_operacion_sin_puntero);
+				content_header = malloc(sizeof(t_content_header));
+				content_header->proceso_origen = esi;
+				content_header->proceso_receptor = coordinador;
+				content_header->operacion = 1;
+				content_header->cantidad_a_leer = sizeof(t_esi_operacion_sin_puntero);
 
-			 int resultado = send(serverCoord, content_header, sizeof(t_content_header), 0);
-			 resultado = send(serverCoord, parse_sin_punteros, sizeof(t_esi_operacion_sin_puntero),0);
+				 int resultado = send(serverCoord, content_header, sizeof(t_content_header), 0);
+				 resultado = send(serverCoord, parse_sin_punteros, sizeof(t_esi_operacion_sin_puntero),0);
+				 int envio_valor_clave = send(serverCoord, parsed.argumentos.SET.valor, sizeof(t_esi_operacion_sin_puntero),0);
 
-			 free(content_header);
+				 free(content_header);
 
-			 //recibo la rta del coord
-			 content_header = malloc(sizeof(t_content_header));
-			 recv(serverCoord, content_header, sizeof(t_content_header),0);
-			 if(content_header->operacion == RESULTADO_EJECUCION_SENTENCIA){
-				 recv(serverCoord, rtaCoord, sizeof(rtaCoord),0);
-				 conf->resultado = rtaCoord;
-			 }
+				 //recibo la rta del coord
+				 content_header = malloc(sizeof(t_content_header));
+				 recv(serverCoord, content_header, sizeof(t_content_header),0);
+				 if(content_header->operacion == RESULTADO_EJECUCION_SENTENCIA){
+					 recv(serverCoord, rtaCoord, sizeof(rtaCoord),0);
+					 conf->resultado = rtaCoord;
+				 }
 
-			 free(content_header);
+				 free(content_header);
 
-		 //envio al planif lo que me mando el coord
-			 content_header = malloc(sizeof(t_content_header));
-			 send(serverPlanif, content_header, sizeof(t_content_header),0);
-			 if(content_header->operacion == RESPUESTA_EJECUCION_SENTENCIA){
-				 send(serverPlanif, conf, sizeof(t_confirmacion_sentencia),0);
-			 }
+			 //envio al planif lo que me mando el coord
+				 content_header = malloc(sizeof(t_content_header));
+				 send(serverPlanif, content_header, sizeof(t_content_header),0);
+				 if(content_header->operacion == RESPUESTA_EJECUCION_SENTENCIA){
+					 send(serverPlanif, conf, sizeof(t_confirmacion_sentencia),0);
+				 }
 
-			 free(content_header);
-			 free(conf);
-			 destruir_operacion(parsed);
+				 free(content_header);
+				 free(conf);
+				 destruir_operacion(parsed);
+			}
 		}
 	}
 

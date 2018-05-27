@@ -10,9 +10,9 @@ t_esi_operacion_sin_puntero  *transformarSinPunteroYagregarpID(t_esi_operacion t
 	int keyword = t.keyword;
 	char * valorp = NULL;
 	char * clavep;
-	char valor[40];
 	char clave[40];
-	int pid = id;
+	int tam_valor;
+	int pid;
 
 	/*
 	get 0
@@ -39,12 +39,8 @@ t_esi_operacion_sin_puntero  *transformarSinPunteroYagregarpID(t_esi_operacion t
 	strncpy(tsp->clave, clavep, sizeof clave - 1);
 	tsp->clave[strlen(clavep)-1] = '\0';
 
-	if (keyword == 1 ) {
-		strncpy(tsp->valor, valorp, sizeof valor - 1);
-		tsp->valor[strlen(valorp)-1] = '\0';
-	};
-
 	tsp->pid = id;
+	tsp->tam_valor = sizeof(t.argumentos.SET.valor);
 
 	return tsp;
 }

@@ -54,7 +54,7 @@ typedef struct confirmacion_sentencia t_confirmacion_sentencia;
 typedef struct{
 	int keyword;
 	char clave[40];
-	char valor[40];
+	int tam_valor;
 	int pid;
 } __attribute__((packed)) t_esi_operacion_sin_puntero;
 
