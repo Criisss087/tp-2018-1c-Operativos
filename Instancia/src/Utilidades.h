@@ -57,8 +57,15 @@ typedef struct{
 typedef struct{
 	int keyword;
 	char clave[40];
-	char valor[40];
-} __attribute__((packed)) t_sentencia_sin_puntero;
+	int tam_valor;
+	int pid;
+	} __attribute__((packed)) t_esi_operacion_sin_puntero;
+
+typedef struct{
+		int keyword;
+		char clave[40];
+		char * valor;
+	} t_sentencia;
 
 // Lista de Entradas
 

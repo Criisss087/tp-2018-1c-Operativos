@@ -107,23 +107,43 @@ t_config_tabla_entradas * obtenerConfigTablaEntradas(int socketCoordinador) {
 	return configRecibida;
 }
 
-t_sentencia_sin_puntero * recibirSentencia(int socketCoordinador) {
-	t_sentencia_sin_puntero * sentenciaRecibida = malloc(
-			sizeof(t_sentencia_sin_puntero));
+t_sentencia * recibirSentencia(int socketCoordinador) {
+	t_esi_operacion_sin_puntero * sentenciaPreliminarRecibida = malloc(
+			sizeof(t_esi_operacion_sin_puntero));
 
-	int statusHeader = recv(socketCoordinador, sentenciaRecibida,
-			sizeof(t_sentencia_sin_puntero), (int) NULL);
+	int statusSentenciaPreliminar = recv(socketCoordinador, sentenciaPreliminarRecibida,
+			sizeof(t_esi_operacion_sin_puntero), (int) NULL);
 
-	printf("status header: %d \n", statusHeader);
-	printf("sentencia recibida: \n");
-	printf("\tKeyword: %i - Clave: %s - Valor: %s\n",
-			sentenciaRecibida->keyword, sentenciaRecibida->clave,
-			sentenciaRecibida->valor);
+	printf("Status Sentencia Preliminar: %d \n", statusSentenciaPreliminar);
+	printf("Sentencia preliminar recibida: \n");
+	printf("\tKeyword: %d - Clave: %s - Tamanio del Valor: %d\n",
+			sentenciaPreliminarRecibida->keyword, sentenciaPreliminarRecibida->clave,
+			sentenciaPreliminarRecibida->tam_valor);
+
+	// Ahora se recibe el VALOR real de la sentencia
+
+	char * valorRecibido = malloc(sentenciaPreliminarRecibida->tam_valor);
+
+	int statusValorSentencia = recv(socketCoordinador, valorRecibido,
+				sizeof(sentenciaPreliminarRecibida->tam_valor), (int) NULL);
+
+		printf("status header: %d \n", statusValorSentencia);
+		printf("Valor de Sentencia recibido: \n");
+		printf("\tValor: %s\n",
+				valorRecibido);
+
+	// Armado de sentencia definitiva
+
+	t_sentencia * sentenciaRecibida = malloc(sizeof(t_sentencia));
+
+	strcpy(sentenciaRecibida->clave, sentenciaPreliminarRecibida->clave);
+	sentenciaRecibida->keyword = sentenciaPreliminarRecibida->keyword;
+	strcpy(sentenciaRecibida->valor, valorRecibido);
 
 	return sentenciaRecibida;
 }
 
-void guardarEntrada(t_sentencia_sin_puntero * sentenciaRecibida) {
+void guardarEntrada(t_sentencia * sentenciaRecibida) {
 	printf("TODO: Guardar valor en el Storage con mmap()\n");
 
 	if (list_size(l_entradas) < configTablaEntradas->cantTotalEntradas) {
@@ -137,7 +157,7 @@ void guardarEntrada(t_sentencia_sin_puntero * sentenciaRecibida) {
 
 		strcpy(entrada->clave, sentenciaRecibida->clave);
 		entrada->numeroEntrada = 0;
-		entrada->tamanioEntrada = sizeof(t_sentencia_sin_puntero);
+		entrada->tamanioEntrada = sizeof(t_sentencia);
 
 		printf("La clave guardada es %s\n", entrada->clave);
 
@@ -170,7 +190,7 @@ void guardarEntrada(t_sentencia_sin_puntero * sentenciaRecibida) {
 void interpretarOperacionCoordinador(t_content_header * header,
 		int socketCoordinador) {
 
-	t_sentencia_sin_puntero * sentenciaRecibida;
+	t_sentencia * sentenciaRecibida;
 	t_config_tabla_entradas * configTablaEntradas;
 
 	switch (header->operacion) {
