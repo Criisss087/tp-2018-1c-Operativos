@@ -1048,6 +1048,11 @@ int bloquear_clave(char* clave , char* id)
 	t_claves_bloqueadas * existe = buscar_bloqueo(clave, pid);
 	if(existe == NULL)
 	{
+		/* TODO: Se debe pasar el ESI bloqueado a la lista de bloqueados una vez que termine de
+		 * ejecutar su sentencia si estaba ejecutando
+		 * Revisar si esto se tiene que hacer antes o despues de tocar la lista de claves
+		 */
+
 		t_claves_bloqueadas * clave_bloqueada = malloc(sizeof(t_claves_bloqueadas));
 
 		memset(clave_bloqueada, 0, sizeof(t_claves_bloqueadas));
@@ -1064,7 +1069,6 @@ int bloquear_clave(char* clave , char* id)
 		printf("La clave %s ya está bloqueada por el ESI %d\n",clave,pid);
 		return 1;
 	}
-
 
 }
 
@@ -1086,6 +1090,8 @@ int desbloquear_clave(char* clave, int pid)
 		printf("La clave %s no está bloqueada por el ESI %d\n",clave,pid);
 		return 1;
 	}
+
+	//TODO: Se debe pasar el ESI desbloqueado de la lista bloqueados a ready
 
 }
 
