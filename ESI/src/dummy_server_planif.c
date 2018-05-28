@@ -61,7 +61,7 @@ int main()
 		printf("Escuchando? %d \n",socketCliente);
 
 
-    close(listenningSocket);
+   // close(listenningSocket);
     return 0;
 
 
