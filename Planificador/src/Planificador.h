@@ -50,11 +50,13 @@
 #define RESULTADO_ESI_BLOQUEADA -1
 #define OPERACION_CONF_SENTENCIA 1
 #define OPERACION_RES_SENTENCIA 2
-#define OPERACION_HANDSHAKE_COORD 0
+#define OPERACION_HANDSHAKE_COORD 1
+#define OPERACION_BLOQUEO_COORD 2
+#define OPERACION_DESBLOQUEO_COORD 3
 
 //Enumeracion de los comandos de la consola
 enum comandos { pausar, continuar, bloquear, desbloquear, listar, kill, status, deadlock, salir,
-				mostrar, ejecucion};
+				mostrar, ejecucion, bloqueos};
 //enum procesos { esi, instancia, planificador, coordinador };
 enum estados { listo, ejecut, bloqueado, terminado };
 
@@ -81,15 +83,7 @@ struct pcb_esi {
 	t_conexion_esi conexion;
 };
 typedef struct pcb_esi t_pcb_esi;
-/*
-struct content_header {
-	int proceso_origen;
-	int proceso_receptor;
-	int operacion;
-	size_t cantidad_a_leer;
-};
-typedef struct __attribute__((packed)) content_header t_content_header  ;
-*/
+
 struct config{
 	char puerto_escucha[5];
 	char algoritmo[6];
@@ -102,8 +96,8 @@ struct config{
 };
 
 struct claves_bloqueadas{
-	char * clave;
 	int pid;
+	char * clave;
 };
 typedef struct claves_bloqueadas t_claves_bloqueadas;
 
@@ -113,6 +107,12 @@ struct confirmacion_sentencia{
 	int resultado;
 };
 typedef struct confirmacion_sentencia t_confirmacion_sentencia;
+
+struct bloqueo_clave{
+	int pid;
+	char * clave;
+};
+typedef struct bloqueo_clave t_bloqueo_clave;
 
 /**********************************************/
 /* DATOS GLOBALES							  */
@@ -160,6 +160,7 @@ void consola_consultar_status_clave(char* clave);
 void consola_consultar_deadlock(void);
 void mostrar_lista(char* lista);
 void mostrar_esi_en_ejecucion(void);
+void mostrar_bloqueos(void);
 
 //Manejo de ESI
 void inicializar_conexiones_esi(void);
@@ -176,5 +177,8 @@ int recibir_mensaje_coordinador(int coord_socket);
 int cerrar_conexion_coord(int coord_socket);
 
 //Manejo de claves
-void bloquear_clave(char* clave , char* id);
-void desbloquear_clave(char* clave, char* id);
+int bloquear_clave(char* clave , char* id);
+int desbloquear_clave(char* clave, int pid);
+void mostrar_clave_bloqueada(t_claves_bloqueadas * clave_bloqueada);
+int destruir_clave_bloqueada(t_claves_bloqueadas * clave_bloqueada);
+t_claves_bloqueadas * buscar_bloqueo(char* clave, int pid);

@@ -244,24 +244,57 @@ int recibir_mensaje_coordinador(int coord_socket)
 	int read_size;
 	char client_message[2000];
 
-	//TODO Recibir mensaje de "Puedo bloquear esta clave desde este esi?" (punto 4.3)
-
-
-	//TODO Recibir mensaje de "Puedo des-bloquear esta clave desde este esi?" (Punto 5.1)
-
-
 	//Recepcion de mensaje comun de texto, con la cabecera (para no bloquear) Borrar mas adelante
 	t_content_header *content_header = malloc(sizeof(t_content_header));
 
 	read_size = recv(coord_socket, content_header, sizeof(t_content_header), 0);
-
-
-	read_size = recv(coord_socket , client_message, content_header->cantidad_a_leer , 0);
-	if(read_size > 0)
+	if(read_size < 0)
 	{
-		printf("Coordinador %d dice: %s\n",coord_socket,client_message);
-		//int res_send = send(coord_socket, client_message, sizeof(client_message), (int)NULL);
+		printf("Error recv header\n");
 	}
+
+
+	//TODO Recibir mensaje de "Puedo bloquear esta clave desde este esi?" (punto 4.3)
+	if(content_header->operacion == OPERACION_BLOQUEO_COORD)
+	{
+
+		/* 4.1 El COORDINADOR le solicita al PLANIFICADOR aprobación para bloquear dicha
+		 * clave [informándole Clave y PID del ESI]
+		 * El PLANIFICADOR verifica internamente si la clave tiene un bloqueo vigente.
+		 * SI existe un bloqueo, el PLANIFICADOR le indica al COORDINADOR que existe un
+		 * bloqueo para que éste no avance con la ejecución de la sentencia.
+		 * SI no existe un bloqueo, el PLANIFICADOR le indica al COORDINADOR que avance
+		 * con la ejecución de la sentencia y registra la clave bloqueada en su lista.
+		 */
+
+		t_bloqueo_clave * bloqueo_clave = malloc(sizeof(t_bloqueo_clave));
+
+		read_size = recv(coord_socket, bloqueo_clave, sizeof(t_bloqueo_clave),0);
+		if(read_size < 0)
+		{
+			printf("Error recv coord 2 \n");
+		}
+
+	}
+	//TODO Recibir mensaje de "Puedo des-bloquear esta clave desde este esi?" (Punto 5.1)
+	else if (content_header->operacion == OPERACION_DESBLOQUEO_COORD)
+	{
+		/* Se debe sacar de la lista de bloqueados la clave recibida, y se debe pasar a ready
+		 * el primer esi en lista de bloqueados que espere a la clave que se acaba
+		 * de desbloquear
+		 */
+
+	}
+	else
+	{
+		read_size = recv(coord_socket , client_message, content_header->cantidad_a_leer , 0);
+		if(read_size > 0)
+		{
+			printf("Coordinador %d dice: %s\n",coord_socket,client_message);
+			//int res_send = send(coord_socket, client_message, sizeof(client_message), (int)NULL);
+		}
+	}
+
 
 	free(content_header);
 
@@ -469,6 +502,9 @@ int consola_derivar_comando(char * buffer){
 		case ejecucion:
 			mostrar_esi_en_ejecucion();
 			break;
+		case bloqueos:
+			mostrar_bloqueos();
+			break;
 		default:
 			printf("No reconozco el comando...\n");
 			break;
@@ -529,6 +565,9 @@ int consola_obtener_key_comando(char* comando)
 
 	if(!strcmp(comando, "ejec"))
 			key = ejecucion;
+
+	if(!strcmp(comando, "bloqueos"))
+				key = bloqueos;
 
 	if(!strcmp(comando, "exit"))
 		key = salir;
@@ -669,7 +708,8 @@ void consola_desbloquear_clave(char* clave, char* id){
 	else
 	{
 		printf("Desbloquear clave: %s id: %s\n",clave, id);
-		desbloquear_clave(clave, id);
+		int pid = atoi(id);
+		desbloquear_clave(clave, pid);
 	}
 
 
@@ -802,6 +842,34 @@ void mostrar_esi_en_ejecucion(void)
 	return;
 }
 
+void mostrar_bloqueos(void)
+{
+
+	t_list * lista;
+
+	lista = list_create();
+	list_add_all(lista,claves_bloqueadas);
+
+	printf("\nEstado actual de la lista de claves bloqueadas: \n\n");
+
+	list_iterate(lista,(void*)mostrar_clave_bloqueada);
+
+	printf("\nTamaño: %d \n",list_size(lista));
+
+	list_destroy(lista);
+	printf("\n");
+
+}
+
+void mostrar_clave_bloqueada(t_claves_bloqueadas * clave_bloqueada)
+{
+	printf("PID esi: %d\n", clave_bloqueada->pid);
+	printf("Clave Bloqueada: %s\n", clave_bloqueada->clave);
+	printf("\n");
+
+	return;
+}
+
 void stdin_no_bloqueante(void)
 {
 	  /* Set nonblock for stdin. */
@@ -918,6 +986,7 @@ void crear_listas_planificador(void)
 	esi_listos = list_create();
 	esi_bloqueados = list_create();
 	esi_terminados = list_create();
+	claves_bloqueadas = list_create();
 }
 
 // TODO Implementar
@@ -931,6 +1000,7 @@ void terminar_planificador(void)
 	list_destroy_and_destroy_elements(esi_listos,(void*)destruir_esi);
 	list_destroy_and_destroy_elements(esi_bloqueados,(void*)destruir_esi);
 	list_destroy_and_destroy_elements(esi_terminados,(void*)destruir_esi);
+	list_destroy_and_destroy_elements(claves_bloqueadas,(void*)destruir_clave_bloqueada);
 
 	if(esi_en_ejecucion!=NULL)
 		destruir_esi(esi_en_ejecucion);
@@ -970,17 +1040,71 @@ int destruir_esi(t_pcb_esi * esi)
 	return 0;
 }
 
-// TODO Implementar
-void bloquear_clave(char* clave , char* id)
+int bloquear_clave(char* clave , char* id)
 {
+	int pid = -1;
 
-	return;
+	pid = atoi(id);
+	t_claves_bloqueadas * existe = buscar_bloqueo(clave, pid);
+	if(existe == NULL)
+	{
+		t_claves_bloqueadas * clave_bloqueada = malloc(sizeof(t_claves_bloqueadas));
+
+		memset(clave_bloqueada, 0, sizeof(t_claves_bloqueadas));
+
+		clave_bloqueada->clave = strdup(clave);
+		clave_bloqueada->pid = pid;
+
+		list_add(claves_bloqueadas, clave_bloqueada);
+
+		return 0;
+	}
+	else
+	{
+		printf("La clave %s ya está bloqueada por el ESI %d\n",clave,pid);
+		return 1;
+	}
+
+
 }
 
-// TODO Implementar
-void desbloquear_clave(char* clave, char* id)
+int desbloquear_clave(char* clave, int pid)
 {
+	bool is_clave_bloqueada(t_claves_bloqueadas * clave_bloqueada)
+	{
+		return ((!strcmp(clave, clave_bloqueada->clave)) && (clave_bloqueada->pid == pid));
+	}
 
-	return;
+	t_claves_bloqueadas * existe = buscar_bloqueo(clave, pid);
+	if(existe!=NULL)
+	{
+		list_remove_and_destroy_by_condition(claves_bloqueadas,(void*)is_clave_bloqueada,(void*)destruir_clave_bloqueada);
+		return 0;
+	}
+	else
+	{
+		printf("La clave %s no está bloqueada por el ESI %d\n",clave,pid);
+		return 1;
+	}
+
 }
 
+t_claves_bloqueadas * buscar_bloqueo(char* clave, int pid)
+{
+
+	bool is_clave_bloqueada(t_claves_bloqueadas * clave_bloqueada)
+	{
+		return ((!strcmp(clave, clave_bloqueada->clave)) && (clave_bloqueada->pid == pid));
+	}
+
+	 return (list_find(claves_bloqueadas,(void*)is_clave_bloqueada));
+
+}
+
+int destruir_clave_bloqueada(t_claves_bloqueadas * clave_bloqueada)
+{
+	free(clave_bloqueada->clave);
+	free(clave_bloqueada);
+	return 0;
+
+}
