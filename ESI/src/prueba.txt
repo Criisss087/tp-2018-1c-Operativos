@@ -1,0 +1,3 @@
+GET clave 
+SET clave valor
+STORE clave
