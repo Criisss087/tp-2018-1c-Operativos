@@ -81,6 +81,7 @@ struct pcb_esi {
 	int instruccion_actual;
 	int ejec_anterior;			// 1 Si en la siguiente corrida debe ejectar denuevo la ultima instruccion
 	t_conexion_esi conexion;
+	char * clave_bloqueo;
 };
 typedef struct pcb_esi t_pcb_esi;
 
@@ -153,7 +154,7 @@ int consola_leer_stdin(char *read_buffer, size_t max_len);
 void consola_pausar(void);
 void consola_continuar(void);
 void consola_bloquear_clave(char* clave , char* id);
-void consola_desbloquear_clave(char* clave, char* id);
+void consola_desbloquear_clave(char* clave);
 void consola_listar_recurso(char* recurso);
 void consola_matar_proceso(char* id);
 void consola_consultar_status_clave(char* clave);
@@ -178,7 +179,7 @@ int cerrar_conexion_coord(int coord_socket);
 
 //Manejo de claves
 int bloquear_clave(char* clave , char* id);
-int desbloquear_clave(char* clave, int pid);
+int desbloquear_clave(char* clave);
 void mostrar_clave_bloqueada(t_claves_bloqueadas * clave_bloqueada);
 int destruir_clave_bloqueada(t_claves_bloqueadas * clave_bloqueada);
-t_claves_bloqueadas * buscar_bloqueo(char* clave, int pid);
+t_claves_bloqueadas * buscar_bloqueo(char* clave); //, int pid);

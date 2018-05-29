@@ -478,7 +478,7 @@ int consola_derivar_comando(char * buffer){
 			consola_bloquear_clave(parametro1,parametro2);
 			break;
 		case desbloquear:
-			consola_desbloquear_clave(parametro1, parametro2);
+			consola_desbloquear_clave(parametro1);
 			break;
 		case listar:
 			consola_listar_recurso(parametro1);
@@ -696,20 +696,19 @@ void consola_bloquear_clave(char* clave , char* id){
 	return;
 }
 
-void consola_desbloquear_clave(char* clave, char* id){
+void consola_desbloquear_clave(char* clave){
 
 	/* desbloquear clave: Se desbloqueara el primer proceso ESI bloquedo por la clave
 	 * especificada.
 	 *
 	 */
 
-	if(clave == NULL || id == NULL)
-		printf("Parametros incorrectos (desbloquear <clave> <id>)\n");
+	if(clave == NULL)
+		printf("Parametros incorrectos (desbloquear <clave>)\n");
 	else
 	{
-		printf("Desbloquear clave: %s id: %s\n",clave, id);
-		int pid = atoi(id);
-		desbloquear_clave(clave, pid);
+		printf("Desbloquear clave: %s \n",clave);
+		desbloquear_clave(clave);
 	}
 
 
@@ -1006,6 +1005,10 @@ void terminar_planificador(void)
 		destruir_esi(esi_en_ejecucion);
 }
 
+//***********************//
+//FUNCIONES DE ESI		 //
+//***********************//
+
 t_pcb_esi * crear_esi(t_conexion_esi conexion)
 {
 	t_pcb_esi * esi;
@@ -1019,6 +1022,7 @@ t_pcb_esi * crear_esi(t_conexion_esi conexion)
 	esi->estimacion_ant = ESTIMACION_INICIAL;
 	esi->instruccion_actual = 0;
 	esi->ejec_anterior = 0;
+	esi->clave_bloqueo = NULL;
 	esi_seq_pid++;
 
 	return esi;
@@ -1028,6 +1032,10 @@ void mostrar_esi(t_pcb_esi * esi)
 {
 	printf("PID esi: %d\n", esi->pid);
 	printf("Estado: %d\n", esi->estado);
+
+	if(esi->clave_bloqueo!=NULL)
+		printf("Clave que lo bloqueó: %s\n", esi->clave_bloqueo);
+
 	printf("\n");
 
 	return;
@@ -1036,23 +1044,34 @@ void mostrar_esi(t_pcb_esi * esi)
 int destruir_esi(t_pcb_esi * esi)
 {
 	esi->conexion.socket = NO_SOCKET;
+	if(esi->clave_bloqueo!=NULL)
+	{
+		free(esi->clave_bloqueo);
+	}
 	free(esi);
 	return 0;
 }
 
+
+//*******************************//
+//FUNCIONES DE CLAVES BLOQUEADAS //
+//*******************************//
+
 int bloquear_clave(char* clave , char* id)
 {
+
+	bool is_esi_bloqueado(t_pcb_esi * esi)
+	{
+		return ((!strcmp(clave, esi->clave_bloqueo)));
+	}
+
+
 	int pid = -1;
 
 	pid = atoi(id);
-	t_claves_bloqueadas * existe = buscar_bloqueo(clave, pid);
+	t_claves_bloqueadas * existe = buscar_bloqueo(clave);
 	if(existe == NULL)
 	{
-		/* TODO: Se debe pasar el ESI bloqueado a la lista de bloqueados una vez que termine de
-		 * ejecutar su sentencia si estaba ejecutando
-		 * Revisar si esto se tiene que hacer antes o despues de tocar la lista de claves
-		 */
-
 		t_claves_bloqueadas * clave_bloqueada = malloc(sizeof(t_claves_bloqueadas));
 
 		memset(clave_bloqueada, 0, sizeof(t_claves_bloqueadas));
@@ -1061,46 +1080,83 @@ int bloquear_clave(char* clave , char* id)
 		clave_bloqueada->pid = pid;
 
 		list_add(claves_bloqueadas, clave_bloqueada);
-
-		return 0;
 	}
 	else
 	{
-		printf("La clave %s ya está bloqueada por el ESI %d\n",clave,pid);
+		printf("La clave %s ya está bloqueada! No se agrega a la lista\n",clave);
+
+	}
+
+	if(esi_en_ejecucion->pid == pid)
+	{
+		/* TODO: Si el esi esta en ejecucion, esperar a que termine la instrucción y desalojar
+		 * Seguramente hay que usar un semaforo
+		 *
+		 */
+	}
+
+
+	return 0;
+}
+
+
+int desbloquear_clave(char* clave)
+{
+	// Funciones locales para las busquedas
+	bool is_clave_bloqueada(t_claves_bloqueadas * clave_bloqueada)
+	{
+		return ((!strcmp(clave, clave_bloqueada->clave)));
+	}
+
+	bool is_esi_bloqueado(t_pcb_esi * esi)
+	{
+		return ((!strcmp(clave, esi->clave_bloqueo)));
+	}
+
+	t_claves_bloqueadas * existe = buscar_bloqueo(clave);
+	if(existe==NULL)
+	{
+		printf("La clave %s no está bloqueada\n",clave);
 		return 1;
 	}
 
-}
-
-int desbloquear_clave(char* clave, int pid)
-{
-	bool is_clave_bloqueada(t_claves_bloqueadas * clave_bloqueada)
+	//Busco el primer esi bloqueado por la clave a desbloquear
+	t_pcb_esi * esi_a_desbloquear = list_find(esi_bloqueados,(void*)is_esi_bloqueado);
+	if(esi_a_desbloquear!=NULL)
 	{
-		return ((!strcmp(clave, clave_bloqueada->clave)) && (clave_bloqueada->pid == pid));
+		//Si existe, lo remuevo de los bloqueados
+		esi_a_desbloquear = list_remove_by_condition(esi_bloqueados,(void*)is_esi_bloqueado);
+
+		//Lo agrego a Ready
+		list_add(esi_listos,esi_a_desbloquear);
+
+		//Busco si hay otro esi bloqueado por la misma clave
+		t_pcb_esi * otro_esi = list_find(esi_bloqueados,(void*)is_esi_bloqueado);
+
+		//Si no existe otro esi bloqueado por esa clave, hay que eliminar la clave de la lista de claves bloqueadas
+		if(otro_esi==NULL)
+		{
+			list_remove_and_destroy_by_condition(claves_bloqueadas,(void*)is_clave_bloqueada,(void*)destruir_clave_bloqueada);
+		}
+
+
 	}
-
-	t_claves_bloqueadas * existe = buscar_bloqueo(clave, pid);
-	if(existe!=NULL)
+	else
 	{
+		//Si no hay esi bloqueado por esa clave, solamente lo elimino de las claves bloqueadas
 		list_remove_and_destroy_by_condition(claves_bloqueadas,(void*)is_clave_bloqueada,(void*)destruir_clave_bloqueada);
-		return 0;
-	}
-	else
-	{
-		printf("La clave %s no está bloqueada por el ESI %d\n",clave,pid);
-		return 1;
 	}
 
-	//TODO: Se debe pasar el ESI desbloqueado de la lista bloqueados a ready
 
+	return 0;
 }
 
-t_claves_bloqueadas * buscar_bloqueo(char* clave, int pid)
+t_claves_bloqueadas * buscar_bloqueo(char* clave)
 {
 
 	bool is_clave_bloqueada(t_claves_bloqueadas * clave_bloqueada)
 	{
-		return ((!strcmp(clave, clave_bloqueada->clave)) && (clave_bloqueada->pid == pid));
+		return ((!strcmp(clave, clave_bloqueada->clave))); // && (clave_bloqueada->pid == pid));
 	}
 
 	 return (list_find(claves_bloqueadas,(void*)is_clave_bloqueada));
