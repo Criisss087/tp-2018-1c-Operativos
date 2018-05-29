@@ -172,6 +172,9 @@ int enviar_confirmacion_sentencia(t_pcb_esi * pcb_esi);
 t_pcb_esi * crear_esi(t_conexion_esi conexion);
 int destruir_esi(t_pcb_esi * esi);
 void mostrar_esi(t_pcb_esi * esi);
+t_pcb_esi * buscar_esi_en_lista_pid(t_list *lista,int pid);
+t_pcb_esi * sacar_esi_de_lista_pid(t_list *lista,int pid);
+t_pcb_esi * buscar_esi_bloqueado_por_clave(char* clave);
 
 //Manejo de Coordinador
 int recibir_mensaje_coordinador(int coord_socket);
@@ -182,4 +185,4 @@ int bloquear_clave(char* clave , char* id);
 int desbloquear_clave(char* clave);
 void mostrar_clave_bloqueada(t_claves_bloqueadas * clave_bloqueada);
 int destruir_clave_bloqueada(t_claves_bloqueadas * clave_bloqueada);
-t_claves_bloqueadas * buscar_bloqueo(char* clave); //, int pid);
+t_claves_bloqueadas * buscar_clave_bloqueada(char* clave); //, int pid);
