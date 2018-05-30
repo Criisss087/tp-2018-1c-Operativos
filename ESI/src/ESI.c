@@ -35,11 +35,6 @@ int main(int argc, char **argv){
     int serverCoord = socket(serverInfoCoord->ai_family, serverInfoCoord->ai_socktype, serverInfoCoord->ai_protocol);
 	int serverPlanif = socket(serverInfoPlanif->ai_family, serverInfoPlanif->ai_socktype, serverInfoPlanif->ai_protocol);
 
-
-	/* Las siguientes dos lineas sirven para no lockear el address
-		int activado = 1;
-		setsockopt(serverSocket1, SOL_SOCKET, SO_REUSEADDR, &activado, sizeof(activado));*/
-
 	int coord = connect(serverCoord, serverInfoCoord->ai_addr, serverInfoCoord->ai_addrlen);
 	int planif = connect(serverPlanif, serverInfoPlanif->ai_addr, serverInfoPlanif->ai_addrlen);
 
@@ -48,44 +43,39 @@ int main(int argc, char **argv){
 
 	printf("Conectado al servidor coordinador: %d \n",coord);
 	printf("Conectado al servidor planificador: %d \n",planif);
-	int valorInt;
+
 	archivo_a_leer_por_el_ESI = fopen(argv[1], "r");
 
 	//leo el archivo y parseo
-	while(!feof(archivo_a_leer_por_el_ESI)){
-		//recibo orden del planif
+	while(read != -1){
+
+			//recibo orden del planif
 			t_content_header *content_header = malloc(sizeof(t_content_header));
-			printf("esperando orden del planificador\n");
 			int read_size = recv(serverPlanif, content_header, sizeof(t_content_header), (int)NULL);
 			t_confirmacion_sentencia *conf = malloc(sizeof(t_confirmacion_sentencia));
 			read_size = recv(serverPlanif, conf, sizeof(t_confirmacion_sentencia), 0);
 
-			printf("transformar la sentencia\n");
-
 			if ((read = getline(&linea_a_parsear, &direccion_de_la_linea_a_parsear, archivo_a_leer_por_el_ESI)) != -1){
 				t_esi_operacion parsed = parse(linea_a_parsear);
 
-				printf("veo si puede transformar la sentencia\n");
-
 				//transformo el t_esi_operacion a un tipo que se pueda enviar correctamente
-
 				if(parsed.valido){
 					t_esi_operacion_sin_puntero  *parse_sin_punteros;
 					parse_sin_punteros = transformarSinPunteroYagregarpID(parsed, conf->pid);
 
-					content_header = malloc(sizeof(t_content_header));
+					content_header = crear_cabecera_header(/*TODO*/);
+					/*content_header = malloc(sizeof(t_content_header));
 					content_header->proceso_origen = esi;
 					content_header->proceso_receptor = coordinador;
 					content_header->operacion = 1;
 					content_header->cantidad_a_leer = sizeof(t_esi_operacion_sin_puntero);
-
+*/
 					 int resultado = send(serverCoord, content_header, sizeof(t_content_header), 0);
 					 resultado = send(serverCoord, parse_sin_punteros, sizeof(t_esi_operacion_sin_puntero),0);
 					 int envio_valor_clave = send(serverCoord, parsed.argumentos.SET.valor, sizeof(t_esi_operacion_sin_puntero),0);
 
 					 free(content_header);
 
-					 printf("recibo respuesta del coord\n");
 					 //recibo la rta del coord
 					 content_header = malloc(sizeof(t_content_header));
 					 recv(serverCoord, content_header, sizeof(t_content_header),0);
@@ -96,7 +86,6 @@ int main(int argc, char **argv){
 
 					 free(content_header);
 
-					 printf("envio al planificador lo que envio el coordinador\n");
 					 //envio al planif lo que me mando el coord
 					 content_header = malloc(sizeof(t_content_header));
 					 send(serverPlanif, content_header, sizeof(t_content_header),0);
@@ -104,18 +93,19 @@ int main(int argc, char **argv){
 						 send(serverPlanif, conf, sizeof(t_confirmacion_sentencia),0);
 					 }
 
-				 free(content_header);
-				 free(conf);
-				 destruir_operacion(parsed);
+					 free(content_header);
+					 free(conf);
+					 destruir_operacion(parsed);
 
-				 if(linea_a_parsear){
-				         free(linea_a_parsear);
-				     }
-			}
+				}//if parsed valido
 
-		}
+			}// if read = getline ...
 
-	}
+	}//while
+
+	if(linea_a_parsear){
+	         free(linea_a_parsear);
+	     }
 
 	fclose(archivo_a_leer_por_el_ESI);
 	close(serverCoord);
