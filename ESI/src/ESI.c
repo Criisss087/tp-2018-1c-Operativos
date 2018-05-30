@@ -63,12 +63,13 @@ int main(int argc, char **argv){
 					t_esi_operacion_sin_puntero  *parse_sin_punteros;
 					parse_sin_punteros = transformarSinPunteroYagregarpID(parsed, conf->pid);
 
-					content_header = malloc(sizeof(t_content_header));
+					content_header = crear_cabecera_header(/*TODO*/);
+					/*content_header = malloc(sizeof(t_content_header));
 					content_header->proceso_origen = esi;
 					content_header->proceso_receptor = coordinador;
 					content_header->operacion = 1;
 					content_header->cantidad_a_leer = sizeof(t_esi_operacion_sin_puntero);
-
+*/
 					 int resultado = send(serverCoord, content_header, sizeof(t_content_header), 0);
 					 resultado = send(serverCoord, parse_sin_punteros, sizeof(t_esi_operacion_sin_puntero),0);
 					 int envio_valor_clave = send(serverCoord, parsed.argumentos.SET.valor, sizeof(t_esi_operacion_sin_puntero),0);
