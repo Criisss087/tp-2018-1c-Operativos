@@ -47,7 +47,7 @@ int main(int argc, char **argv){
 	archivo_a_leer_por_el_ESI = fopen(argv[1], "r");
 
 	//leo el archivo y parseo
-	while(!feof(archivo_a_leer_por_el_ESI)){
+	while(read != -1){
 
 			//recibo orden del planif
 			t_content_header *content_header = malloc(sizeof(t_content_header));
