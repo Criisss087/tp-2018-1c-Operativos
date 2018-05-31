@@ -25,6 +25,7 @@
 #include <errno.h>			//errorno
 #include <fcntl.h>			// std no block
 #include <redis_lib.h>		// Commons para el TP
+#include <semaphore.h>
 
 /**********************************************/
 /* DEFINES									  */
@@ -129,6 +130,8 @@ t_pcb_esi * esi_en_ejecucion = NULL;
 int esi_seq_pid = 0;
 
 struct config config;
+
+sem_t sem_ejecucion_esi;
 
 /**********************************************/
 /* FUNCIONES								  */

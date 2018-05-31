@@ -29,6 +29,9 @@ int main(void) {
 	inicializar_conexiones_esi();
 	stdin_no_bloqueante();
 
+	//Inicializa semáforo
+	sem_init(&sem_ejecucion_esi, 0, 1);
+
 	while(TRUE){
 		//Inicializa los file descriptor
 		FD_ZERO(&readset);
@@ -318,6 +321,8 @@ int recibir_mensaje_esi(int esi_socket)
 	printf("Llego la operacion %d  debo leer %d bytes\n",content_header->operacion,content_header->cantidad_a_leer );
 
 	if(content_header->operacion == OPERACION_RES_SENTENCIA){
+
+		sem_post(&sem_ejecucion_esi);
 
 		confirmacion = malloc(sizeof(t_confirmacion_sentencia));
 
@@ -950,6 +955,8 @@ void obtener_proximo_ejecucion(void)
 int enviar_confirmacion_sentencia(t_pcb_esi * pcb_esi)
 {
 
+	sem_wait(&sem_ejecucion_esi);
+
 	t_content_header * header = crear_cabecera_mensaje(planificador,esi,OPERACION_CONF_SENTENCIA,sizeof(t_confirmacion_sentencia));
 
 	t_confirmacion_sentencia * conf = NULL;
@@ -1131,6 +1138,9 @@ int bloquear_clave(char* clave , char* id)
 		 * Seguramente hay que usar un semaforo
 		 *
 		 */
+
+		sem_wait(&sem_ejecucion_esi);
+
 		esi_en_ejecucion->clave_bloqueo = strdup(clave);
 		esi_en_ejecucion->estado = bloqueado;
 
@@ -1138,6 +1148,7 @@ int bloquear_clave(char* clave , char* id)
 
 		esi_en_ejecucion = NULL;
 
+		sem_post(&sem_ejecucion_esi);
 
 		printf("El ESI %d estaba en ejecución, se pasó a bloqueados\n",pid);
 	}
