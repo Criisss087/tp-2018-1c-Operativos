@@ -26,6 +26,7 @@
 #include <fcntl.h>			// std no block
 #include <redis_lib.h>		// Commons para el TP
 #include <semaphore.h>
+#include <pthread.h>
 
 /**********************************************/
 /* DEFINES									  */
@@ -136,7 +137,7 @@ sem_t sem_ejecucion_esi;
 /**********************************************/
 /* FUNCIONES								  */
 /**********************************************/
-
+int* conexiones(void);
 int conectar_coordinador(char * ip, char * port);
 int iniciar_servidor(char *port);
 void *consola();

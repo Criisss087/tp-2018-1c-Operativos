@@ -10,12 +10,34 @@
 
 #include "Planificador.h"
 
+int main(void)
+{
+	pthread_t t_conexiones_id;
+	pthread_t t_consola_id;
 
-int main(void) {
+	pthread_attr_t t_conexiones_attr;
+	pthread_attr_t t_consola_attr;
+
+	// Abrir la consola
+	pthread_attr_init(&t_consola_attr);
+	pthread_create(&t_consola_id, &t_consola_attr, (void *)consola, NULL);
+
+	pthread_attr_init(&t_conexiones_attr);
+	pthread_create(&t_conexiones_id, &t_conexiones_attr, (void *)conexiones, NULL);
+
+	pthread_join(t_consola_id, NULL);
+	terminar_planificador();
+	//pthread_join(t_conexiones_id, NULL);
+
+	return 0;
+}
+
+int* conexiones(void){ //main(void) {
 
 	fd_set readset, writeset, exepset;
 	int max_fd;
-	char read_buffer[MAX_LINEA];
+	//char read_buffer[MAX_LINEA];
+	//struct timeval tv = {10, 0};
 
 	//TODO Obtener datos del archivo de configuración
 
@@ -48,7 +70,7 @@ int main(void) {
 		FD_SET(coord_socket, &exepset);
 
 		//Agrega el stdin para leer la consola
-		FD_SET(STDIN_FILENO, &readset);
+		//FD_SET(STDIN_FILENO, &readset);
 		//FD_SET(fileno(stdin), &exepset);
 
 		/* Seteo el maximo file descriptor necesario para el select */
@@ -72,7 +94,7 @@ int main(void) {
 		if(max_fd < coord_socket)
 			max_fd = coord_socket;
 
-		int result = select(max_fd+1, &readset, &writeset, &exepset, NULL); //&time);
+		int result = select(max_fd+1, &readset, &writeset, &exepset, NULL); // &tv);
 
 		if(result == 0)
 			printf("Select time out\n");
@@ -116,6 +138,7 @@ int main(void) {
 			}
 
 			//Se ingresó algo a la consola
+			/*
 			if(FD_ISSET(STDIN_FILENO, &readset))
 			{
 
@@ -128,6 +151,7 @@ int main(void) {
 					break;
 				}
 			}
+			*/
 
 			//Manejo de conexiones esi ya existentes
 			for (int i = 0; i < MAX_CLIENTES; ++i) {
@@ -154,6 +178,7 @@ int main(void) {
 		} //if result select
 	} //while
 
+	pthread_exit(0);
 	return EXIT_SUCCESS;
 }
 
@@ -322,8 +347,6 @@ int recibir_mensaje_esi(int esi_socket)
 
 	if(content_header->operacion == OPERACION_RES_SENTENCIA){
 
-		sem_post(&sem_ejecucion_esi);
-
 		confirmacion = malloc(sizeof(t_confirmacion_sentencia));
 
 		recv(esi_socket, confirmacion, content_header->cantidad_a_leer,(int) NULL);
@@ -335,8 +358,11 @@ int recibir_mensaje_esi(int esi_socket)
 			esi_en_ejecucion->instruccion_actual++;
 			esi_en_ejecucion->ejec_anterior = 0;
 
+			sem_post(&sem_ejecucion_esi);
+
 			// Ordenar ejecutar siguiente sentencia del ESI
-			enviar_confirmacion_sentencia(esi_en_ejecucion);
+			if(esi_en_ejecucion!=NULL)
+				enviar_confirmacion_sentencia(esi_en_ejecucion);
 
 		}
 		else if(confirmacion->resultado == RESULTADO_ESI_OK_FINAL){
@@ -362,6 +388,7 @@ int recibir_mensaje_esi(int esi_socket)
 		}
 
 		free(confirmacion);
+
 	}
 
 	else if(content_header->operacion == 10){
@@ -441,6 +468,7 @@ void *consola() {
 
 		//Trae la linea de consola
 		buffer = readline(">");
+		//consola_leer_stdin(buffer, MAX_LINEA);
 
 		res = consola_derivar_comando(buffer);
 
@@ -451,7 +479,7 @@ void *consola() {
 			break;
 	}
 
-	//pthread_exit(0);
+	pthread_exit(0);
 	return 0;
 }
 
@@ -1139,7 +1167,9 @@ int bloquear_clave(char* clave , char* id)
 		 *
 		 */
 
+		printf("\nEsperando a que termine de ejecutar la sentencia\n");
 		sem_wait(&sem_ejecucion_esi);
+		printf("\nSentencia terminada!\n");
 
 		esi_en_ejecucion->clave_bloqueo = strdup(clave);
 		esi_en_ejecucion->estado = bloqueado;
@@ -1149,7 +1179,6 @@ int bloquear_clave(char* clave , char* id)
 		esi_en_ejecucion = NULL;
 
 		sem_post(&sem_ejecucion_esi);
-
 		printf("El ESI %d estaba en ejecución, se pasó a bloqueados\n",pid);
 	}
 	else if (buscar_esi_en_lista_pid(esi_listos, pid))
