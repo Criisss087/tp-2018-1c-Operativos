@@ -56,7 +56,7 @@ int main(int argc, char **argv){
 				int resultado = send(serverCoord, content_header, sizeof(t_content_header), 0);
 				resultado = send(serverCoord, parse_sin_punteros, sizeof(t_esi_operacion_sin_puntero),0);
 				printf("Enviando valor de la clave necesaria para el coordinador... \n");
-				int envio_valor_clave = send(serverCoord, parsed.argumentos.SET.valor, sizeof(parsed.argumentos.SET.valor),0);
+				int envio_valor_clave = send(serverCoord, parsed.argumentos.SET.valor, sizeof(strlen(parsed.argumentos.SET.valor)),0);
 
 				free(parse_sin_punteros);
 				destruir_cabecera_mensaje(content_header);
