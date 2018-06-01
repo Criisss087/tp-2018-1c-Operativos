@@ -385,7 +385,8 @@ int recibir_mensaje_esi(int esi_socket)
 
 			list_add(esi_terminados, esi_aux);
 
-			esi_en_ejecucion = NULL;
+			desalojar_ejecucion();
+
 			pthread_mutex_unlock(&mutex_esi_en_ejecucion);
 
 		}
@@ -398,7 +399,8 @@ int recibir_mensaje_esi(int esi_socket)
 
 			list_add(esi_bloqueados, esi_aux);
 
-			esi_en_ejecucion = NULL;
+			desalojar_ejecucion();
+
 			pthread_mutex_unlock(&mutex_esi_en_ejecucion);
 
 		}
@@ -1035,6 +1037,13 @@ void crear_listas_planificador(void)
 // TODO Implementar
 void desalojar_ejecucion(void){
 
+	if(esi_en_ejecucion!=NULL)
+	{
+		estimar_esi(esi_en_ejecucion);
+		esi_en_ejecucion = NULL;
+	}
+
+
 	return;
 }
 
@@ -1078,6 +1087,8 @@ void mostrar_esi(t_pcb_esi * esi)
 {
 	printf("PID esi: %d\n", esi->pid);
 	printf("Estado: %d\n", esi->estado);
+	printf("Estimacion: %f\n", esi->estimacion);
+	printf("Estimacion anterior: %f\n", esi->estimacion_ant);
 
 	if(esi->clave_bloqueo!=NULL)
 		printf("Clave que lo bloqueó: %s\n", esi->clave_bloqueo);
@@ -1140,6 +1151,20 @@ t_pcb_esi * sacar_esi_bloqueado_por_clave(char* clave)
 
 }
 
+int estimar_esi(t_pcb_esi * esi){
+
+	config.alfa = ALPHA;
+	esi->estimacion_ant = esi->estimacion;
+
+	esi->estimacion = ( (config.alfa / 100) * esi->instruccion_actual ) +
+					  ( ( 1 - (config.alfa / 100) ) * esi->estimacion_ant );
+
+	esi->instruccion_actual = 0;
+
+
+	return 0;
+}
+
 //*******************************//
 //FUNCIONES DE CLAVES BLOQUEADAS //
 //*******************************//
@@ -1190,7 +1215,7 @@ int bloquear_clave(char* clave , char* id)
 
 		list_add(esi_bloqueados,esi_en_ejecucion);
 
-		esi_en_ejecucion = NULL;
+		desalojar_ejecucion();
 		pthread_mutex_unlock(&mutex_esi_en_ejecucion);
 
 		sem_post(&sem_ejecucion_esi);

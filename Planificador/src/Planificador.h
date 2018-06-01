@@ -42,6 +42,7 @@
 #define MAX_LINEA 255
 #define NO_SOCKET -1
 #define ESTIMACION_INICIAL 5
+#define ALPHA 50
 
 #define ALGORITMO_PLAN_FIFO "FIFO"
 #define ALGORITMO_PLAN_SJFCD "SJF-CD"
@@ -79,8 +80,8 @@ typedef struct conexion_esi t_conexion_esi;
 struct pcb_esi {
 	int pid;
 	int estado;
-	int estimacion;
-	int estimacion_ant;
+	float estimacion;
+	float estimacion_ant;
 	int instruccion_actual;
 	int ejec_anterior;			// 1 Si en la siguiente corrida debe ejectar denuevo la ultima instruccion
 	t_conexion_esi conexion;
@@ -92,7 +93,7 @@ struct config{
 	char puerto_escucha[5];
 	char algoritmo[6];
 	int desalojo;
-	int alfa;
+	float alfa;
 	int estimacion_inicial;
 	char* ip_coordinador;
 	char puerto_coordinador[5];
@@ -183,6 +184,7 @@ void mostrar_esi(t_pcb_esi * esi);
 t_pcb_esi * buscar_esi_en_lista_pid(t_list *lista,int pid);
 t_pcb_esi * sacar_esi_de_lista_pid(t_list *lista,int pid);
 t_pcb_esi * buscar_esi_bloqueado_por_clave(char* clave);
+int estimar_esi(t_pcb_esi * esi);
 
 //Manejo de Coordinador
 int recibir_mensaje_coordinador(int coord_socket);
