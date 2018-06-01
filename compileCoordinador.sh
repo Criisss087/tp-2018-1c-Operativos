@@ -1,2 +1,2 @@
-gcc Coordinador/src/Coordinador.c -lpthread -lcommons -lparsi -o coordinador
+gcc Coordinador/src/Coordinador.c -lpthread -lcommons -lparsi -lredis_lib -o coordinador
 

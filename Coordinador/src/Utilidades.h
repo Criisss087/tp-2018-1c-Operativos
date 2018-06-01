@@ -20,6 +20,7 @@
 #include <commons/string.h>
 #include <parsi/parser.h>
 #include <commons/collections/list.h>
+#include <redis_lib.h>
 
 #define IP "127.0.0.1"
 #define PUERTO "8080"
@@ -27,12 +28,12 @@
 #define PACKAGESIZE 1024
 #define HEADER_LENGTH 10
 
-//***Cod Procesos
-#define ESI 1
+//***Cod Procesos - ya estan en redis_lib
+/*#define ESI 1
 #define PLANIFICADOR 3
 #define COORDINADOR 4
 #define INSTANCIA 2
-
+*/
 //***
 
 //***Cod ops
@@ -55,14 +56,14 @@ enum{
 	CLAVE_BLOQUEADA
 };
 //***
-
+/*
 struct content_header {
 	int proceso_origen;
 	int proceso_receptor;
 	int operacion;
 	size_t cantidad_a_leer;
 };
-typedef struct __attribute__((packed)) content_header t_content_header  ;
+typedef struct __attribute__((packed)) content_header t_content_header  ;*/
 
 typedef struct{
 	int keyword;

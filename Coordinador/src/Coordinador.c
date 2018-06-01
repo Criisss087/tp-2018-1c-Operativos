@@ -36,11 +36,8 @@ void enviarConfiguracionInicial(int socketInstancia){
 	config->cantTotalEntradas = CANT_MAX_ENTRADAS;
 	config->tamanioEntradas= TAMANIO_ENTRADAS;
 
-	t_content_header * header = malloc(sizeof(t_content_header));
-	header->cantidad_a_leer = sizeof(t_configTablaEntradas);
-	header->proceso_origen = COORDINADOR;
-	header->proceso_receptor = INSTANCIA;
-	header->operacion = COORDINADOR_INSTANCIA_CONFIG_INICIAL;
+
+	t_content_header * header = crear_cabecera_mensaje(coordinador,instancia,COORDINADOR_INSTANCIA_CONFIG_INICIAL,sizeof(t_configTablaEntradas));
 
 	int sent_header = send(socketInstancia, header, sizeof(t_content_header),NULL);
 	int sent = send(socketInstancia, config, sizeof(t_configTablaEntradas),NULL);
@@ -99,11 +96,7 @@ void enviarSentenciaInstancia(t_sentencia * sentencia){
 		return;
 	}
 
-	t_content_header * header = malloc(sizeof(t_content_header));
-	header->cantidad_a_leer = sizeof(t_content_header);
-	header->operacion = COORDINADOR_INSTANCIA_SENTENCIA;
-	header->proceso_origen = COORDINADOR;
-	header->proceso_receptor = INSTANCIA;
+	t_content_header * header = crear_cabecera_mensaje(coordinador,instancia,COORDINADOR_INSTANCIA_SENTENCIA, sizeof(t_content_header));
 
 	t_esi_operacion_sin_puntero * s_sin_p = malloc(sizeof(t_esi_operacion_sin_puntero));
 	strncpy(s_sin_p->clave, sentencia->clave,40);
@@ -200,13 +193,13 @@ void interpretarHeader(t_content_header * hd, int socketCliente){
 	log_info(logger, "Interpretando header - Origen: %d, Receptor: %d, Operación: %d, Cantidad: %d",hd->proceso_origen,hd->proceso_receptor,hd->operacion,hd->cantidad_a_leer);
 
 	switch(hd->proceso_origen){
-	case ESI:
+	case esi:
 		interpretarOperacionESI(hd,socketCliente);
 		break;
-	case INSTANCIA:
+	case instancia:
 		interpretarOperacionInstancia(hd,socketCliente);
 		break;
-	case PLANIFICADOR:
+	case planificador:
 		interpretarOperacionPlanificador(hd,socketCliente);
 		break;
 	default:
