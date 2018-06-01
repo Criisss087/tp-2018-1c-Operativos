@@ -42,10 +42,11 @@
 //***
 
 //*** Enums
-	//Para rta de planificador sobre estado de clave
+	//Para rta sobre estado de clave
 enum{
 	CORRECTO,
-	CLAVE_BLOQUEADA
+	CLAVE_BLOQUEADA,
+	ABORTAR
 };
 //***
 /*
@@ -68,6 +69,10 @@ typedef struct{
 	int keyword;
 	int pid;
 } t_sentencia;
+
+typedef struct{
+	int resultado_del_parseado;
+} respuesta_coordinador;
 /*
 typedef struct {
 	int cantTotalEntradas;
@@ -87,5 +92,5 @@ int hay_instancias = 0; //No se porque si uso lista.element_count tira segmentat
 int debug_var = 1;
 //***
 
-#include "Utilidades.c""
+#include "Utilidades.c"
 #endif /* SRC_UTILIDADES_H_ */

@@ -140,13 +140,26 @@ void interpretarOperacionPlanificador(t_content_header * hd, int socketCliente){
 	}
 }
 
-int puedoEnviarSentencia(t_sentencia * sentencia){
+int puedoEjecutarSentencia(t_sentencia * sentencia){
+	//TODO Verificar existencia de clave en alguna instancia.
+	//	   Si no existe, crearla (internamente?)
+	//	   Si existe, verificar conexión de instancia.
+	//	   Si no está conectada abortar esi.
 	//TODO Preguntarle a Planificador si la clave no esta bloqueada.
-	return CORRECTO;
+	return ABORTAR;
 }
 
-void devolverErrorAESI(socketCliente){
+void devolverErrorAESI(int socketCliente, int cod){
 	//TODO Devolver resultado de error a ESI
+	log_info(logger,"enviando mje error header");
+	t_content_header * cabecera_error = crear_cabecera_mensaje(coordinador,esi, 2,sizeof(t_content_header));
+	int status_hd_error = send(socketCliente,cabecera_error,sizeof(t_content_header),NULL);
+	log_info(logger,"enviado mje error header: %d", status_hd_error);
+	log_info(logger,"enviando mje error numero");
+	respuesta_coordinador * cod_error = malloc(sizeof(respuesta_coordinador));
+	cod_error->resultado_del_parseado = cod;
+	int status_hd_mensaje_error = send(socketCliente, cod_error, sizeof(respuesta_coordinador), NULL);
+	log_info(logger,"enviado mje error nro: %d", status_hd_mensaje_error);
 }
 
 
@@ -157,12 +170,18 @@ void interpretarOperacionESI(t_content_header * hd, int socketCliente){
 	case ESI_COORDINADOR_SENTENCIA:
 		;
 		//Recibo de ESI sentencia parseada
+		log_info(logger,"esi sentencia recibo");
 		t_esi_operacion_sin_puntero * sentencia = malloc(sizeof(t_esi_operacion_sin_puntero));
 		int cantleida = recv( socketCliente, sentencia, hd->cantidad_a_leer, NULL);
+		log_info(logger,"esi sentencia recibida");
 
-		//Recibo el valor - El esi me lo manda "pelado", directamente el string, ningún struct
-		char * valor = malloc(sentencia->tam_valor);
-		int valor_status = recv(socketCliente, valor, sentencia->tam_valor,NULL);
+		char * valor;
+		if (sentencia->keyword == SET){
+			//Recibo el valor - El esi me lo manda "pelado", directamente el string, ningún struct
+			valor = malloc(sentencia->tam_valor);
+			int valor_status = recv(socketCliente, valor, sentencia->tam_valor,NULL);
+			log_info(logger,"esi valor recibido: %s", valor);
+		}else valor = "";
 
 		//Armo una variable interna para manejar la sentencia
 		t_sentencia * sentencia_con_punteros = malloc(sizeof(t_sentencia));
@@ -171,13 +190,18 @@ void interpretarOperacionESI(t_content_header * hd, int socketCliente){
 		sentencia_con_punteros->keyword = sentencia->keyword;
 		sentencia_con_punteros->pid = sentencia->pid;
 
-		int puedoEnviar = puedoEnviarSentencia(sentencia_con_punteros);
+		int puedoEnviar = puedoEjecutarSentencia(sentencia_con_punteros);
+		log_info(logger, "puedo ejecutar? %d", puedoEnviar);
 		switch(puedoEnviar){
 			case CORRECTO:
 				enviarSentenciaInstancia(sentencia_con_punteros);
 				break;
 			case CLAVE_BLOQUEADA:
-				devolverErrorAESI(socketCliente);
+				devolverErrorAESI(socketCliente, CLAVE_BLOQUEADA);
+				break;
+			case ABORTAR:
+				log_info(logger, "abortando");
+				devolverErrorAESI(socketCliente, ABORTAR);
 				break;
 			default:
 				break;
@@ -188,6 +212,7 @@ void interpretarOperacionESI(t_content_header * hd, int socketCliente){
 		//TODO no se reconoció el tipo operación
 		break;
 	}
+	log_info(logger,"fin interpret");
 }
 
 void interpretarHeader(t_content_header * hd, int socketCliente){
