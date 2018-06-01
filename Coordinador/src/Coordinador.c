@@ -9,83 +9,14 @@
 #include "Utilidades.h"
 #include "FuncionesCoordinador.c"
 
-#define TAMANIO_ENTRADAS 8
-#define CANT_MAX_ENTRADAS 5
 
-struct addrinfo* crear_addrinfo(){
-	struct addrinfo hints;
-	struct addrinfo *serverInfo;
-
-	memset(&hints, 0, sizeof(hints));
-	hints.ai_family = AF_UNSPEC;		// No importa si uso IPv4 o IPv6
-	hints.ai_socktype = SOCK_STREAM;	// Indica que usaremos el protocolo TCP
-	getaddrinfo(IP, PUERTO, &hints, &serverInfo);
-	return serverInfo;
-}
-
-int nuevoIDInstancia(){
-	id_counter++;
-	return id_counter;
-}
-
-void enviarConfiguracionInicial(int socketInstancia){
-
-	log_info(logger,"Enviando configuracion inicial a Instancia");
-
-	t_configTablaEntradas * config = malloc(sizeof(t_configTablaEntradas));
-	config->cantTotalEntradas = CANT_MAX_ENTRADAS;
-	config->tamanioEntradas= TAMANIO_ENTRADAS;
-
-
-	t_content_header * header = crear_cabecera_mensaje(coordinador,instancia,COORDINADOR_INSTANCIA_CONFIG_INICIAL,sizeof(t_configTablaEntradas));
-
-	int sent_header = send(socketInstancia, header, sizeof(t_content_header),NULL);
-	int sent = send(socketInstancia, config, sizeof(t_configTablaEntradas),NULL);
-
-	log_info(logger,"Enviada configuración inicial a Instancia - send: %d",sent);
-
-	free(config);
-	free(header);
-
-}
-
-void guardarEnListaDeInstancias(int socketInstancia, char *nombre){
-	hay_instancias++;
-	t_instancia * nueva = malloc(sizeof(t_instancia));
-	nueva->id= nuevoIDInstancia();
-	nueva->socket = socketInstancia;
-	nueva->nombre = nombre;
-	list_add(lista_instancias, nueva);
-	log_info(logger,"Guardada Instancia: %s", nombre);
-
-}
-
-t_instancia * siguienteEqLoad(){
-	//Quizá convenga hacer que recorra la lista de atrás para adelante,
-	//para no estar siempre con las nuevas dejando las viejas para lo último.
-	//Como no va a haber la misma cantidad de conexiones con instancias como con esis por ejemplo, no creo que sea tan necesario.
-	int cant = list_size(lista_instancias);
-	indice_actual_lista++;
-	if (indice_actual_lista>cant){indice_actual_lista = indice_actual_lista - cant;}
-	int siguiente = indice_actual_lista % cant;
-	return list_get(lista_instancias, siguiente);
-}
-
-t_instancia * siguienteInstanciaSegunAlgoritmo(){
-	//TODO usar la funcion list_size para ver si mostrar o no el error
-	if(	hay_instancias == 0){
-			log_error(logger,"No hay Instancias conectadas");
-			t_instancia * instancia_error = malloc(sizeof(t_instancia));
-			strncpy(instancia_error->nombre,"ERROR",5);
-			return instancia_error;
-	}
-	switch(ALGORITMO){
-	case EQUITATIVE_LOAD:
-		return siguienteEqLoad();
-		break;
-	default:
-		return siguienteEqLoad();
-	}
+t_esi_operacion_sin_puntero * esi_operacion_sin_puntero(t_sentencia * sentencia){
+	t_esi_operacion_sin_puntero * op_sin_punt = malloc(sizeof(t_esi_operacion_sin_puntero));
+	strncpy(op_sin_punt->clave, sentencia->clave,40);
+	op_sin_punt->keyword = sentencia->keyword;
+	op_sin_punt->tam_valor = sizeof(sentencia->valor);
+	op_sin_punt->pid = sentencia->pid;
+	return op_sin_punt;
 }
 
 void enviarSentenciaInstancia(t_sentencia * sentencia){
@@ -98,12 +29,14 @@ void enviarSentenciaInstancia(t_sentencia * sentencia){
 
 	t_content_header * header = crear_cabecera_mensaje(coordinador,instancia,COORDINADOR_INSTANCIA_SENTENCIA, sizeof(t_content_header));
 
-	t_esi_operacion_sin_puntero * s_sin_p = malloc(sizeof(t_esi_operacion_sin_puntero));
+	t_esi_operacion_sin_puntero * s_sin_p = esi_operacion_sin_puntero(sentencia);
+
+	/*t_esi_operacion_sin_puntero * s_sin_p = malloc(sizeof(t_esi_operacion_sin_puntero));
 	strncpy(s_sin_p->clave, sentencia->clave,40);
 	s_sin_p->keyword = sentencia->keyword;
 	s_sin_p->tam_valor = sizeof(sentencia->valor);
 	s_sin_p->pid = sentencia->pid;
-
+*/
 	int header_envio = send(proxima->socket,header,sizeof(t_content_header),NULL);
 	int sentencia_envio = send(proxima->socket, s_sin_p, sizeof(t_esi_operacion_sin_puntero),NULL);
 	int valor_envio = send(proxima->socket,sentencia->valor,sizeof(sentencia->valor),NULL);
@@ -150,16 +83,18 @@ int puedoEjecutarSentencia(t_sentencia * sentencia){
 }
 
 void devolverErrorAESI(int socketCliente, int cod){
-	//TODO Devolver resultado de error a ESI
-	log_info(logger,"enviando mje error header");
-	t_content_header * cabecera_error = crear_cabecera_mensaje(coordinador,esi, 2,sizeof(t_content_header));
+	log_info(logger,"Devolviendo error al ESI");
+
+	t_content_header * cabecera_error = crear_cabecera_mensaje(coordinador,esi, RESULTADO_EJECUCION_SENTENCIA,sizeof(t_content_header));
 	int status_hd_error = send(socketCliente,cabecera_error,sizeof(t_content_header),NULL);
-	log_info(logger,"enviado mje error header: %d", status_hd_error);
-	log_info(logger,"enviando mje error numero");
+
 	respuesta_coordinador * cod_error = malloc(sizeof(respuesta_coordinador));
 	cod_error->resultado_del_parseado = cod;
 	int status_hd_mensaje_error = send(socketCliente, cod_error, sizeof(respuesta_coordinador), NULL);
-	log_info(logger,"enviado mje error nro: %d", status_hd_mensaje_error);
+
+	if (cod==ABORTAR){log_info(logger,"Devuelto ABORTAR");}
+	else log_info(logger,"Devuelto CLAVE_BLOQUEADA");
+
 }
 
 

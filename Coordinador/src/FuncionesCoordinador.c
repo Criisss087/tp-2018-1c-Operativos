@@ -5,6 +5,8 @@
  *      Author: utnso
  */
 
+#include "funcionesInstancia.c"
+
 void crear_hilo_conexion(int socket, void(*funcion_a_ejecutar)(int)){
 	pthread_t hilo;
 	pthread_create(&hilo,NULL,*funcion_a_ejecutar,socket);
@@ -25,4 +27,15 @@ void seteosIniciales(){
 	indice_actual_lista = -1; //TODO usar la funcion list_size para ver si mostrar o no el error
 	t_instancia inst;
 
+}
+
+struct addrinfo* crear_addrinfo(){
+	struct addrinfo hints;
+	struct addrinfo *serverInfo;
+
+	memset(&hints, 0, sizeof(hints));
+	hints.ai_family = AF_UNSPEC;		// No importa si uso IPv4 o IPv6
+	hints.ai_socktype = SOCK_STREAM;	// Indica que usaremos el protocolo TCP
+	getaddrinfo(IP, PUERTO, &hints, &serverInfo);
+	return serverInfo;
 }
