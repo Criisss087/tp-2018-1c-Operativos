@@ -132,6 +132,7 @@ void interpretarOperacionInstancia(t_content_header * hd, int socketInstancia){
 }
 
 void interpretarOperacionPlanificador(t_content_header * hd, int socketCliente){
+	log_info(logger,"Interpetando operación planificador");
 	switch(hd->operacion){
 	case PLANIFICADOR_COORDINADOR_HEADER_IDENTIFICACION:
 		PROCESO_PLANIFICADOR.id = nuevoIDInstancia();

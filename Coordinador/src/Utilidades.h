@@ -8,6 +8,7 @@
 #ifndef SRC_UTILIDADES_H_
 #define SRC_UTILIDADES_H_
 
+#include <redis_lib.h>
 #include <stdio.h>
 #include <string.h>
 #include <stdlib.h>
@@ -20,7 +21,6 @@
 #include <commons/string.h>
 #include <parsi/parser.h>
 #include <commons/collections/list.h>
-#include <redis_lib.h>
 
 #define IP "127.0.0.1"
 #define PUERTO "8888"
@@ -48,14 +48,14 @@ enum{
 	CLAVE_BLOQUEADA
 };
 //***
-
+/*
 typedef struct{
 	int keyword;
 	char clave[40];
 	int tam_valor;
 	int pid;
 } __attribute__((packed)) t_esi_operacion_sin_puntero;
-
+*/
 typedef struct{
 	int socket;
 	int id;
@@ -68,12 +68,12 @@ typedef struct{
 	int keyword;
 	int pid;
 } t_sentencia;
-
+/*
 typedef struct {
 	int cantTotalEntradas;
 	int tamanioEntradas;
 } __attribute__((packed)) t_configTablaEntradas;
-
+*/
 //*** Estructuras internas de Coordinador
 #define EQUITATIVE_LOAD 1
 t_log * logger;
