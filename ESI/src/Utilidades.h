@@ -48,12 +48,6 @@ struct confirmacion_sentencia{
 };
 typedef struct confirmacion_sentencia t_confirmacion_sentencia;
 
-typedef struct{
-	int keyword;
-	int tam_valor;
-	int pid;
-	char clave[40];
-} __attribute__((packed)) t_esi_operacion_sin_puntero;
 
 //Funciones
 struct addrinfo* crear_addrinfo(char *, char *);
