@@ -27,6 +27,7 @@
 #include <redis_lib.h>		// Commons para el TP
 #include <semaphore.h>
 #include <pthread.h>
+#include <signal.h>
 
 /**********************************************/
 /* DEFINES									  */
@@ -57,7 +58,7 @@
 #define OPERACION_DESBLOQUEO_COORD 3
 
 //Enumeracion de los comandos de la consola
-enum comandos { pausar, continuar, bloquear, desbloquear, listar, kill, status, deadlock, salir,
+enum comandos { pausar, continuar, bloquear, desbloquear, listar, ckill, status, deadlock, salir,
 				mostrar, ejecucion, bloqueos};
 //enum procesos { esi, instancia, planificador, coordinador };
 enum estados { listo, ejecut, bloqueado, terminado };
@@ -133,6 +134,9 @@ int esi_seq_pid = 0;
 struct config config;
 
 sem_t sem_ejecucion_esi;
+sem_t sem_bloqueo_esi_ejec;
+pthread_mutex_t mutex_esi_en_ejecucion;
+
 
 /**********************************************/
 /* FUNCIONES								  */

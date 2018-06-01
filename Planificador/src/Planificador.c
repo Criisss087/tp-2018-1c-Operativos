@@ -18,6 +18,11 @@ int main(void)
 	pthread_attr_t t_conexiones_attr;
 	pthread_attr_t t_consola_attr;
 
+	//Inicializa semáforo
+	sem_init(&sem_ejecucion_esi, 0, 1);
+	sem_init(&sem_bloqueo_esi_ejec, 0, 1);
+
+
 	// Abrir la consola
 	pthread_attr_init(&t_consola_attr);
 	pthread_create(&t_consola_id, &t_consola_attr, (void *)consola, NULL);
@@ -26,6 +31,7 @@ int main(void)
 	pthread_create(&t_conexiones_id, &t_conexiones_attr, (void *)conexiones, NULL);
 
 	pthread_join(t_consola_id, NULL);
+	pthread_kill(t_conexiones_id,EINTR);
 	terminar_planificador();
 	//pthread_join(t_conexiones_id, NULL);
 
@@ -50,9 +56,6 @@ int* conexiones(void){ //main(void) {
 	crear_listas_planificador();
 	inicializar_conexiones_esi();
 	stdin_no_bloqueante();
-
-	//Inicializa semáforo
-	sem_init(&sem_ejecucion_esi, 0, 1);
 
 	while(TRUE){
 		//Inicializa los file descriptor
@@ -98,11 +101,14 @@ int* conexiones(void){ //main(void) {
 
 		if(result == 0)
 			printf("Select time out\n");
-		else if(result < 0){
+		else if(result < 0 ) {
 			printf("Error en select\n");
-			exit(EXIT_FAILURE);
+			break;
 		}
-
+		else if(errno == EINTR) {
+			printf("Me mataron! salgo del select\n");
+			break;
+		}
 		else if(result > 0) //Hubo un cambio en algun fd
 		{
 			//Aceptar nuevas conexiones de ESI
@@ -179,7 +185,7 @@ int* conexiones(void){ //main(void) {
 	} //while
 
 	pthread_exit(0);
-	return EXIT_SUCCESS;
+	//return EXIT_SUCCESS;
 }
 
 //*************************//
@@ -333,7 +339,6 @@ int recibir_mensaje_coordinador(int coord_socket)
 int recibir_mensaje_esi(int esi_socket)
 {
 	int read_size;
-	char client_message[2000];
 	t_pcb_esi *esi_aux;
 	t_confirmacion_sentencia * confirmacion;
 
@@ -345,7 +350,8 @@ int recibir_mensaje_esi(int esi_socket)
 
 	printf("Llego la operacion %d  debo leer %d bytes\n",content_header->operacion,content_header->cantidad_a_leer );
 
-	if(content_header->operacion == OPERACION_RES_SENTENCIA){
+	if(content_header->operacion == OPERACION_RES_SENTENCIA)
+	{
 
 		confirmacion = malloc(sizeof(t_confirmacion_sentencia));
 
@@ -355,17 +361,23 @@ int recibir_mensaje_esi(int esi_socket)
 
 		if(confirmacion->resultado == RESULTADO_ESI_OK_SIG){
 
+			pthread_mutex_lock(&mutex_esi_en_ejecucion);
 			esi_en_ejecucion->instruccion_actual++;
 			esi_en_ejecucion->ejec_anterior = 0;
+			pthread_mutex_unlock(&mutex_esi_en_ejecucion);
 
 			sem_post(&sem_ejecucion_esi);
 
+			sem_wait(&sem_bloqueo_esi_ejec);
 			// Ordenar ejecutar siguiente sentencia del ESI
 			if(esi_en_ejecucion!=NULL)
 				enviar_confirmacion_sentencia(esi_en_ejecucion);
 
+			sem_post(&sem_bloqueo_esi_ejec);
 		}
 		else if(confirmacion->resultado == RESULTADO_ESI_OK_FINAL){
+
+			pthread_mutex_lock(&mutex_esi_en_ejecucion);
 			esi_en_ejecucion->estado = terminado;
 			esi_en_ejecucion->instruccion_actual++;
 
@@ -374,9 +386,12 @@ int recibir_mensaje_esi(int esi_socket)
 			list_add(esi_terminados, esi_aux);
 
 			esi_en_ejecucion = NULL;
-			planificar();
+			pthread_mutex_unlock(&mutex_esi_en_ejecucion);
+
 		}
 		else if(confirmacion->resultado == RESULTADO_ESI_BLOQUEADA){
+
+			pthread_mutex_lock(&mutex_esi_en_ejecucion);
 			esi_en_ejecucion->estado = bloqueado;
 			esi_en_ejecucion->ejec_anterior = 1;
 			esi_aux = esi_en_ejecucion;
@@ -384,27 +399,17 @@ int recibir_mensaje_esi(int esi_socket)
 			list_add(esi_bloqueados, esi_aux);
 
 			esi_en_ejecucion = NULL;
-			planificar();
+			pthread_mutex_unlock(&mutex_esi_en_ejecucion);
+
 		}
 
 		free(confirmacion);
 
 	}
 
-	else if(content_header->operacion == 10){
-
-		// TODO Eliminar el bloque de operacion de prueba
-		read_size = recv(esi_socket , client_message , content_header->cantidad_a_leer, 0);
-		if(read_size > 0)
-		{
-			printf("Esi %d dice: %s\n",esi_socket,client_message);
-			//int res_send = send(esi_socket, client_message, sizeof(client_message), 0);
-		}
-
-	}
-
 	destruir_cabecera_mensaje(content_header);
-	//free(content_header);
+
+	planificar();
 
 	return read_size;
 }
@@ -516,7 +521,7 @@ int consola_derivar_comando(char * buffer){
 		case listar:
 			consola_listar_recurso(parametro1);
 			break;
-		case kill:
+		case ckill:
 			consola_matar_proceso(parametro1);
 			break;
 		case status:
@@ -585,7 +590,7 @@ int consola_obtener_key_comando(char* comando)
 		key = listar;
 
 	if(!strcmp(comando, "kill"))
-		key = kill;
+		key = ckill;
 
 	if(!strcmp(comando, "status"))
 		key = status;
@@ -956,11 +961,15 @@ void obtener_proximo_ejecucion(void)
 	 */
 	else if(!strcmp(config.algoritmo, "FIFO") )
 	{
+		pthread_mutex_lock(&mutex_esi_en_ejecucion);
 		esi_en_ejecucion = list_remove(esi_listos,0);
+		pthread_mutex_unlock(&mutex_esi_en_ejecucion);
 	}
 	else
 	{
+		pthread_mutex_lock(&mutex_esi_en_ejecucion);
 		esi_en_ejecucion = list_remove(esi_listos,0);
+		pthread_mutex_unlock(&mutex_esi_en_ejecucion);
 	}
 
 	// Punto 2
@@ -1036,8 +1045,10 @@ void terminar_planificador(void)
 	list_destroy_and_destroy_elements(esi_terminados,(void*)destruir_esi);
 	list_destroy_and_destroy_elements(claves_bloqueadas,(void*)destruir_clave_bloqueada);
 
+	pthread_mutex_lock(&mutex_esi_en_ejecucion);
 	if(esi_en_ejecucion!=NULL)
 		destruir_esi(esi_en_ejecucion);
+	pthread_mutex_unlock(&mutex_esi_en_ejecucion);
 }
 
 //***********************//
@@ -1168,17 +1179,22 @@ int bloquear_clave(char* clave , char* id)
 		 */
 
 		printf("\nEsperando a que termine de ejecutar la sentencia\n");
+
+		sem_wait(&sem_bloqueo_esi_ejec);
 		sem_wait(&sem_ejecucion_esi);
 		printf("\nSentencia terminada!\n");
 
+		pthread_mutex_lock(&mutex_esi_en_ejecucion);
 		esi_en_ejecucion->clave_bloqueo = strdup(clave);
 		esi_en_ejecucion->estado = bloqueado;
 
 		list_add(esi_bloqueados,esi_en_ejecucion);
 
 		esi_en_ejecucion = NULL;
+		pthread_mutex_unlock(&mutex_esi_en_ejecucion);
 
 		sem_post(&sem_ejecucion_esi);
+		sem_post(&sem_bloqueo_esi_ejec);
 		printf("El ESI %d estaba en ejecución, se pasó a bloqueados\n",pid);
 	}
 	else if (buscar_esi_en_lista_pid(esi_listos, pid))
