@@ -37,10 +37,10 @@ t_esi_operacion_sin_puntero  *transformarSinPunteroYagregarpID(t_esi_operacion t
 	tsp = malloc(sizeof(t_esi_operacion_sin_puntero));
 	tsp->keyword = keyword;
 
-	/*strncpy(tsp->clave, clavep, sizeof clave - 1);
-	tsp->clave[strlen(clavep)-1] = '\0';*/
+	strncpy(tsp->clave, clavep, sizeof clave - 1);
+	tsp->clave[strlen(clavep)-1] = '\0';
 
-	tsp->clave = strdup(clavep);
+	//tsp->clave = strdup(clavep);
 	tsp->pid = id;
 	tsp->tam_valor = sizeof(valorp);
 

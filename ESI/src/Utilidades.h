@@ -52,7 +52,7 @@ typedef struct{
 	int keyword;
 	int tam_valor;
 	int pid;
-	char * clave;
+	char clave[40];
 } __attribute__((packed)) t_esi_operacion_sin_puntero;
 
 //Funciones
