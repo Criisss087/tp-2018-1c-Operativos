@@ -42,7 +42,7 @@ t_esi_operacion_sin_puntero  *transformarSinPunteroYagregarpID(t_esi_operacion t
 
 	//tsp->clave = strdup(clavep);
 	tsp->pid = id;
-	tsp->tam_valor = sizeof(valorp);
+	tsp->tam_valor = sizeof(strlen(valorp));
 
 
 	return tsp;
