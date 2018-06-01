@@ -23,18 +23,10 @@
 #include <redis_lib.h>
 
 #define IP "127.0.0.1"
-#define PUERTO "8080"
+#define PUERTO "8888"
 #define BACKLOG 10			// Define cuantas conexiones vamos a mantener pendientes al mismo tiempo
 #define PACKAGESIZE 1024
 #define HEADER_LENGTH 10
-
-//***Cod Procesos - ya estan en redis_lib
-/*#define ESI 1
-#define PLANIFICADOR 3
-#define COORDINADOR 4
-#define INSTANCIA 2
-*/
-//***
 
 //***Cod ops
 #define ESI_COORDINADOR_SENTENCIA 1
@@ -56,14 +48,6 @@ enum{
 	CLAVE_BLOQUEADA
 };
 //***
-/*
-struct content_header {
-	int proceso_origen;
-	int proceso_receptor;
-	int operacion;
-	size_t cantidad_a_leer;
-};
-typedef struct __attribute__((packed)) content_header t_content_header  ;*/
 
 typedef struct{
 	int keyword;
