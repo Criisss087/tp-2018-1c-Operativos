@@ -9,16 +9,6 @@
 #include "Utilidades.h"
 #include "FuncionesCoordinador.c"
 
-
-t_esi_operacion_sin_puntero * esi_operacion_sin_puntero(t_sentencia * sentencia){
-	t_esi_operacion_sin_puntero * op_sin_punt = malloc(sizeof(t_esi_operacion_sin_puntero));
-	strncpy(op_sin_punt->clave, sentencia->clave,40);
-	op_sin_punt->keyword = sentencia->keyword;
-	op_sin_punt->tam_valor = sizeof(sentencia->valor);
-	op_sin_punt->pid = sentencia->pid;
-	return op_sin_punt;
-}
-
 void enviarSentenciaInstancia(t_sentencia * sentencia){
 	t_instancia * proxima = siguienteInstanciaSegunAlgoritmo();
 
@@ -29,7 +19,7 @@ void enviarSentenciaInstancia(t_sentencia * sentencia){
 
 	t_content_header * header = crear_cabecera_mensaje(coordinador,instancia,COORDINADOR_INSTANCIA_SENTENCIA, sizeof(t_content_header));
 
-	t_esi_operacion_sin_puntero * s_sin_p = esi_operacion_sin_puntero(sentencia);
+	t_esi_operacion_sin_puntero * s_sin_p = armar_esi_operacion_sin_puntero(sentencia);
 
 	/*t_esi_operacion_sin_puntero * s_sin_p = malloc(sizeof(t_esi_operacion_sin_puntero));
 	strncpy(s_sin_p->clave, sentencia->clave,40);
@@ -39,7 +29,8 @@ void enviarSentenciaInstancia(t_sentencia * sentencia){
 */
 	int header_envio = send(proxima->socket,header,sizeof(t_content_header),NULL);
 	int sentencia_envio = send(proxima->socket, s_sin_p, sizeof(t_esi_operacion_sin_puntero),NULL);
-	int valor_envio = send(proxima->socket,sentencia->valor,sizeof(sentencia->valor),NULL);
+//	int valor_envio = send(proxima->socket,sentencia->valor,sizeof(sentencia->valor),NULL);
+	int valor_envio = send(proxima->socket,sentencia->valor,strlen(sentencia->valor),NULL);
 
 	free(header);
 	free(s_sin_p);
@@ -74,12 +65,13 @@ void interpretarOperacionPlanificador(t_content_header * hd, int socketCliente){
 }
 
 int puedoEjecutarSentencia(t_sentencia * sentencia){
+
 	//TODO Verificar existencia de clave en alguna instancia.
 	//	   Si no existe, crearla (internamente?)
 	//	   Si existe, verificar conexión de instancia.
 	//	   Si no está conectada abortar esi.
 	//TODO Preguntarle a Planificador si la clave no esta bloqueada.
-	return ABORTAR;
+	if(	hay_instancias != 0){return CORRECTO;}else return ABORTAR;
 }
 
 void devolverErrorAESI(int socketCliente, int cod){
@@ -115,16 +107,19 @@ void interpretarOperacionESI(t_content_header * hd, int socketCliente){
 			//Recibo el valor - El esi me lo manda "pelado", directamente el string, ningún struct
 			valor = malloc(sentencia->tam_valor);
 			int valor_status = recv(socketCliente, valor, sentencia->tam_valor,NULL);
+			valor[strlen(valor)-1] = '\0';
 			log_info(logger,"esi valor recibido: %s", valor);
 		}else valor = "";
 
 		//Armo una variable interna para manejar la sentencia
+		t_sentencia * sentencia_con_punteros = armar_sentencia(sentencia, valor);
+		/*
 		t_sentencia * sentencia_con_punteros = malloc(sizeof(t_sentencia));
 		strncpy(sentencia_con_punteros->clave, sentencia->clave,40);
 		sentencia_con_punteros->valor = valor;
 		sentencia_con_punteros->keyword = sentencia->keyword;
 		sentencia_con_punteros->pid = sentencia->pid;
-
+*/
 		int puedoEnviar = puedoEjecutarSentencia(sentencia_con_punteros);
 		log_info(logger, "puedo ejecutar? %d", puedoEnviar);
 		switch(puedoEnviar){
