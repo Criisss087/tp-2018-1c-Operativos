@@ -1,3 +1,3 @@
-GET clave 
-SET clave valor
-STORE clave
+GET futbol:messi
+SET futbol:messi TraemeLaCopa
+STORE futbol:messi

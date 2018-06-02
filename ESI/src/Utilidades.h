@@ -26,15 +26,18 @@
 #define IP_PLANIFICADOR "127.0.0.1"
 #define PUERTO_PLANIFICADOR "8080"//8082
 
+//Respuestas del coordinador
 //#define OK 1
 //#define HUBO_UN_PROBLEMA -1
 #define LISTO 2
 
 //Codigos de las operaciones:
-#define ENVIA_ORDEN 1
-#define ENVIA_SENTENCIA 1
-#define RESULTADO_EJECUCION_SENTENCIA 2
-#define RESPUESTA_EJECUCION_SENTENCIA 2
+#define RECIBIR_ORDEN_EJECUCION 1
+#define ENVIAR_RESULTADO_PLANIF 2
+#define ENVIAR_SENTENCIA_COORD 1
+#define RECIBIR_RESULTADO_SENTENCIA_COORD 2
+#define RECIBIR_ORDEN_ABORTAR_ESI 3
+#define AVISAR_ORDEN_ABORTAR_ESI 3
 
 //Structs
 typedef struct{

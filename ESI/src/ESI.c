@@ -34,11 +34,11 @@ int main(int argc, char **argv){
 	while(read != -1){ //Mientras no sea fin del archivo
 
 		//Recibo orden del planificador
-		printf("Esperando orden del planificador...\n");
+		printf("Esperando orden del planificador para comenzar...\n");
 		int read_size = recv(serverPlanif, content_header, sizeof(t_content_header), (int)NULL);
 		read_size = recv(serverPlanif, confirmacion, sizeof(t_confirmacion_sentencia), 0);
 
-		if(content_header->operacion == ENVIA_ORDEN){
+		if(content_header->operacion == RECIBIR_ORDEN_EJECUCION){
 			printf("Orden recibida, comienzo el parseo \n");
 		}
 
@@ -52,12 +52,14 @@ int main(int argc, char **argv){
 				parse_sin_punteros = transformarSinPunteroYagregarpID(parsed, confirmacion->pid);
 
 				printf("Enviando linea parseada al coordinador... \n");
-				content_header = crear_cabecera_mensaje(esi, coordinador, ENVIA_SENTENCIA, sizeof(t_esi_operacion_sin_puntero));
+				content_header = crear_cabecera_mensaje(esi, coordinador, ENVIAR_SENTENCIA_COORD, sizeof(t_esi_operacion_sin_puntero));
 				int resultado = send(serverCoord, content_header, sizeof(t_content_header), 0);
 				resultado = send(serverCoord, parse_sin_punteros, sizeof(t_esi_operacion_sin_puntero),0);
-				printf("Enviando valor de la clave necesaria para el coordinador... \n");
 
 				if(parse_sin_punteros->keyword == SET){
+					printf("Enviando valor de la clave necesaria para el coordinador... \n");
+					printf("La clave es: %s\n", parsed.argumentos.SET.valor);
+
 					int envio_valor_clave = send(serverCoord, parsed.argumentos.SET.valor , sizeof(strlen(parsed.argumentos.SET.valor)),0);
 				}
 
@@ -69,7 +71,35 @@ int main(int argc, char **argv){
 				printf("Recibiendo respuesta del coordinador...\n");
 				content_header = malloc(sizeof(t_content_header));
 				recv(serverCoord, content_header, sizeof(t_content_header),0);
-				if(content_header->operacion == RESULTADO_EJECUCION_SENTENCIA){
+
+				//SI recibo orden de abortar
+				if(content_header->operacion == RECIBIR_ORDEN_ABORTAR_ESI){
+					printf("Recibi orden de aborto, aviso al planificador y fin de ejecucion. \n");
+
+					free(respuesta_coordinador);
+					free(content_header);
+
+					//Aviso al planificador que recibi orden de abortar, enviando el header
+					content_header = crear_cabecera_mensaje(esi, planificador, AVISAR_ORDEN_ABORTAR_ESI, sizeof(t_content_header));
+					int enviar_aviso_abortar = send(serverPlanif, content_header, sizeof(t_content_header),0);
+
+					//Cierro!
+					destruir_cabecera_mensaje(content_header);
+					free(confirmacion);
+					destruir_operacion(parsed);
+
+					if(linea_a_parsear){
+						free(linea_a_parsear);
+					}
+
+					fclose(archivo_a_leer_por_el_ESI);
+					close(serverCoord);
+					close(serverPlanif);
+
+					exit(EXIT_FAILURE);
+				}
+
+				if(content_header->operacion == RECIBIR_RESULTADO_SENTENCIA_COORD){
 					recv(serverCoord, respuesta_coordinador, sizeof(respuesta_coordinador),0);
 					confirmacion->resultado = respuesta_coordinador->resultado_del_parseado;
 				}
@@ -77,11 +107,12 @@ int main(int argc, char **argv){
 				free(respuesta_coordinador);
 				free(content_header);
 
+
 				//Envio al planificador lo que me mando el coordinador
 				printf("Enviando al planificador la respuesta del coordinador...\n");
 				content_header = malloc(sizeof(t_content_header));
 				send(serverPlanif, content_header, sizeof(t_content_header),0);
-				if(content_header->operacion == RESPUESTA_EJECUCION_SENTENCIA){
+				if(content_header->operacion == ENVIAR_RESULTADO_PLANIF){
 					send(serverPlanif, confirmacion, sizeof(t_confirmacion_sentencia),0);
 				}
 
@@ -89,8 +120,6 @@ int main(int argc, char **argv){
 				free(confirmacion);
 
 				destruir_operacion(parsed);
-
-				printf("Fin de comunicaciones, espero orden de planificador para comenzar. \n");
 
 			}//if parsed valido
 
@@ -106,10 +135,11 @@ int main(int argc, char **argv){
 	//Le aviso al planificador que termine de leer el archivo
 	content_header = malloc(sizeof(t_content_header));
 	send(serverPlanif, content_header, sizeof(t_content_header),0);
-	if(content_header->operacion == RESPUESTA_EJECUCION_SENTENCIA){
+	if(content_header->operacion == ENVIAR_RESULTADO_PLANIF){
 		confirmacion->resultado = LISTO;
 		send(serverPlanif, confirmacion, sizeof(t_confirmacion_sentencia),0);
 	}
+	printf("Fin de ejecucion por alcanzar el fin del archivo \n");
 
 	free(content_header);
 	free(confirmacion);
@@ -146,24 +176,22 @@ int conectar_coordinador(char * ip, char * puerto){
 
 	int serverCoord = socket(serverInfoCoord->ai_family, serverInfoCoord->ai_socktype, serverInfoCoord->ai_protocol);
 
-	if (serverCoord < 0)
-			{
-				printf("Error al intentar conectar al coordinador\n");
-				exit(EXIT_FAILURE);
-			}
+	if (serverCoord < 0){
+		printf("Error al intentar conectar al coordinador\n");
+		exit(EXIT_FAILURE);
+	}
 
 	int activado = 1;
 	setsockopt(serverCoord, SOL_SOCKET, SO_REUSEADDR, &activado, sizeof(activado));
 
 	int resultado_conexion_coordinador = connect(serverCoord, serverInfoCoord->ai_addr, serverInfoCoord->ai_addrlen);
 
-	if (resultado_conexion_coordinador < 0)
-		{
-			freeaddrinfo(serverInfoCoord);
-			close(serverCoord);
-			printf("Error al intentar conectar al coordinador\n");
-			exit(EXIT_FAILURE);
-		}
+	if (resultado_conexion_coordinador < 0){
+		freeaddrinfo(serverInfoCoord);
+		close(serverCoord);
+		printf("Error al intentar conectar al coordinador\n");
+		exit(EXIT_FAILURE);
+	}
 
 	freeaddrinfo(serverInfoCoord);
 
@@ -179,24 +207,22 @@ int conectar_planificador(char * ip, char * puerto){
 
 	int serverPlanif = socket(serverInfoPlanif->ai_family, serverInfoPlanif->ai_socktype, serverInfoPlanif->ai_protocol);
 
-	if (serverPlanif < 0)
-			{
-				printf("Error al intentar conectar al planificador\n");
-				exit(EXIT_FAILURE);
-			}
+	if (serverPlanif < 0){
+		printf("Error al intentar conectar al planificador\n");
+		exit(EXIT_FAILURE);
+	}
 
 	int activado = 1;
 	setsockopt(serverPlanif, SOL_SOCKET, SO_REUSEADDR, &activado, sizeof(activado));
 
 	int resultado_conexion_planificador = connect(serverPlanif, serverInfoPlanif->ai_addr, serverInfoPlanif->ai_addrlen);
 
-	if (resultado_conexion_planificador < 0)
-		{
-			freeaddrinfo(serverInfoPlanif);
-			close(serverPlanif);
-			printf("Error al intentar conectar al planificador\n");
-			exit(EXIT_FAILURE);
-		}
+	if (resultado_conexion_planificador < 0){
+		freeaddrinfo(serverInfoPlanif);
+		close(serverPlanif);
+		printf("Error al intentar conectar al planificador\n");
+		exit(EXIT_FAILURE);
+	}
 
 	freeaddrinfo(serverInfoPlanif);
 
