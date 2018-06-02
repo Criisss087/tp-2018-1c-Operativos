@@ -6,9 +6,6 @@
  */
 
 
-#define TAMANIO_ENTRADAS 8
-#define CANT_MAX_ENTRADAS 5
-
 int nuevoIDInstancia(){
 	id_counter++;
 	return id_counter;
@@ -64,7 +61,7 @@ t_instancia * siguienteInstanciaSegunAlgoritmo(){
 			strncpy(instancia_error->nombre,"ERROR",5);
 			return instancia_error;
 	}
-	switch(ALGORITMO){
+	switch(ALGORITMO_DISTRIBUCION){
 	case EQUITATIVE_LOAD:
 		return siguienteEqLoad();
 		break;

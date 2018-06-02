@@ -21,9 +21,10 @@
 #include <commons/string.h>
 #include <parsi/parser.h>
 #include <commons/collections/list.h>
+#include <commons/config.h>
 
 #define IP "127.0.0.1"
-#define PUERTO "8888"
+
 #define BACKLOG 10			// Define cuantas conexiones vamos a mantener pendientes al mismo tiempo
 #define PACKAGESIZE 1024
 #define HEADER_LENGTH 10
@@ -44,6 +45,14 @@
 #define RESULTADO_EJECUCION_SENTENCIA 2
 #define RESPUESTA_EJECUCION_SENTENCIA 2
 
+//***
+
+//*** Nombres claves de archivo de configuración
+#define ARCH_CONFIG_ALGORITMO_DISTRIBUCION "Algoritmo"
+#define ARCH_CONFIG_PUERTO "Puerto"
+#define ARCH_CONFIG_TAMANIO_ENTRADAS "Tamanio Entradas"
+#define ARCH_CONFIG_CANTIDAD_ENTRADAS "Cantidad Entradas"
+#define ARCH_CONFIG_RETARDO "Retardo"
 //***
 
 //*** Enums
@@ -85,11 +94,21 @@ typedef struct {
 } __attribute__((packed)) t_configTablaEntradas;
 */
 //*** Estructuras internas de Coordinador
+//#define EQUITATIVE_LOAD "EQ"
 #define EQUITATIVE_LOAD 1
+//CONFIG
+//char * ALGORITMO_DISTRIBUCION;
+int ALGORITMO_DISTRIBUCION;
+//int  PUERTO = 8888;
+char * PUERTO = "8888";
+int TAMANIO_ENTRADAS = 8;
+int CANT_MAX_ENTRADAS = 5;
+int RETARDO = 0; //ms
+//
 t_log * logger;
 t_list * lista_instancias;
 int id_counter = 0;
-int ALGORITMO;
+
 signed int indice_actual_lista; //que item de la lista fue el ultimo al que se asigno trabajo
 t_instancia PROCESO_PLANIFICADOR;
 int total_hilos = 0; //borrable

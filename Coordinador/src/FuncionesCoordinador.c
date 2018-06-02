@@ -6,7 +6,7 @@
  */
 
 #include "funcionesInstancia.c"
-
+#include "Utilidades.h"
 void crear_hilo_conexion(int socket, void(*funcion_a_ejecutar)(int)){
 	pthread_t hilo;
 	pthread_create(&hilo,NULL,*funcion_a_ejecutar,socket);
@@ -20,12 +20,38 @@ void interpretarOperacionESI(t_content_header *, int);
 void interpretarHeader(t_content_header * , int);
 void *escucharMensajesEntrantes(int);
 
-void seteosIniciales(){
-	ALGORITMO = EQUITATIVE_LOAD;
+void cargarArchivoConfiguracion(char * path){
+	log_info(logger,"cargar archivo configuracion");
+	t_config * config_file = config_create(path);
+	log_info(logger,"null file? : %d", config_file!=NULL);
+	log_info(logger,"cant de keys: %d", config_keys_amount(config_file));
+	if (config_has_property(config_file,ARCH_CONFIG_ALGORITMO_DISTRIBUCION)){
+		ALGORITMO_DISTRIBUCION = config_get_string_value(config_file, ARCH_CONFIG_ALGORITMO_DISTRIBUCION);
+		log_info(logger,"Se obtuvo configuración 'Algoritmo de distribución': %s", ALGORITMO_DISTRIBUCION);
+	}
+	if (config_has_property(config_file,ARCH_CONFIG_CANTIDAD_ENTRADAS)){
+		CANT_MAX_ENTRADAS = config_get_int_value(config_file, ARCH_CONFIG_CANTIDAD_ENTRADAS);
+		log_info(logger,"Se obtuvo configuración 'Cantidad de entradas': %d", CANT_MAX_ENTRADAS);
+	}
+	if (config_has_property(config_file,ARCH_CONFIG_PUERTO)){
+		PUERTO = config_get_int_value(config_file, ARCH_CONFIG_PUERTO);
+		log_info(logger,"Se obtuvo configuración 'Puerto': %d", PUERTO);
+	}
+
+
+}
+
+void seteosIniciales(char * path){
+
 	logger = log_create("log_coordinador.txt","Coordinador",true, LOG_LEVEL_INFO);
-	lista_instancias = list_create();
-	indice_actual_lista = -1; //TODO usar la funcion list_size para ver si mostrar o no el error
-	t_instancia inst;
+
+	//char * path = "config.txt";
+		//cargarArchivoConfiguracion(path);
+		ALGORITMO_DISTRIBUCION = EQUITATIVE_LOAD;
+		lista_instancias = list_create();
+		indice_actual_lista = -1; //TODO usar la funcion list_size para ver si mostrar o no el error
+		t_instancia inst;
+
 
 }
 
