@@ -10,7 +10,6 @@
 #include "FuncionesCoordinador.c"
 
 void enviarSentenciaInstancia(t_sentencia * sentencia){
-	log_info(logger,"Enviando a instancia: %s %s",sentencia->clave, sentencia->valor);
 	t_instancia * proxima = siguienteInstanciaSegunAlgoritmo();
 
 	if (string_equals_ignore_case(proxima->nombre, "ERROR")){
@@ -32,7 +31,7 @@ void enviarSentenciaInstancia(t_sentencia * sentencia){
 	int sentencia_envio = send(proxima->socket, s_sin_p, sizeof(t_esi_operacion_sin_puntero),NULL);
 //	int valor_envio = send(proxima->socket,sentencia->valor,sizeof(sentencia->valor),NULL);
 	int valor_envio = send(proxima->socket,sentencia->valor,strlen(sentencia->valor),NULL);
-log_info(logger,"Enviada sentencia a instancia");
+
 	free(header);
 	free(s_sin_p);
 }
@@ -72,7 +71,6 @@ int puedoEjecutarSentencia(t_sentencia * sentencia){
 	//	   Si existe, verificar conexión de instancia.
 	//	   Si no está conectada abortar esi.
 	//TODO Preguntarle a Planificador si la clave no esta bloqueada.
-	log_info(logger,"Puedo ejecutar?");
 	if(	hay_instancias != 0){return CORRECTO;}else return ABORTAR;
 }
 
