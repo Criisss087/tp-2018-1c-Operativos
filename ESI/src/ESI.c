@@ -25,9 +25,8 @@ int main(int argc, char **argv){
 	printf("Abriendo archivo a leer...\n");
 	archivo_a_leer_por_el_ESI = fopen(argv[1], "r");
 
-	t_content_header *content_header = malloc(sizeof(t_content_header));
-	respuesta_coordinador *respuesta_coordinador = malloc (sizeof(respuesta_coordinador));
-	t_confirmacion_sentencia *confirmacion = malloc(sizeof(t_confirmacion_sentencia));
+
+
 
 
 	//Leo el archivo y parseo
@@ -35,7 +34,11 @@ int main(int argc, char **argv){
 
 		//Recibo orden del planificador
 		printf("Esperando orden del planificador para comenzar...\n");
+
+		t_content_header *content_header = malloc(sizeof(t_content_header));
 		int read_size = recv(serverPlanif, content_header, sizeof(t_content_header), (int)NULL);
+
+		t_confirmacion_sentencia *confirmacion = malloc(sizeof(t_confirmacion_sentencia));
 		read_size = recv(serverPlanif, confirmacion, sizeof(t_confirmacion_sentencia), 0);
 
 		if(content_header->operacion == RECIBIR_ORDEN_EJECUCION){
@@ -54,6 +57,7 @@ int main(int argc, char **argv){
 				printf("Enviando linea parseada al coordinador... \n");
 				content_header = crear_cabecera_mensaje(esi, coordinador, ENVIAR_SENTENCIA_COORD, sizeof(t_esi_operacion_sin_puntero));
 				int resultado = send(serverCoord, content_header, sizeof(t_content_header), 0);
+
 				resultado = send(serverCoord, parse_sin_punteros, sizeof(t_esi_operacion_sin_puntero),0);
 
 				if(parse_sin_punteros->keyword == SET){
@@ -69,14 +73,14 @@ int main(int argc, char **argv){
 
 				//Recibo respuesta del coordinador
 				printf("Recibiendo respuesta del coordinador...\n");
+
+
 				content_header = malloc(sizeof(t_content_header));
 				recv(serverCoord, content_header, sizeof(t_content_header),0);
 
 				//SI recibo orden de abortar
 				if(content_header->operacion == RECIBIR_ORDEN_ABORTAR_ESI){
 					printf("Recibi orden de aborto, aviso al planificador y fin de ejecucion. \n");
-
-					free(respuesta_coordinador);
 					free(content_header);
 
 					//Aviso al planificador que recibi orden de abortar, enviando el header
@@ -100,18 +104,22 @@ int main(int argc, char **argv){
 				}
 
 				if(content_header->operacion == RECIBIR_RESULTADO_SENTENCIA_COORD){
+					respuesta_coordinador *respuesta_coordinador = malloc (sizeof(respuesta_coordinador));
 					recv(serverCoord, respuesta_coordinador, sizeof(respuesta_coordinador),0);
 					confirmacion->resultado = respuesta_coordinador->resultado_del_parseado;
+					free(respuesta_coordinador);
+
 				}
 
-				free(respuesta_coordinador);
+
 				free(content_header);
 
 
 				//Envio al planificador lo que me mando el coordinador
 				printf("Enviando al planificador la respuesta del coordinador...\n");
-				content_header = malloc(sizeof(t_content_header));
+				content_header = crear_cabecera_mensaje(esi, planificador, ENVIAR_RESULTADO_PLANIF, sizeof(t_content_header));
 				send(serverPlanif, content_header, sizeof(t_content_header),0);
+
 				if(content_header->operacion == ENVIAR_RESULTADO_PLANIF){
 					send(serverPlanif, confirmacion, sizeof(t_confirmacion_sentencia),0);
 				}
@@ -132,14 +140,28 @@ int main(int argc, char **argv){
 		free(linea_a_parsear);
 	}
 
-	//Le aviso al planificador que termine de leer el archivo
-	content_header = malloc(sizeof(t_content_header));
-	send(serverPlanif, content_header, sizeof(t_content_header),0);
-	if(content_header->operacion == ENVIAR_RESULTADO_PLANIF){
+
+	printf("Esperando orden del planificador para finalizar...\n");
+	t_content_header* content_header = malloc(sizeof(t_content_header));
+	int read_size = recv(serverPlanif, content_header, sizeof(t_content_header), (int)NULL);
+
+	t_confirmacion_sentencia * confirmacion = malloc(sizeof(t_confirmacion_sentencia));
+	read_size = recv(serverPlanif, confirmacion, sizeof(t_confirmacion_sentencia), 0);
+
+	if(content_header->operacion == RECIBIR_ORDEN_EJECUCION){
+		printf("Orden recibida, finaliza el proceso \n");
+
+		content_header = crear_cabecera_mensaje(esi, planificador, ENVIAR_RESULTADO_PLANIF , sizeof(t_confirmacion_sentencia));
+
+		//Le aviso al planificador que termine de leer el archivo
+		send(serverPlanif, content_header, sizeof(t_content_header),0);
 		confirmacion->resultado = LISTO;
 		send(serverPlanif, confirmacion, sizeof(t_confirmacion_sentencia),0);
+
+
+		printf("Fin de ejecucion por alcanzar el fin del archivo \n");
 	}
-	printf("Fin de ejecucion por alcanzar el fin del archivo \n");
+
 
 	free(content_header);
 	free(confirmacion);
@@ -148,7 +170,8 @@ int main(int argc, char **argv){
 	fclose(archivo_a_leer_por_el_ESI);
 	close(serverCoord);
 	close(serverPlanif);
-		return 0;
+	return 0;
+
 }
 
 
