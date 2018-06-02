@@ -25,6 +25,9 @@
 #include <errno.h>			//errorno
 #include <fcntl.h>			// std no block
 #include <redis_lib.h>		// Commons para el TP
+#include <semaphore.h>
+#include <pthread.h>
+#include <signal.h>
 
 /**********************************************/
 /* DEFINES									  */
@@ -39,6 +42,7 @@
 #define MAX_LINEA 255
 #define NO_SOCKET -1
 #define ESTIMACION_INICIAL 5
+#define ALPHA 50
 
 #define ALGORITMO_PLAN_FIFO "FIFO"
 #define ALGORITMO_PLAN_SJFCD "SJF-CD"
@@ -55,7 +59,7 @@
 #define OPERACION_DESBLOQUEO_COORD 3
 
 //Enumeracion de los comandos de la consola
-enum comandos { pausar, continuar, bloquear, desbloquear, listar, kill, status, deadlock, salir,
+enum comandos { pausar, continuar, bloquear, desbloquear, listar, ckill, status, deadlock, salir,
 				mostrar, ejecucion, bloqueos};
 //enum procesos { esi, instancia, planificador, coordinador };
 enum estados { listo, ejecut, bloqueado, terminado };
@@ -76,11 +80,12 @@ typedef struct conexion_esi t_conexion_esi;
 struct pcb_esi {
 	int pid;
 	int estado;
-	int estimacion;
-	int estimacion_ant;
+	float estimacion;
+	float estimacion_ant;
 	int instruccion_actual;
 	int ejec_anterior;			// 1 Si en la siguiente corrida debe ejectar denuevo la ultima instruccion
 	t_conexion_esi conexion;
+	char * clave_bloqueo;
 };
 typedef struct pcb_esi t_pcb_esi;
 
@@ -88,7 +93,7 @@ struct config{
 	char puerto_escucha[5];
 	char algoritmo[6];
 	int desalojo;
-	int alfa;
+	float alfa;
 	int estimacion_inicial;
 	char* ip_coordinador;
 	char puerto_coordinador[5];
@@ -129,10 +134,15 @@ int esi_seq_pid = 0;
 
 struct config config;
 
+sem_t sem_ejecucion_esi;
+sem_t sem_bloqueo_esi_ejec;
+pthread_mutex_t mutex_esi_en_ejecucion;
+
+
 /**********************************************/
 /* FUNCIONES								  */
 /**********************************************/
-
+int* conexiones(void);
 int conectar_coordinador(char * ip, char * port);
 int iniciar_servidor(char *port);
 void *consola();
@@ -153,7 +163,7 @@ int consola_leer_stdin(char *read_buffer, size_t max_len);
 void consola_pausar(void);
 void consola_continuar(void);
 void consola_bloquear_clave(char* clave , char* id);
-void consola_desbloquear_clave(char* clave, char* id);
+void consola_desbloquear_clave(char* clave);
 void consola_listar_recurso(char* recurso);
 void consola_matar_proceso(char* id);
 void consola_consultar_status_clave(char* clave);
@@ -171,6 +181,10 @@ int enviar_confirmacion_sentencia(t_pcb_esi * pcb_esi);
 t_pcb_esi * crear_esi(t_conexion_esi conexion);
 int destruir_esi(t_pcb_esi * esi);
 void mostrar_esi(t_pcb_esi * esi);
+t_pcb_esi * buscar_esi_en_lista_pid(t_list *lista,int pid);
+t_pcb_esi * sacar_esi_de_lista_pid(t_list *lista,int pid);
+t_pcb_esi * buscar_esi_bloqueado_por_clave(char* clave);
+int estimar_esi(t_pcb_esi * esi);
 
 //Manejo de Coordinador
 int recibir_mensaje_coordinador(int coord_socket);
@@ -178,7 +192,7 @@ int cerrar_conexion_coord(int coord_socket);
 
 //Manejo de claves
 int bloquear_clave(char* clave , char* id);
-int desbloquear_clave(char* clave, int pid);
+int desbloquear_clave(char* clave);
 void mostrar_clave_bloqueada(t_claves_bloqueadas * clave_bloqueada);
 int destruir_clave_bloqueada(t_claves_bloqueadas * clave_bloqueada);
-t_claves_bloqueadas * buscar_bloqueo(char* clave, int pid);
+t_claves_bloqueadas * buscar_clave_bloqueada(char* clave); //, int pid);
