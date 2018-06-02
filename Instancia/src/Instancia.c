@@ -8,6 +8,7 @@
  ============================================================================
  */
 
+// offset
 #include  "Utilidades.h"
 
 int conexionConCoordinador() {
@@ -29,8 +30,9 @@ int conexionConCoordinador() {
 }
 
 int existeClave(t_indice_entrada * entrada) {
-	printf("TODO:Remover claver hardcodeada\n\n");
-	return (int) strcmp(entrada->clave, "deportessasaf:messi") != 1;
+	printf("TODO:Remover clave hardcodeada\n\n");
+	// return (int) strcmp(entrada->clave, "deportessasaf:messi") != 1;
+	return false;
 }
 
 void enviarHeader(int socketCoordinador, int procesoOrigen, int procesoReceptor,
@@ -58,8 +60,8 @@ void enviarNombreInstanciaACoordinador(int socketCoordinador) {
 
 	printf("Envio de header para info inicial de Instancia...\n");
 
-	enviarHeader(socketCoordinador, INSTANCIA,
-	COORDINADOR, INSTANCIA_COORDINADOR_CONEXION, sizeof(t_info_instancia));
+	enviarHeader(socketCoordinador, instancia, coordinador,
+	INSTANCIA_COORDINADOR_CONEXION, sizeof(t_info_instancia));
 
 	t_info_instancia * infoInstancia = malloc(sizeof(t_info_instancia));
 
@@ -74,10 +76,11 @@ void enviarNombreInstanciaACoordinador(int socketCoordinador) {
 
 }
 
-t_content_header * interpretarHeader(int socketCoordinador) {
+int interpretarHeader(int socketCoordinador, t_content_header * header) {
 	printf("Esperando mensajes:\n");
+	header->proceso_origen = 0;
 
-	t_content_header * header = malloc(sizeof(t_content_header));
+	// header = malloc(sizeof(t_content_header));
 	int statusHeader = recv(socketCoordinador, header, sizeof(t_content_header),
 			(int) NULL);
 
@@ -86,16 +89,16 @@ t_content_header * interpretarHeader(int socketCoordinador) {
 			statusHeader, header->proceso_origen, header->proceso_receptor,
 			header->operacion);
 
-	return header;
+	return statusHeader;
 }
 
-t_config_tabla_entradas * obtenerConfigTablaEntradas(int socketCoordinador) {
+t_configTablaEntradas * obtenerConfigTablaEntradas(int socketCoordinador) {
 
-	t_config_tabla_entradas * configRecibida = malloc(
-			sizeof(t_config_tabla_entradas));
+	t_configTablaEntradas * configRecibida = malloc(
+			sizeof(t_configTablaEntradas));
 
 	int statusHeader = recv(socketCoordinador, configRecibida,
-			sizeof(t_config_tabla_entradas), (int) NULL);
+			sizeof(t_configTablaEntradas), (int) NULL);
 
 	printf(
 			"################################################################\n");
@@ -106,6 +109,22 @@ t_config_tabla_entradas * obtenerConfigTablaEntradas(int socketCoordinador) {
 			"################################################################\n");
 
 	return configRecibida;
+}
+
+void crearTablaEntradas(t_configTablaEntradas * config) {
+
+	l_indice_entradas = list_create();
+
+	int tamanio = config->cantTotalEntradas * config->tamanioEntradas;
+
+	tablaEntradas = malloc(tamanio);
+
+	if (tablaEntradas != NULL) {
+		printf("Alocado memoria para tabla de entradas\n");
+
+	} else {
+		printf("No se pudo alocar la memoria para tabla de entradas\n");
+	}
 }
 
 t_sentencia * recibirSentencia(int socketCoordinador) {
@@ -123,12 +142,15 @@ t_sentencia * recibirSentencia(int socketCoordinador) {
 			sentenciaPreliminarRecibida->clave,
 			sentenciaPreliminarRecibida->tam_valor);
 
+	// TODO: Hacer verficiacion de keyword recibida (si es un SET pasar el valor, sino no)
+
 	// Ahora se recibe el VALOR real de la sentencia
+
 
 	char * valorRecibido = malloc(sentenciaPreliminarRecibida->tam_valor);
 
 	int statusValorSentencia = recv(socketCoordinador, valorRecibido,
-			sizeof(sentenciaPreliminarRecibida->tam_valor), (int) NULL);
+			sentenciaPreliminarRecibida->tam_valor, (int) NULL);
 
 	printf("status header: %d \n", statusValorSentencia);
 	printf("Valor de Sentencia recibido: \n");
@@ -140,67 +162,63 @@ t_sentencia * recibirSentencia(int socketCoordinador) {
 
 	strcpy(sentenciaRecibida->clave, sentenciaPreliminarRecibida->clave);
 	sentenciaRecibida->keyword = sentenciaPreliminarRecibida->keyword;
-	strcpy(sentenciaRecibida->valor, valorRecibido);
+	sentenciaRecibida->valor = strdup(valorRecibido);
+
+	printf("Se asigna la sentencia correctamente... Lista para ser procesada...\n");
 
 	return sentenciaRecibida;
 }
 
-void guardarEntrada(t_sentencia * sentenciaRecibida) {
+void guardarClaveValor(t_sentencia * sentenciaRecibida) {
 
-	// TODO: Verificar si aun hay espacio disponible contiguo para almacenar valores
-	if (true) {
+	// TODO: Verificar si la clave existe, sino crearla
 
-		// TODO: verificar el menor indice disponible para almacenar el valor
-		const int indice = 0;
+	if (existeClave(sentenciaRecibida)) {
+		// TODO: Reemplazar valor (ver logica)
+	} else {
+		printf("La clave no existe... guardar...\n");
+		// guardar indice  de entrada
+		// guardar valor
 
-		printf("El tamaño de la lista de entradas es: %d, el maximo es: %d\n",
-				list_size(l_indice_entradas),
-				configTablaEntradas->cantTotalEntradas);
+		int tamanioTotalValor = strlen(sentenciaRecibida->valor);
 
-		t_indice_entrada * indiceEntrada;
-
-		indiceEntrada = malloc(sizeof(t_indice_entrada));
-
-		strcpy(indiceEntrada->clave, sentenciaRecibida->clave);
-		indiceEntrada->numeroEntrada = indice;
-		indiceEntrada->tamanioEntrada = sizeof(t_sentencia);
-
-		printf("Guardando indice de entrada:\n");
-		printf("\tLa clave guardada es %s", indiceEntrada->clave);
-		printf("\ten la posicion %d", indiceEntrada->numeroEntrada);
-		printf("\ty su tamanio es: %d", indiceEntrada->tamanioEntrada);
-
-		list_add(l_indice_entradas, indiceEntrada);
-
-		printf("El tamaño de la lista de entradas es: %d\n",
-				list_size(l_indice_entradas));
-
-		////////////////////////////////////////////////////////////////////
-		// guardar Entrada en el array de entradas
-
-		t_entrada entradas[configTablaEntradas->cantTotalEntradas];
-
-		if (sizeof(sentenciaRecibida->valor)
-				> configTablaEntradas->tamanioEntradas) {
-			printf("Es necesario guardar el valor en mas de una entrada\n");
+		if (tamanioTotalValor > configTablaEntradas->tamanioEntradas) {
+			// Guardar varias entradas
 		} else {
-			strcpy(entradas[indice].valor, sentenciaRecibida->valor);
-			entradas[indice].superaTamanioEntrada = false;
-			// entradas[indice].siguienteEntrada = null;
+
+			printf("Agregando unica entrada\n");
+
+			t_indice_entrada * indiceEntrada = malloc(sizeof(t_indice_entrada));
+			strcpy(indiceEntrada->clave, sentenciaRecibida->clave);
+
+			// validar que no exceda canntidad total de entradas
+			indiceEntrada->numeroEntrada = numeroEntrada;
+			numeroEntrada++;
+
+			indiceEntrada->esAtomica = true;
+			indiceEntrada->tamanioValor = tamanioTotalValor;
+
+			indiceEntrada->puntero = tablaEntradas + (indiceEntrada->numeroEntrada*configTablaEntradas->tamanioEntradas);
+
+			list_add(l_indice_entradas, indiceEntrada);
+
+			printf("Indice agregado correctamente\n");
+
+			memcpy(indiceEntrada->puntero, sentenciaRecibida->valor, strlen(sentenciaRecibida->valor));
+
+			printf("Valor guardado: %s\n", indiceEntrada->puntero);
+
 		}
 
-	} else {
 		printf(
-				"TODO: Se supera la cantidad maxima de entradas definida por el coordinador");
+				"TODO: Se supera la cantidad maxima de entradas definida por el coordinador. Se requiere reemplazar o compactar");
 	}
-
 }
 
 void interpretarOperacionCoordinador(t_content_header * header,
 		int socketCoordinador) {
 
 	t_sentencia * sentenciaRecibida;
-	t_config_tabla_entradas * configTablaEntradas;
 
 	switch (header->operacion) {
 
@@ -208,7 +226,7 @@ void interpretarOperacionCoordinador(t_content_header * header,
 
 		configTablaEntradas = obtenerConfigTablaEntradas(socketCoordinador);
 
-		l_indice_entradas = list_create();
+		crearTablaEntradas(configTablaEntradas);
 
 		break;
 
@@ -218,7 +236,7 @@ void interpretarOperacionCoordinador(t_content_header * header,
 
 		if (sentenciaRecibida->keyword == SET_KEYWORD) {
 
-			guardarEntrada(sentenciaRecibida);
+			guardarClaveValor(sentenciaRecibida);
 
 		} else if (sentenciaRecibida->keyword == GET_KEYWORD) {
 			printf("TODO: Leer clave y devolver valor\n");
@@ -236,7 +254,7 @@ void interpretarOperacionCoordinador(t_content_header * header,
 			printf(
 					"La clave es: %s, el Numero de Entrada: %d, el tamaño de entrada: %d\n",
 					entradaBuscada->clave, entradaBuscada->numeroEntrada,
-					entradaBuscada->tamanioEntrada);
+					entradaBuscada->tamanioValor);
 
 		}
 
@@ -250,24 +268,27 @@ int main(void) {
 
 	enviarNombreInstanciaACoordinador(socketCoordinador);
 
-	// while (true) {
-	t_content_header * header = interpretarHeader(socketCoordinador);
+	t_content_header * header = malloc(sizeof(t_content_header));
+	int status = 1;
 
-	switch (header->proceso_origen) {
+	while (status != -1) {
+		status = interpretarHeader(socketCoordinador, header);
 
-	// Recibir sentencias del coordinador
-	case COORDINADOR:
+		switch (header->proceso_origen) {
 
-		interpretarOperacionCoordinador(header, socketCoordinador);
-		break;
+		// Recibir sentencias del coordinador
+		case coordinador:
 
-	default:
-		printf("El codigo de proceso no es correcto o no esta identificado.\n");
-		break;
+			interpretarOperacionCoordinador(header, socketCoordinador);
+			break;
 
+		default:
+			printf(
+					"El codigo de proceso no es correcto o no esta identificado.\n");
+			break;
+
+		}
 	}
-
-	// }
 
 	return 0;
 }
