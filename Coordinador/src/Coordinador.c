@@ -31,8 +31,10 @@ void enviarSentenciaInstancia(t_sentencia * sentencia){
 	int header_envio = send(proxima->socket,header,sizeof(t_content_header),NULL);
 	int sentencia_envio = send(proxima->socket, s_sin_p, sizeof(t_esi_operacion_sin_puntero),NULL);
 //	int valor_envio = send(proxima->socket,sentencia->valor,sizeof(sentencia->valor),NULL);
-	int valor_envio = send(proxima->socket,sentencia->valor,strlen(sentencia->valor),NULL);
-log_info(logger,"Enviada sentencia a instancia");
+	if (sentencia->keyword == SET){
+		int valor_envio = send(proxima->socket,sentencia->valor,strlen(sentencia->valor),NULL);
+	}
+	log_info(logger,"Enviada sentencia a instancia");
 	free(header);
 	free(s_sin_p);
 }

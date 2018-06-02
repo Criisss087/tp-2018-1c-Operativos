@@ -9,14 +9,15 @@
 #include "Utilidades.h"
 #include "FuncionesCoordinador.c"
 
-void enviarSentenciaInstancia(t_sentencia * sentencia){
-	t_instancia * proxima = siguienteInstanciaSegunAlgoritmo();
+void enviarSentenciaInstancia(t_sentencia * sentencia, socket){
+	//t_instancia * proxima = siguienteInstanciaSegunAlgoritmo();
 
 	if (string_equals_ignore_case(proxima->nombre, "ERROR")){
 		free(proxima);
 		return;
 	}
-
+	t_instancia * proxima = malloc(sizeof(t_instancia));
+	proxima->socket = socket;
 	t_content_header * header = crear_cabecera_mensaje(coordinador,instancia,COORDINADOR_INSTANCIA_SENTENCIA, sizeof(t_content_header));
 
 	t_esi_operacion_sin_puntero * s_sin_p = armar_esi_operacion_sin_puntero(sentencia);
@@ -30,8 +31,11 @@ void enviarSentenciaInstancia(t_sentencia * sentencia){
 	int header_envio = send(proxima->socket,header,sizeof(t_content_header),NULL);
 	int sentencia_envio = send(proxima->socket, s_sin_p, sizeof(t_esi_operacion_sin_puntero),NULL);
 //	int valor_envio = send(proxima->socket,sentencia->valor,sizeof(sentencia->valor),NULL);
-	int valor_envio = send(proxima->socket,sentencia->valor,strlen(sentencia->valor),NULL);
 
+	if (sentencia->keyword == SET){
+		int valor_envio = send(proxima->socket,sentencia->valor,strlen(sentencia->valor),NULL);
+	}
+	log_info(logger,"Enviada sentencia a instancia");
 	free(header);
 	free(s_sin_p);
 }
@@ -48,6 +52,28 @@ void interpretarOperacionInstancia(t_content_header * hd, int socketInstancia){
 			enviarConfiguracionInicial(socketInstancia);
 			guardarEnListaDeInstancias(socketInstancia, nombre);
 
+			t_sentencia * una_sentencia = malloc(sizeof(t_sentencia));
+			una_sentencia->clave="prueba";
+			una_sentencia->keyword=SET;
+			una_sentencia->valor= "opopop";
+			una_sentencia->pid= 2;
+
+			enviarSentenciaInstancia(una_sentencia, socketInstancia);
+
+			una_sentencia->clave="prueba2";
+			una_sentencia->keyword=STORE;
+			una_sentencia->valor= "";
+			una_sentencia->pid= 2;
+
+			enviarSentenciaInstancia(una_sentencia, socketInstancia);
+
+			una_sentencia->clave="prueba2";
+			una_sentencia->keyword=GET;
+			una_sentencia->valor= "";
+			una_sentencia->pid= 3;
+
+			enviarSentenciaInstancia(una_sentencia, socketInstancia);
+
 			free(nombre);
 			break;
 		default:
@@ -55,14 +81,6 @@ void interpretarOperacionInstancia(t_content_header * hd, int socketInstancia){
 	}
 }
 
-void interpretarOperacionPlanificador(t_content_header * hd, int socketCliente){
-	log_info(logger,"Interpetando operación planificador");
-	switch(hd->operacion){
-	case PLANIFICADOR_COORDINADOR_HEADER_IDENTIFICACION:
-		PROCESO_PLANIFICADOR.id = nuevoIDInstancia();
-		PROCESO_PLANIFICADOR.socket = socketCliente;
-	}
-}
 
 int puedoEjecutarSentencia(t_sentencia * sentencia){
 
@@ -74,76 +92,6 @@ int puedoEjecutarSentencia(t_sentencia * sentencia){
 	if(	hay_instancias != 0){return CORRECTO;}else return ABORTAR;
 }
 
-void devolverErrorAESI(int socketCliente, int cod){
-	log_info(logger,"Devolviendo error al ESI");
-
-	t_content_header * cabecera_error = crear_cabecera_mensaje(coordinador,esi, RESULTADO_EJECUCION_SENTENCIA,sizeof(t_content_header));
-	int status_hd_error = send(socketCliente,cabecera_error,sizeof(t_content_header),NULL);
-
-	respuesta_coordinador * cod_error = malloc(sizeof(respuesta_coordinador));
-	cod_error->resultado_del_parseado = cod;
-	int status_hd_mensaje_error = send(socketCliente, cod_error, sizeof(respuesta_coordinador), NULL);
-
-	if (cod==ABORTAR){log_info(logger,"Devuelto ABORTAR");}
-	else log_info(logger,"Devuelto CLAVE_BLOQUEADA");
-
-}
-
-
-void interpretarOperacionESI(t_content_header * hd, int socketCliente){
-	log_info(logger, "Interpretando operación ESI - Origen: %d, Receptor: %d, Operación: %d, Cantidad: %d",hd->proceso_origen,hd->proceso_receptor,hd->operacion,hd->cantidad_a_leer);
-
-	switch(hd->operacion){
-	case ESI_COORDINADOR_SENTENCIA:
-		;
-		//Recibo de ESI sentencia parseada
-		log_info(logger,"esi sentencia recibo");
-		t_esi_operacion_sin_puntero * sentencia = malloc(sizeof(t_esi_operacion_sin_puntero));
-		int cantleida = recv( socketCliente, sentencia, hd->cantidad_a_leer, NULL);
-		log_info(logger,"esi sentencia recibida");
-
-		char * valor;
-		if (sentencia->keyword == SET){
-			//Recibo el valor - El esi me lo manda "pelado", directamente el string, ningún struct
-			valor = malloc(sentencia->tam_valor);
-			int valor_status = recv(socketCliente, valor, sentencia->tam_valor,NULL);
-			valor[strlen(valor)-1] = '\0';
-			log_info(logger,"esi valor recibido: %s", valor);
-		}else valor = "";
-
-		//Armo una variable interna para manejar la sentencia
-		t_sentencia * sentencia_con_punteros = armar_sentencia(sentencia, valor);
-		/*
-		t_sentencia * sentencia_con_punteros = malloc(sizeof(t_sentencia));
-		strncpy(sentencia_con_punteros->clave, sentencia->clave,40);
-		sentencia_con_punteros->valor = valor;
-		sentencia_con_punteros->keyword = sentencia->keyword;
-		sentencia_con_punteros->pid = sentencia->pid;
-*/
-		int puedoEnviar = puedoEjecutarSentencia(sentencia_con_punteros);
-		log_info(logger, "puedo ejecutar? %d", puedoEnviar);
-		switch(puedoEnviar){
-			case CORRECTO:
-				enviarSentenciaInstancia(sentencia_con_punteros);
-				break;
-			case CLAVE_BLOQUEADA:
-				devolverErrorAESI(socketCliente, CLAVE_BLOQUEADA);
-				break;
-			case ABORTAR:
-				log_info(logger, "abortando");
-				devolverErrorAESI(socketCliente, ABORTAR);
-				break;
-			default:
-				break;
-		}
-		free(sentencia);
-		break;
-	default:
-		//TODO no se reconoció el tipo operación
-		break;
-	}
-	log_info(logger,"fin interpret");
-}
 
 void interpretarHeader(t_content_header * hd, int socketCliente){
 	log_info(logger, "Interpretando header - Origen: %d, Receptor: %d, Operación: %d, Cantidad: %d",hd->proceso_origen,hd->proceso_receptor,hd->operacion,hd->cantidad_a_leer);
