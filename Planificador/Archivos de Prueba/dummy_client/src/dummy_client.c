@@ -43,7 +43,8 @@ typedef struct confirmacion_sentencia t_confirmacion_sentencia;
 
 int main(int argc , char *argv[])
 {
-    int sock;
+    int resultado;
+	int sock;
     struct sockaddr_in server;
     char message[1000] , server_reply[2000];
 
@@ -73,7 +74,7 @@ int main(int argc , char *argv[])
     puts("Connected\n");
 
     //keep communicating with server
-    while(1)
+    while(resultado!=2)
     {
 
     	printf("Esperando turno para ejecutar... \n ");
@@ -101,7 +102,7 @@ int main(int argc , char *argv[])
          * 1 ok
          * 2 ok y fin
          */
-        int resultado;
+
         scanf("%d" , &resultado);
 
         conf->resultado = resultado;

@@ -25,9 +25,9 @@
 #include <errno.h>			//errorno
 #include <fcntl.h>			// std no block
 #include <redis_lib.h>		// Commons para el TP
-#include <semaphore.h>
-#include <pthread.h>
-#include <signal.h>
+#include <semaphore.h>		// Semaforos de pthread
+#include <pthread.h>		// Hilos
+#include <signal.h>			// Señales
 
 /**********************************************/
 /* DEFINES									  */
@@ -51,6 +51,7 @@
 
 #define RESULTADO_ESI_OK_SIG 1
 #define RESULTADO_ESI_OK_FINAL 2
+#define RESULTADO_ESI_ABORTADO 3
 #define RESULTADO_ESI_BLOQUEADA -1
 #define OPERACION_CONF_SENTENCIA 1
 #define OPERACION_RES_SENTENCIA 2
@@ -65,15 +66,13 @@ enum comandos { pausar, continuar, bloquear, desbloquear, listar, ckill, status,
 enum estados { listo, ejecut, bloqueado, terminado };
 
 
-//TODO completar a medida que surjan operaciones
-//enum operacion { };
-
 /**********************************************/
 /* ESTUCTURAS								  */
 /**********************************************/
 struct conexion_esi {
-  int socket;
-  struct sockaddr_in addres;
+	int pid;
+	int socket;
+	struct sockaddr_in addres;
 };
 typedef struct conexion_esi t_conexion_esi;
 
@@ -84,7 +83,7 @@ struct pcb_esi {
 	float estimacion_ant;
 	int instruccion_actual;
 	int ejec_anterior;			// 1 Si en la siguiente corrida debe ejectar denuevo la ultima instruccion
-	t_conexion_esi conexion;
+	t_conexion_esi * conexion;
 	char * clave_bloqueo;
 };
 typedef struct pcb_esi t_pcb_esi;
@@ -131,13 +130,15 @@ t_list * claves_bloqueadas;
 t_pcb_esi * esi_en_ejecucion = NULL;
 
 int esi_seq_pid = 0;
+int bloqueo_en_ejecucion = 0;
 
 struct config config;
 
+/*
 sem_t sem_ejecucion_esi;
 sem_t sem_bloqueo_esi_ejec;
 pthread_mutex_t mutex_esi_en_ejecucion;
-
+*/
 
 /**********************************************/
 /* FUNCIONES								  */
@@ -178,13 +179,15 @@ int atender_nuevo_esi(int serv_socket);
 int recibir_mensaje_esi(int esi_socket);
 int cerrar_conexion_esi(t_conexion_esi * esi);
 int enviar_confirmacion_sentencia(t_pcb_esi * pcb_esi);
-t_pcb_esi * crear_esi(t_conexion_esi conexion);
+t_pcb_esi * crear_esi(t_conexion_esi * conexion);
 int destruir_esi(t_pcb_esi * esi);
 void mostrar_esi(t_pcb_esi * esi);
 t_pcb_esi * buscar_esi_en_lista_pid(t_list *lista,int pid);
 t_pcb_esi * sacar_esi_de_lista_pid(t_list *lista,int pid);
 t_pcb_esi * buscar_esi_bloqueado_por_clave(char* clave);
 int estimar_esi(t_pcb_esi * esi);
+int confirmar_bloqueo_ejecucion(void);
+int finalizar_esi(int pid_esi);
 
 //Manejo de Coordinador
 int recibir_mensaje_coordinador(int coord_socket);
