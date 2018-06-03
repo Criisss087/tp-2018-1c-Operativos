@@ -19,7 +19,7 @@ void interpretarHeader(t_content_header * , int);
 void *escucharMensajesEntrantes(int);
 
 void seteosIniciales(){
-	ALGORITMO = EQUITATIVE_LOAD;
+	ALGORITMO_DISTRIBUCION = EQUITATIVE_LOAD;
 	logger = log_create("log_coordinador.txt","Coordinador",true, LOG_LEVEL_INFO);
 	lista_instancias = list_create();
 	indice_actual_lista = -1; //TODO usar la funcion list_size para ver si mostrar o no el error

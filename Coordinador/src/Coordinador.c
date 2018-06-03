@@ -82,7 +82,7 @@ t_instancia * siguienteInstanciaSegunAlgoritmo(){
 			strncpy(instancia_error->nombre,"ERROR",5);
 			return instancia_error;
 	}
-	switch(ALGORITMO){
+	switch(ALGORITMO_DISTRIBUCION){
 	case EQUITATIVE_LOAD:
 		return siguienteEqLoad();
 		break;

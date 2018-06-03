@@ -94,7 +94,7 @@ typedef struct {
 t_log * logger;
 t_list * lista_instancias;
 int id_counter = 0;
-int ALGORITMO;
+int ALGORITMO_DISTRIBUCION;
 signed int indice_actual_lista; //que item de la lista fue el ultimo al que se asigno trabajo
 t_instancia PROCESO_PLANIFICADOR;
 int total_hilos = 0; //borrable
