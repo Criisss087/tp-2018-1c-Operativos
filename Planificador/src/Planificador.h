@@ -90,7 +90,7 @@ typedef struct pcb_esi t_pcb_esi;
 
 struct config{
 	char puerto_escucha[5];
-	char algoritmo[6];
+	char algoritmo[7];
 	int desalojo;
 	float alfa;
 	int estimacion_inicial;
@@ -185,6 +185,8 @@ void mostrar_esi(t_pcb_esi * esi);
 t_pcb_esi * buscar_esi_en_lista_pid(t_list *lista,int pid);
 t_pcb_esi * sacar_esi_de_lista_pid(t_list *lista,int pid);
 t_pcb_esi * buscar_esi_bloqueado_por_clave(char* clave);
+t_pcb_esi * sacar_esi_bloqueado_por_clave(char* clave);
+void ordenar_lista_estimacion(t_list * lista);
 int estimar_esi(t_pcb_esi * esi);
 int confirmar_bloqueo_ejecucion(void);
 int finalizar_esi(int pid_esi);
