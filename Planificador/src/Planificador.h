@@ -63,8 +63,9 @@
 enum comandos { pausar, continuar, bloquear, desbloquear, listar, ckill, status, deadlock, salir,
 				mostrar, ejecucion, bloqueos};
 //enum procesos { esi, instancia, planificador, coordinador };
-enum estados { listo, ejecut, bloqueado, terminado };
+enum estados { nuevo, listo, en_ejecucion, bloqueado, terminado };
 
+enum sentencias { get, set, store };
 
 /**********************************************/
 /* ESTUCTURAS								  */
@@ -79,8 +80,9 @@ typedef struct conexion_esi t_conexion_esi;
 struct pcb_esi {
 	int pid;
 	int estado;
-	float estimacion;
-	float estimacion_ant;
+	float estimacion_real;
+	float estimacion_actual;
+	float estimacion_anterior;
 	int instruccion_actual;
 	int ejec_anterior;			// 1 Si en la siguiente corrida debe ejectar denuevo la ultima instruccion
 	t_conexion_esi * conexion;
@@ -112,11 +114,12 @@ struct confirmacion_sentencia{
 };
 typedef struct confirmacion_sentencia t_confirmacion_sentencia;
 
-struct bloqueo_clave{
+struct consulta_bloqueo{
 	int pid;
+	int sentencia;
 	char * clave;
 };
-typedef struct bloqueo_clave t_bloqueo_clave;
+typedef struct consulta_bloqueo t_consulta_bloqueo;
 
 /**********************************************/
 /* DATOS GLOBALES							  */
@@ -128,9 +131,11 @@ t_list * esi_bloqueados;
 t_list * esi_terminados;
 t_list * claves_bloqueadas;
 t_pcb_esi * esi_en_ejecucion = NULL;
+t_pcb_esi * esi_por_desalojar = NULL;
 
 int esi_seq_pid = 0;
 int bloqueo_en_ejecucion = 0;
+int desalojo_en_ejecucion = 0;
 
 struct config config;
 
@@ -189,6 +194,7 @@ t_pcb_esi * sacar_esi_bloqueado_por_clave(char* clave);
 void ordenar_lista_estimacion(t_list * lista);
 int estimar_esi(t_pcb_esi * esi);
 int confirmar_bloqueo_ejecucion(void);
+int confirmar_desalojo_ejecucion(void);
 int finalizar_esi(int pid_esi);
 
 //Manejo de Coordinador

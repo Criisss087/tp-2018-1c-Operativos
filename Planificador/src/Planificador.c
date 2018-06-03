@@ -49,7 +49,7 @@ int* conexiones(void){ //main(void) {
 	fd_set readset, writeset, exepset;
 	int max_fd;
 	char read_buffer[MAX_LINEA];
-	//struct timeval tv = {10, 0};
+	struct timeval tv = {5, 0};
 
 	//TODO Obtener datos del archivo de configuración
 
@@ -102,11 +102,12 @@ int* conexiones(void){ //main(void) {
 		if(max_fd < coord_socket)
 			max_fd = coord_socket;
 
-		int result = select(max_fd+1, &readset, &writeset, &exepset, NULL); // &tv);
+		int result = select(max_fd+1, &readset, &writeset, &exepset, &tv);
 
-		if(result == 0)
-			printf("Select time out\n");
-		else if(result < 0 ) {
+		//if(result == 0)
+		//	printf("Select time out\n");
+		//else
+		if(result < 0 ) {
 			printf("Error en select\n");
 			break;
 		}
@@ -259,6 +260,25 @@ int atender_nuevo_esi(int serv_socket)
 			//Agrego el esi nuevo a la cola de listos
 			list_add(esi_listos, nuevo_esi);
 			printf("Esi %d agregado a ready!\n",nuevo_esi->pid);
+
+			/*
+			 * Si el algoritmo es con desalojo, (solo SJF) debo chequear si la estimacion del esi nuevo es
+			 * menor a la rafaga pendiente del que esta en ejecucion, si lo es reemplazarlo por el nuevo.
+			 */
+			//if(!strcmp(config.algoritmo, "SJF-CD"))
+			if(1)
+			{
+				if((esi_en_ejecucion!=NULL) && (nuevo_esi->estimacion_real < esi_en_ejecucion->estimacion_actual))
+				{
+
+					printf("El Esi nuevo de pid %d debe desalojar al esi en ejecucion!\n",nuevo_esi->pid);
+					desalojo_en_ejecucion++;
+					esi_por_desalojar = nuevo_esi;
+					printf("Esperando a que esi %d termine su sentencia\n",esi_en_ejecucion->pid);
+
+				}
+			}
+
 	        return 0;
 	    }
 
@@ -308,9 +328,9 @@ int recibir_mensaje_coordinador(int coord_socket)
 		 * con la ejecución de la sentencia y registra la clave bloqueada en su lista.
 		 */
 
-		t_bloqueo_clave * bloqueo_clave = malloc(sizeof(t_bloqueo_clave));
+		t_consulta_bloqueo * bloqueo_clave = malloc(sizeof(t_consulta_bloqueo));
 
-		read_size = recv(coord_socket, bloqueo_clave, sizeof(t_bloqueo_clave),0);
+		read_size = recv(coord_socket, bloqueo_clave, sizeof(t_consulta_bloqueo),0);
 		if(read_size < 0)
 		{
 			printf("Error recv coord 2 \n");
@@ -369,6 +389,7 @@ int recibir_mensaje_esi(int esi_socket)
 		if(confirmacion->resultado == RESULTADO_ESI_OK_SIG){
 
 			esi_en_ejecucion->instruccion_actual++;
+			esi_en_ejecucion->estimacion_actual--;
 			esi_en_ejecucion->ejec_anterior = 0;
 
 			//sem_post(&sem_ejecucion_esi);
@@ -379,12 +400,17 @@ int recibir_mensaje_esi(int esi_socket)
 				confirmar_bloqueo_ejecucion();
 			}
 
+			if(desalojo_en_ejecucion)
+			{
+				confirmar_desalojo_ejecucion();
+
+			}
+
 			//sem_wait(&sem_bloqueo_esi_ejec);
 
 			// Ordenar ejecutar siguiente sentencia del ESI
 			if(esi_en_ejecucion!=NULL)
 			{
-				printf("Pid antes de enviar conf: %d\n",esi_en_ejecucion->pid);
 				enviar_confirmacion_sentencia(esi_en_ejecucion);
 			}
 
@@ -768,6 +794,7 @@ void consola_desbloquear_clave(char* clave){
 	{
 		printf("Desbloquear clave: %s \n",clave);
 		desbloquear_clave(clave);
+		planificar();
 	}
 
 
@@ -893,7 +920,15 @@ void mostrar_esi_en_ejecucion(void)
 {
 
 	if(esi_en_ejecucion!=NULL)
+	{
 		printf("\nPID Esi en ejecución actual: %d: \n",esi_en_ejecucion->pid);
+		printf("Estado: %d: \n",esi_en_ejecucion->estado);
+		printf("Estimacion real: %f: \n",esi_en_ejecucion->estimacion_real);
+		printf("Estimacion actual: %f: \n",esi_en_ejecucion->estimacion_actual);
+
+	}
+
+
 	else
 		printf("No hay ningun esi en ejecucion\n");
 
@@ -986,6 +1021,7 @@ void obtener_proximo_ejecucion(void)
 	{
 		printf("Saco de la lista de listos el próximo esi a ejecutar\n");
 		sacar_esi_de_lista_pid(esi_listos,esi_en_ejecucion->pid);
+		esi_en_ejecucion->estado = en_ejecucion;
 	}
 	else
 	{
@@ -1097,8 +1133,9 @@ t_pcb_esi * crear_esi(t_conexion_esi * conexion)
 	conexion->pid = esi->pid;
 	esi->conexion = conexion;
 	esi->estado = listo;
-	esi->estimacion = ESTIMACION_INICIAL;
-	esi->estimacion_ant = ESTIMACION_INICIAL;
+	esi->estimacion_real = ESTIMACION_INICIAL;
+	esi->estimacion_actual = ESTIMACION_INICIAL;
+	esi->estimacion_anterior = ESTIMACION_INICIAL;
 	esi->instruccion_actual = 0;
 	esi->ejec_anterior = 0;
 	esi->clave_bloqueo = NULL;
@@ -1111,8 +1148,9 @@ void mostrar_esi(t_pcb_esi * esi)
 {
 	printf("PID esi: %d\n", esi->pid);
 	printf("Estado: %d\n", esi->estado);
-	printf("Estimacion: %f\n", esi->estimacion);
-	printf("Estimacion anterior: %f\n", esi->estimacion_ant);
+	printf("Estimacion faltante: %f\n", esi->estimacion_actual);
+	printf("Estimacion Real: %f\n", esi->estimacion_real);
+	printf("Estimacion anterior: %f\n", esi->estimacion_anterior);
 
 	if(esi->clave_bloqueo!=NULL)
 		printf("Clave que lo bloqueó: %s\n", esi->clave_bloqueo);
@@ -1124,9 +1162,6 @@ void mostrar_esi(t_pcb_esi * esi)
 
 int destruir_esi(t_pcb_esi * esi)
 {
-	// Libero campo por campo porque la conexion no esta allocada, sino es la direccion a la posicion
-	// del vector de conexiones
-
 	esi->conexion->socket = NO_SOCKET;
 	if(esi->clave_bloqueo!=NULL)
 	{
@@ -1185,7 +1220,7 @@ void ordenar_lista_estimacion(t_list * lista)
 
 	bool is_estimacion_menor(t_pcb_esi * esi1, t_pcb_esi * esi2)
 	{
-		return ( (esi1->estimacion < esi2->estimacion) || (esi1->estimacion == esi2->estimacion) );
+		return ( (esi1->estimacion_real < esi2->estimacion_real) || (esi1->estimacion_real == esi2->estimacion_real) );
 	}
 
 	/*
@@ -1202,11 +1237,12 @@ void ordenar_lista_estimacion(t_list * lista)
 int estimar_esi(t_pcb_esi * esi){
 
 	config.alfa = ALPHA;
-	esi->estimacion_ant = esi->estimacion;
+	esi->estimacion_anterior = esi->estimacion_real;
 
-	esi->estimacion = ( (config.alfa / 100) * esi->instruccion_actual ) +
-					  ( ( 1 - (config.alfa / 100) ) * esi->estimacion_ant );
+	esi->estimacion_real = ( (config.alfa / 100) * esi->instruccion_actual ) +
+					  ( ( 1 - (config.alfa / 100) ) * esi->estimacion_real );
 
+	esi->estimacion_actual  = esi->estimacion_real;
 	esi->instruccion_actual = 0;
 
 
@@ -1228,6 +1264,27 @@ int confirmar_bloqueo_ejecucion(void)
 	bloqueo_en_ejecucion = 0;
 
 	return 0;
+}
+
+int confirmar_desalojo_ejecucion(void)
+{
+	if(esi_por_desalojar!=NULL)
+	{
+		esi_en_ejecucion->estado = listo;
+		esi_por_desalojar->estado = en_ejecucion;
+
+		list_add(esi_listos, esi_en_ejecucion);
+		esi_en_ejecucion = NULL;
+
+		esi_en_ejecucion  = sacar_esi_de_lista_pid(esi_listos,esi_por_desalojar->pid);
+
+		esi_por_desalojar = NULL;
+		desalojo_en_ejecucion = 0;
+		return 0;
+
+	}
+
+	return 1;
 }
 
 int finalizar_esi(int pid_esi)
