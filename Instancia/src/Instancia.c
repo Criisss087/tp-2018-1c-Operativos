@@ -244,7 +244,7 @@ void interpretarOperacionCoordinador(t_content_header * header,
 			break;
 
 		case STORE_KEYWORD:
-			grabarArchivo(sentenciaRecibida);
+			// grabarArchivo(sentenciaRecibida);
 			break;
 
 		case GET_KEYWORD:
