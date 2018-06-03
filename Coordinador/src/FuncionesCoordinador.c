@@ -114,12 +114,26 @@ t_sentencia * armar_sentencia(t_esi_operacion_sin_puntero * op_sin_punt, char * 
 
 }
 
-void log_operacion_esi(t_sentencia * sentencia){
+void log_operacion_esi(t_sentencia * sentencia, t_log * logger){
 	char * keyw;
 	if (sentencia->keyword == GET) {keyw = strdup("GET");}
 	else if(sentencia->keyword == SET) {keyw = strdup("SET");}
 	else {keyw = strdup("STORE");}
 
-	log_info(logger_operaciones, "ESI %d = %s %s %v ",sentencia->pid,keyw,sentencia->clave,sentencia->valor);
+	log_info(logger, "ESI %d = %s %s %v ",sentencia->pid,keyw,sentencia->clave,sentencia->valor);
 	free(keyw);
+}
+void log_error_operacion_esi(t_sentencia * sentencia, int puedoEnviar){
+	char * keyw;
+	if (sentencia->keyword == GET) {keyw = strdup("GET");}
+	else if(sentencia->keyword == SET) {keyw = strdup("SET");}
+	else {keyw = strdup("STORE");}
+
+	char * error;
+	if (puedoEnviar == ABORTAR) {keyw = strdup("ABORTAR");}
+	else {keyw = strdup("CLAVE BLOQUEADA");}
+
+	log_info(logger_operaciones, "ESI %d = %s %s %v - ERROR: %s",sentencia->pid,keyw,sentencia->clave,sentencia->valor, error);
+	free(keyw);
+	free(error);
 }

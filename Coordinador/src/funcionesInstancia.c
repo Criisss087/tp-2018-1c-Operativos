@@ -55,17 +55,24 @@ t_instancia * siguienteEqLoad(){
 
 t_instancia * siguienteInstanciaSegunAlgoritmo(){
 	//TODO usar la funcion list_size para ver si mostrar o no el error
-	if(	hay_instancias == 0){
+	if(	list_size(lista_instancias)==0){
 			log_error(logger,"No hay Instancias conectadas");
 			t_instancia * instancia_error = malloc(sizeof(t_instancia));
 			strncpy(instancia_error->nombre,"ERROR",5);
 			return instancia_error;
 	}
+
 	switch(ALGORITMO_DISTRIBUCION){
-	case EQUITATIVE_LOAD:
-		return siguienteEqLoad();
-		break;
-	default:
-		return siguienteEqLoad();
-	}
+		case EQUITATIVE_LOAD:
+			return siguienteEqLoad();
+			break;
+		case LEAST_SPACE_USED:
+			//TODO
+			break;
+		case KEY_EXPLICIT:
+			//TODO
+			break;
+		default:
+			return siguienteEqLoad();
+		}
 }

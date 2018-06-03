@@ -13,20 +13,17 @@ void enviarSentenciaInstancia(t_sentencia * sentencia){
 	log_info(logger,"Enviando a instancia: %s %s",sentencia->clave, sentencia->valor);
 	t_instancia * proxima = siguienteInstanciaSegunAlgoritmo();
 
+
 	if (string_equals_ignore_case(proxima->nombre, "ERROR")){
 		free(proxima->nombre);
 		free(proxima);
 
 		return;
 	}
-
 	t_content_header * header = crear_cabecera_mensaje(coordinador,instancia,COORDINADOR_INSTANCIA_SENTENCIA, sizeof(t_content_header));
-
 	t_esi_operacion_sin_puntero * s_sin_p = armar_esi_operacion_sin_puntero(sentencia);
-
 	int header_envio = send(proxima->socket,header,sizeof(t_content_header),NULL);
 	int sentencia_envio = send(proxima->socket, s_sin_p, sizeof(t_esi_operacion_sin_puntero),NULL);
-
 	if (sentencia->keyword == SET){
 		int valor_envio = send(proxima->socket,sentencia->valor,strlen(sentencia->valor),NULL);
 	}
@@ -104,19 +101,21 @@ void interpretarOperacionESI(t_content_header * hd, int socketCliente){
 		t_esi_operacion_sin_puntero * sentencia = malloc(sizeof(t_esi_operacion_sin_puntero));
 		int cantleida = recv( socketCliente, sentencia, hd->cantidad_a_leer, NULL);
 		log_info(logger,"esi sentencia recibida");
+		log_info(logger,"KEYWORD: %d", sentencia->keyword);
+		log_info(logger,"tam valor: %d", sentencia->tam_valor);
 
 		char * valor;
 		if (sentencia->keyword == SET){
 			//Recibo el valor - El esi me lo manda "pelado", directamente el string, ningún struct
 			valor = malloc(sentencia->tam_valor);
 			int valor_status = recv(socketCliente, valor, sentencia->tam_valor,NULL);
-			valor[strlen(valor)-1] = '\0';
+			//valor[strlen(valor)-1] = '\0';
 			log_info(logger,"esi valor recibido: %s", valor);
 		}else valor = "";
 
 		//Armo una variable interna para manejar la sentencia
 		t_sentencia * sentencia_con_punteros = armar_sentencia(sentencia, valor);
-		log_operacion_esi(sentencia_con_punteros);
+		log_operacion_esi(sentencia_con_punteros, logger_operaciones);
 
 		int puedoEnviar = puedoEjecutarSentencia(sentencia_con_punteros);
 		log_info(logger, "puedo ejecutar? %d", puedoEnviar);
@@ -126,16 +125,18 @@ void interpretarOperacionESI(t_content_header * hd, int socketCliente){
 				break;
 			case CLAVE_BLOQUEADA:
 				devolverErrorAESI(socketCliente, CLAVE_BLOQUEADA);
+				log_error_operacion_esi(sentencia_con_punteros, puedoEnviar);
 				break;
 			case ABORTAR:
-				log_info(logger, "abortando");
 				devolverErrorAESI(socketCliente, ABORTAR);
+				log_error_operacion_esi(sentencia_con_punteros, puedoEnviar);
+				log_warning(logger, "ESI %d ABORTADO", sentencia->pid);
 				break;
 			default:
 				break;
 		}
-		//free(sentencia->clave);
-		//free(sentencia);
+
+		free(sentencia);
 		break;
 	default:
 		//TODO no se reconoció el tipo operación
