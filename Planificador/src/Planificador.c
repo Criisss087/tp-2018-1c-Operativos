@@ -383,7 +383,11 @@ int recibir_mensaje_esi(int esi_socket)
 
 			// Ordenar ejecutar siguiente sentencia del ESI
 			if(esi_en_ejecucion!=NULL)
+			{
+				printf("Pid antes de enviar conf: %d\n",esi_en_ejecucion->pid);
 				enviar_confirmacion_sentencia(esi_en_ejecucion);
+			}
+
 
 			//sem_post(&sem_bloqueo_esi_ejec);
 		}
@@ -935,7 +939,7 @@ void stdin_no_bloqueante(void)
 
 void planificar(void)
 {
-	//TODO Obtener el algoritmo de planificacion de la config
+
 	printf("Replanificando...\n\n");
 	if(esi_en_ejecucion == NULL){
 		obtener_proximo_ejecucion();
@@ -948,23 +952,24 @@ void planificar(void)
 void obtener_proximo_ejecucion(void)
 {
 	t_pcb_esi * ejec_ant;
+	t_list * lista_aux;
 
 	ejec_ant = esi_en_ejecucion;
 
-	/*  TODO SJF debe copiar la lista de listos a una lista auxiliar,
+	/* SJF debe copiar la lista de listos a una lista auxiliar,
 	 * ordenarla por estimacion mas corta, tomar el primero, destruir la lista auxiliar.
 	 * Eso para ambos casos
 	 */
 
-	if(!strcmp(config.algoritmo, "SJF-CD") )
+	lista_aux = list_duplicate(esi_listos);
+
+	//if((!strcmp(config.algoritmo, "SJF-CD")) || (!strcmp(config.algoritmo, "SJF-SD") ) )
+	if(1)
 	{
+		printf("Planificando por SJF...\n");
+		ordenar_lista_estimacion(lista_aux);
 
 	}
-	else if(!strcmp(config.algoritmo, "SJF-SD") )
-	{
-
-	}
-
 	/* TODO HRRN: Similar al anterior, pero ordenar por ratio
 	 * Revisar como es ese ordenamiento
 	 */
@@ -972,22 +977,29 @@ void obtener_proximo_ejecucion(void)
 	{
 
 	}
-
 	/* FIFO: Directamente saca el primer elemento de la lista y lo pone en ejecucion
-	 * Por default tambien hace fifo... ya fue
+	 * Por default hace fifo
 	 */
-	else if(!strcmp(config.algoritmo, "FIFO") )
+
+	esi_en_ejecucion = list_remove(lista_aux,0);
+	if(!list_is_empty(esi_listos))
 	{
-		esi_en_ejecucion = list_remove(esi_listos,0);
+		printf("Saco de la lista de listos el próximo esi a ejecutar\n");
+		sacar_esi_de_lista_pid(esi_listos,esi_en_ejecucion->pid);
 	}
 	else
 	{
-		esi_en_ejecucion = list_remove(esi_listos,0);
+		esi_en_ejecucion = NULL;
+		printf("No hay ESIs para ejecutar! Todo en orden...\n");
 	}
 
-	// Punto 2
+
+
+	list_destroy(lista_aux);
+
+
 	//Si hubo un cambio en el esi en ejecucion, debo avisarle al nuevo esi en ejecucion que es su turno
-	if(ejec_ant != esi_en_ejecucion)
+	if((esi_en_ejecucion != NULL) && (ejec_ant != esi_en_ejecucion))
 	{
 
 		//printf("Aca le debo avisar al esi %d que es su turno\n", esi_en_ejecucion->pid);
@@ -1112,12 +1124,17 @@ void mostrar_esi(t_pcb_esi * esi)
 
 int destruir_esi(t_pcb_esi * esi)
 {
+	// Libero campo por campo porque la conexion no esta allocada, sino es la direccion a la posicion
+	// del vector de conexiones
+
 	esi->conexion->socket = NO_SOCKET;
 	if(esi->clave_bloqueo!=NULL)
 	{
 		free(esi->clave_bloqueo);
+		esi->clave_bloqueo = NULL;
 	}
 	free(esi);
+
 	return 0;
 }
 
@@ -1163,6 +1180,24 @@ t_pcb_esi * sacar_esi_bloqueado_por_clave(char* clave)
 
 }
 
+void ordenar_lista_estimacion(t_list * lista)
+{
+
+	bool is_estimacion_menor(t_pcb_esi * esi1, t_pcb_esi * esi2)
+	{
+		return ( (esi1->estimacion < esi2->estimacion) || (esi1->estimacion == esi2->estimacion) );
+	}
+
+	/*
+	* El comparador devuelve si el primer parametro debe aparecer antes que el
+	* segundo en la lista
+	*/
+
+	list_sort(lista, (void*)is_estimacion_menor);
+
+
+}
+
 
 int estimar_esi(t_pcb_esi * esi){
 
@@ -1187,6 +1222,7 @@ int confirmar_bloqueo_ejecucion(void)
 	esi_en_ejecucion->ejec_anterior = 1;
 
 	list_add(esi_bloqueados,esi_en_ejecucion);
+	printf("Desalojo la ejecucion...\n");
 	esi_en_ejecucion = NULL;
 
 	bloqueo_en_ejecucion = 0;
@@ -1222,7 +1258,7 @@ int finalizar_esi(int pid_esi)
 		esi_aux->estado = terminado;
 
 		list_add(esi_terminados, esi_aux);
-		printf("Esi %d finalizado",esi_aux->pid);
+		printf("Esi %d finalizado\n",esi_aux->pid);
 		cerrar_conexion_esi(esi_aux->conexion);
 
 
