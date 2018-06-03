@@ -21,38 +21,66 @@ void interpretarHeader(t_content_header * , int);
 void *escucharMensajesEntrantes(int);
 
 void cargarArchivoConfiguracion(char * path){
-	log_info(logger,"cargar archivo configuracion");
+	log_info(logger,"Cargando archivo de configuración...");
 	t_config * config_file = config_create(path);
-	log_info(logger,"null file? : %d", config_file!=NULL);
-	log_info(logger,"cant de keys: %d", config_keys_amount(config_file));
+	log_info(logger,"Se cargó archivo? : %d", config_file!=NULL);
+
 	if (config_has_property(config_file,ARCH_CONFIG_ALGORITMO_DISTRIBUCION)){
-		ALGORITMO_DISTRIBUCION = config_get_string_value(config_file, ARCH_CONFIG_ALGORITMO_DISTRIBUCION);
-		log_info(logger,"Se obtuvo configuración 'Algoritmo de distribución': %s", ALGORITMO_DISTRIBUCION);
-	}
+		char * algo_dist = config_get_string_value(config_file, ARCH_CONFIG_ALGORITMO_DISTRIBUCION);
+		if (string_equals_ignore_case(algo_dist, "EL")){
+			//Equitative Load
+			ALGORITMO_DISTRIBUCION = EQUITATIVE_LOAD;
+			log_info(logger,"Se obtuvo configuración 'Algoritmo de distribución': %s - %d", algo_dist, ALGORITMO_DISTRIBUCION);
+		}
+		else if (string_equals_ignore_case(algo_dist, "KE")){
+			//Key Explicit
+			ALGORITMO_DISTRIBUCION = KEY_EXPLICIT;
+			log_info(logger,"Se obtuvo configuración 'Algoritmo de distribución': %s - %d", algo_dist, ALGORITMO_DISTRIBUCION);
+		}
+		else if (string_equals_ignore_case(algo_dist, "LSU")){
+			//Least Space Used
+			ALGORITMO_DISTRIBUCION = LEAST_SPACE_USED;
+			log_info(logger,"Se obtuvo configuración 'Algoritmo de distribución': %s - %d", algo_dist, ALGORITMO_DISTRIBUCION);
+		}else {
+			log_info(logger,"No se reconoció el algoritmo especificado en el archivo de configuración. Se setea por default EL.");}
+
+	}else log_info(logger,"No se encontró algoritmo especificado en el archivo de configuración. Se setea por default EL.");
+
 	if (config_has_property(config_file,ARCH_CONFIG_CANTIDAD_ENTRADAS)){
 		CANT_MAX_ENTRADAS = config_get_int_value(config_file, ARCH_CONFIG_CANTIDAD_ENTRADAS);
 		log_info(logger,"Se obtuvo configuración 'Cantidad de entradas': %d", CANT_MAX_ENTRADAS);
-	}
+	}else log_info(logger,"No se encontró cantidad de entradas especificadas en el archivo de configuración. Se setea por default 50.");
+
 	if (config_has_property(config_file,ARCH_CONFIG_PUERTO)){
 		PUERTO = config_get_int_value(config_file, ARCH_CONFIG_PUERTO);
 		log_info(logger,"Se obtuvo configuración 'Puerto': %d", PUERTO);
-	}
+	}else log_info(logger,"No se encontró puerto especificado en el archivo de configuración. Se setea por default 8888.");
 
+	if (config_has_property(config_file,ARCH_CONFIG_TAMANIO_ENTRADAS)){
+		TAMANIO_ENTRADAS = config_get_int_value(config_file, ARCH_CONFIG_TAMANIO_ENTRADAS);
+		log_info(logger,"Se obtuvo configuración 'Tamaño de entradas': %d", TAMANIO_ENTRADAS);
+	}else log_info(logger,"No se encontró tamaño de entradas especificado en el archivo de configuración. Se setea por default 300.");
 
+	if (config_has_property(config_file,ARCH_CONFIG_RETARDO)){
+		RETARDO = config_get_int_value(config_file, ARCH_CONFIG_RETARDO);
+		log_info(logger,"Se obtuvo configuración 'Retardo': %d", RETARDO);
+	}else log_info(logger,"No se encontró retardo especificado en el archivo de configuración. Se setea por default 0.");
 }
 
-void seteosIniciales(char * path){
-
+void inicializarLogger(){
 	logger = log_create("log_coordinador.txt","Coordinador",true, LOG_LEVEL_INFO);
+}
+void seteosIniciales(char *path){
+	inicializarLogger();
 
-	//char * path = "config.txt";
-		//cargarArchivoConfiguracion(path);
-		ALGORITMO_DISTRIBUCION = EQUITATIVE_LOAD;
-		lista_instancias = list_create();
-		indice_actual_lista = -1; //TODO usar la funcion list_size para ver si mostrar o no el error
-		t_instancia inst;
+	if (path != NULL){
+		cargarArchivoConfiguracion(path);
+		}
+	else {
 
-
+	}
+	lista_instancias = list_create();
+	indice_actual_lista = -1; //TODO usar la funcion list_size para ver si mostrar o no el error
 }
 
 struct addrinfo* crear_addrinfo(){

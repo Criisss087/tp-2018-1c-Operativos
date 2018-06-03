@@ -93,18 +93,20 @@ typedef struct {
 	int tamanioEntradas;
 } __attribute__((packed)) t_configTablaEntradas;
 */
-//*** Estructuras internas de Coordinador
-//#define EQUITATIVE_LOAD "EQ"
+//****** Estructuras internas de Coordinador
+//Algoritmos
+#define LEAST_SPACE_USED 0
 #define EQUITATIVE_LOAD 1
+#define KEY_EXPLICIT 2
+
 //CONFIG
-//char * ALGORITMO_DISTRIBUCION;
+
 int ALGORITMO_DISTRIBUCION;
-//int  PUERTO = 8888;
 char * PUERTO = "8888";
 int TAMANIO_ENTRADAS = 8;
 int CANT_MAX_ENTRADAS = 5;
 int RETARDO = 0; //ms
-//
+
 t_log * logger;
 t_list * lista_instancias;
 int id_counter = 0;

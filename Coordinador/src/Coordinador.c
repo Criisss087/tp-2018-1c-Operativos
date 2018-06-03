@@ -196,12 +196,8 @@ void *escucharMensajesEntrantes(int socketCliente){
 }
 
 int main(int argc, char **argv){
-	if (argv[1] != NULL){
-		seteosIniciales(argv[1]);
-		log_info(logger,"cargado arch por input");}
-	else {
-		seteosIniciales("config.txt");
-		log_info(logger,"cargado arch por default");}
+
+	seteosIniciales(argv[1]);
 
 	struct addrinfo *serverInfo = crear_addrinfo();
 	int listenningSocket = socket(serverInfo->ai_family, serverInfo->ai_socktype, serverInfo->ai_protocol);
