@@ -146,7 +146,6 @@ t_sentencia * recibirSentencia(int socketCoordinador) {
 
 	// Ahora se recibe el VALOR real de la sentencia
 
-
 	char * valorRecibido = malloc(sentenciaPreliminarRecibida->tam_valor);
 
 	int statusValorSentencia = recv(socketCoordinador, valorRecibido,
@@ -164,7 +163,8 @@ t_sentencia * recibirSentencia(int socketCoordinador) {
 	sentenciaRecibida->keyword = sentenciaPreliminarRecibida->keyword;
 	sentenciaRecibida->valor = strdup(valorRecibido);
 
-	printf("Se asigna la sentencia correctamente... Lista para ser procesada...\n");
+	printf(
+			"Se asigna la sentencia correctamente... Lista para ser procesada...\n");
 
 	return sentenciaRecibida;
 }
@@ -184,6 +184,7 @@ void guardarClaveValor(t_sentencia * sentenciaRecibida) {
 
 		if (tamanioTotalValor > configTablaEntradas->tamanioEntradas) {
 			// Guardar varias entradas
+
 		} else {
 
 			printf("Agregando unica entrada\n");
@@ -198,13 +199,16 @@ void guardarClaveValor(t_sentencia * sentenciaRecibida) {
 			indiceEntrada->esAtomica = true;
 			indiceEntrada->tamanioValor = tamanioTotalValor;
 
-			indiceEntrada->puntero = tablaEntradas + (indiceEntrada->numeroEntrada*configTablaEntradas->tamanioEntradas);
+			indiceEntrada->puntero = tablaEntradas
+					+ (indiceEntrada->numeroEntrada
+							* configTablaEntradas->tamanioEntradas);
 
 			list_add(l_indice_entradas, indiceEntrada);
 
 			printf("Indice agregado correctamente\n");
 
-			memcpy(indiceEntrada->puntero, sentenciaRecibida->valor, strlen(sentenciaRecibida->valor));
+			memcpy(indiceEntrada->puntero, sentenciaRecibida->valor,
+					strlen(sentenciaRecibida->valor));
 
 			printf("Valor guardado: %s\n", indiceEntrada->puntero);
 
@@ -234,11 +238,16 @@ void interpretarOperacionCoordinador(t_content_header * header,
 
 		sentenciaRecibida = recibirSentencia(socketCoordinador);
 
-		if (sentenciaRecibida->keyword == SET_KEYWORD) {
-
+		switch (sentenciaRecibida->keyword) {
+		case SET_KEYWORD:
 			guardarClaveValor(sentenciaRecibida);
+			break;
 
-		} else if (sentenciaRecibida->keyword == GET_KEYWORD) {
+		case STORE_KEYWORD:
+			grabarArchivo(sentenciaRecibida);
+			break;
+
+		case GET_KEYWORD:
 			printf("TODO: Leer clave y devolver valor\n");
 
 			// leerEntrada(sentenciaRecibida);
@@ -255,6 +264,7 @@ void interpretarOperacionCoordinador(t_content_header * header,
 					"La clave es: %s, el Numero de Entrada: %d, el tamaño de entrada: %d\n",
 					entradaBuscada->clave, entradaBuscada->numeroEntrada,
 					entradaBuscada->tamanioValor);
+			break;
 
 		}
 
@@ -271,9 +281,8 @@ int main(void) {
 	t_content_header * header = malloc(sizeof(t_content_header));
 	int status = 1;
 
+	status = interpretarHeader(socketCoordinador, header);
 	while (status != -1) {
-		status = interpretarHeader(socketCoordinador, header);
-
 		switch (header->proceso_origen) {
 
 		// Recibir sentencias del coordinador
@@ -288,6 +297,9 @@ int main(void) {
 			break;
 
 		}
+
+		status = interpretarHeader(socketCoordinador, header);
+
 	}
 
 	return 0;
