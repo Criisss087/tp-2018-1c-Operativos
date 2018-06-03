@@ -40,11 +40,9 @@ int main(int argc, char **argv){
 
 		t_confirmacion_sentencia *confirmacion = malloc(sizeof(t_confirmacion_sentencia));
 		read_size = recv(serverPlanif, confirmacion, sizeof(t_confirmacion_sentencia), 0);
-
 		if(content_header->operacion == RECIBIR_ORDEN_EJECUCION){
 			printf("Orden recibida, comienzo el parseo \n");
 		}
-
 		if ((read = getline(&linea_a_parsear, &direccion_de_la_linea_a_parsear, archivo_a_leer_por_el_ESI)) != -1){
 			t_esi_operacion parsed = parse(linea_a_parsear);
 
@@ -53,7 +51,6 @@ int main(int argc, char **argv){
 				//Transformo el t_esi_operacion a un tipo que se pueda enviar correctamente
 				t_esi_operacion_sin_puntero  *parse_sin_punteros = malloc(sizeof(t_esi_operacion_sin_puntero));
 				parse_sin_punteros = transformarSinPunteroYagregarpID(parsed, confirmacion->pid);
-
 				printf("Enviando linea parseada al coordinador... \n");
 				content_header = crear_cabecera_mensaje(esi, coordinador, ENVIAR_SENTENCIA_COORD, sizeof(t_esi_operacion_sin_puntero));
 				int resultado = send(serverCoord, content_header, sizeof(t_content_header), 0);
