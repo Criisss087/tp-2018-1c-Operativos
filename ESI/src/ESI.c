@@ -64,7 +64,7 @@ int main(int argc, char **argv){
 					printf("Enviando valor de la clave necesaria para el coordinador... \n");
 					printf("La clave es: %s\n", parsed.argumentos.SET.valor);
 
-					int envio_valor_clave = send(serverCoord, parsed.argumentos.SET.valor , sizeof(strlen(parsed.argumentos.SET.valor)),0);
+					int envio_valor_clave = send(serverCoord, parsed.argumentos.SET.valor , strlen(parsed.argumentos.SET.valor),0);
 				}
 
 				free(parse_sin_punteros);
