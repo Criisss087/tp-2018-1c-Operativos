@@ -63,14 +63,7 @@ enum{
 	ABORTAR
 };
 //***
-/*
-typedef struct{
-	int keyword;
-	char clave[40];
-	int tam_valor;
-	int pid;
-} __attribute__((packed)) t_esi_operacion_sin_puntero;
-*/
+
 typedef struct{
 	int socket;
 	int id;
@@ -87,12 +80,7 @@ typedef struct{
 typedef struct{
 	int resultado_del_parseado;
 } respuesta_coordinador;
-/*
-typedef struct {
-	int cantTotalEntradas;
-	int tamanioEntradas;
-} __attribute__((packed)) t_configTablaEntradas;
-*/
+
 //****** Estructuras internas de Coordinador
 //Algoritmos
 #define LEAST_SPACE_USED 0
@@ -108,6 +96,7 @@ int CANT_MAX_ENTRADAS = 5;
 int RETARDO = 0; //ms
 
 t_log * logger;
+t_log * logger_operaciones;
 t_list * lista_instancias;
 int id_counter = 0;
 

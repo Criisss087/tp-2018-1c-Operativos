@@ -71,6 +71,7 @@ void cargarArchivoConfiguracion(char * path){
 
 void inicializarLogger(){
 	logger = log_create("log_coordinador.txt","Coordinador",true, LOG_LEVEL_INFO);
+	logger_operaciones = log_create("log_operaciones_coordinador.txt","Coordinador",false, LOG_LEVEL_INFO);
 }
 void seteosIniciales(char *path){
 	inicializarLogger();
@@ -78,7 +79,7 @@ void seteosIniciales(char *path){
 		cargarArchivoConfiguracion(path);
 		}
 	else {
-
+		log_warning(logger,"Configuraciones cargadas por defecto");
 	}
 	lista_instancias = list_create();
 	indice_actual_lista = -1; //TODO usar la funcion list_size para ver si mostrar o no el error
@@ -99,7 +100,7 @@ t_esi_operacion_sin_puntero * armar_esi_operacion_sin_puntero(t_sentencia * sent
 	t_esi_operacion_sin_puntero * op_sin_punt = malloc(sizeof(t_esi_operacion_sin_puntero));
 	strncpy(op_sin_punt->clave, sentencia->clave,40);
 	op_sin_punt->keyword = sentencia->keyword;
-	op_sin_punt->tam_valor = sizeof(sentencia->valor);
+	op_sin_punt->tam_valor = strlen(sentencia->valor);
 	op_sin_punt->pid = sentencia->pid;
 	return op_sin_punt;
 }
@@ -107,8 +108,18 @@ t_esi_operacion_sin_puntero * armar_esi_operacion_sin_puntero(t_sentencia * sent
 t_sentencia * armar_sentencia(t_esi_operacion_sin_puntero * op_sin_punt, char * valor){
 	t_sentencia * sentencia_con_punteros = malloc(sizeof(t_sentencia));
 	strncpy(sentencia_con_punteros->clave, op_sin_punt->clave,40);
-	sentencia_con_punteros->valor = valor;
+	sentencia_con_punteros->valor = strdup(valor);
 	sentencia_con_punteros->keyword = op_sin_punt->keyword;
 	sentencia_con_punteros->pid = op_sin_punt->pid;
 
+}
+
+void log_operacion_esi(t_sentencia * sentencia){
+	char * keyw;
+	if (sentencia->keyword == GET) {keyw = strdup("GET");}
+	else if(sentencia->keyword == SET) {keyw = strdup("SET");}
+	else {keyw = strdup("STORE");}
+
+	log_info(logger_operaciones, "ESI %d = %s %s %v ",sentencia->pid,keyw,sentencia->clave,sentencia->valor);
+	free(keyw);
 }

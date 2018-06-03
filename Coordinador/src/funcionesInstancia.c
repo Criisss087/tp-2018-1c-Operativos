@@ -36,7 +36,7 @@ void guardarEnListaDeInstancias(int socketInstancia, char *nombre){
 	t_instancia * nueva = malloc(sizeof(t_instancia));
 	nueva->id= nuevoIDInstancia();
 	nueva->socket = socketInstancia;
-	nueva->nombre = nombre;
+	nueva->nombre = strdup(nombre);
 	list_add(lista_instancias, nueva);
 	log_info(logger,"Guardada Instancia: %s", nombre);
 

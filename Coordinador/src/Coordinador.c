@@ -14,7 +14,9 @@ void enviarSentenciaInstancia(t_sentencia * sentencia){
 	t_instancia * proxima = siguienteInstanciaSegunAlgoritmo();
 
 	if (string_equals_ignore_case(proxima->nombre, "ERROR")){
+		free(proxima->nombre);
 		free(proxima);
+
 		return;
 	}
 
@@ -22,19 +24,16 @@ void enviarSentenciaInstancia(t_sentencia * sentencia){
 
 	t_esi_operacion_sin_puntero * s_sin_p = armar_esi_operacion_sin_puntero(sentencia);
 
-	/*t_esi_operacion_sin_puntero * s_sin_p = malloc(sizeof(t_esi_operacion_sin_puntero));
-	strncpy(s_sin_p->clave, sentencia->clave,40);
-	s_sin_p->keyword = sentencia->keyword;
-	s_sin_p->tam_valor = sizeof(sentencia->valor);
-	s_sin_p->pid = sentencia->pid;
-*/
 	int header_envio = send(proxima->socket,header,sizeof(t_content_header),NULL);
 	int sentencia_envio = send(proxima->socket, s_sin_p, sizeof(t_esi_operacion_sin_puntero),NULL);
-//	int valor_envio = send(proxima->socket,sentencia->valor,sizeof(sentencia->valor),NULL);
+
 	if (sentencia->keyword == SET){
 		int valor_envio = send(proxima->socket,sentencia->valor,strlen(sentencia->valor),NULL);
 	}
 	log_info(logger,"Enviada sentencia a instancia");
+
+	free(proxima->nombre);
+	free(proxima);
 	free(header);
 	free(s_sin_p);
 }
@@ -117,13 +116,8 @@ void interpretarOperacionESI(t_content_header * hd, int socketCliente){
 
 		//Armo una variable interna para manejar la sentencia
 		t_sentencia * sentencia_con_punteros = armar_sentencia(sentencia, valor);
-		/*
-		t_sentencia * sentencia_con_punteros = malloc(sizeof(t_sentencia));
-		strncpy(sentencia_con_punteros->clave, sentencia->clave,40);
-		sentencia_con_punteros->valor = valor;
-		sentencia_con_punteros->keyword = sentencia->keyword;
-		sentencia_con_punteros->pid = sentencia->pid;
-*/
+		log_operacion_esi(sentencia_con_punteros);
+
 		int puedoEnviar = puedoEjecutarSentencia(sentencia_con_punteros);
 		log_info(logger, "puedo ejecutar? %d", puedoEnviar);
 		switch(puedoEnviar){
@@ -140,7 +134,8 @@ void interpretarOperacionESI(t_content_header * hd, int socketCliente){
 			default:
 				break;
 		}
-		free(sentencia);
+		//free(sentencia->clave);
+		//free(sentencia);
 		break;
 	default:
 		//TODO no se reconoció el tipo operación
