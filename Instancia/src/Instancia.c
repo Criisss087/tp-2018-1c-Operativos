@@ -29,9 +29,26 @@ int conexionConCoordinador() {
 	return socketCoordinador;
 }
 
+void imprimirEntrada(t_indice_entrada * entrada) {
+	printf("\t| %d        | %s    |   %d    |   %d      |   %s   |\n",
+			entrada->numeroEntrada, entrada->clave, entrada->tamanioValor,
+			entrada->esAtomica, entrada->puntero);
+}
+
+void imprimirTablaEntradas() {
+	printf("Imprimiendo tabla administrativa:\n");
+	printf("\t| N° entrada |     Clave     | Tamanio | Valor Atomico | Puntero |\n");
+	list_iterate(l_indice_entradas, (void*) imprimirEntrada);
+}
+
 int existeClave(t_indice_entrada * entrada) {
-	printf("TODO:Remover clave hardcodeada\n\n");
-	// return (int) strcmp(entrada->clave, "deportessasaf:messi") != 1;
+	printf(
+			"Verificando si la clave: %s ya existe en la tabla adminisitrativa...\n\n",
+			claveBuscada);
+
+	int existe = strcmp(entrada->clave, claveBuscada) == 0;
+	printf("\tExiste? --> %d\n\n", existe);
+	// return existe;
 	return false;
 }
 
@@ -120,10 +137,10 @@ void crearTablaEntradas(t_configTablaEntradas * config) {
 	tablaEntradas = malloc(tamanio);
 
 	if (tablaEntradas != NULL) {
-		printf("Alocado memoria para tabla de entradas\n");
+		printf("\tAlocado memoria para tabla de entradas\n");
 
 	} else {
-		printf("No se pudo alocar la memoria para tabla de entradas\n");
+		printf("\tNo se pudo alocar la memoria para tabla de entradas\n");
 	}
 }
 
@@ -169,21 +186,93 @@ t_sentencia * recibirSentencia(int socketCoordinador) {
 	return sentenciaRecibida;
 }
 
+t_indice_entrada * obtenerIndiceDeClave(t_sentencia * sentenciaRecibida) {
+	strcpy(claveBuscada, sentenciaRecibida->clave);
+	t_indice_entrada * indiceBuscado = list_find(l_indice_entradas,
+			(void*) existeClave);
+
+	return indiceBuscado;
+}
+
 void guardarClaveValor(t_sentencia * sentenciaRecibida) {
 
 	// TODO: Verificar si la clave existe, sino crearla
 
+	strcpy(claveBuscada, sentenciaRecibida->clave);
+
 	if (existeClave(sentenciaRecibida)) {
+		printf("La clave '%s' ya existe...\n", sentenciaRecibida->clave);
 		// TODO: Reemplazar valor (ver logica)
 	} else {
 		printf("La clave no existe... guardar...\n");
-		// guardar indice  de entrada
-		// guardar valor
 
 		int tamanioTotalValor = strlen(sentenciaRecibida->valor);
 
 		if (tamanioTotalValor > configTablaEntradas->tamanioEntradas) {
 			// Guardar varias entradas
+			printf("\tTamanio total del Valor: %d\n", tamanioTotalValor);
+			printf("\tTamanio maximo a guardar por entrada: %d\n",
+					configTablaEntradas->tamanioEntradas);
+
+			int entradasNecesariasParaGuardarValor = tamanioTotalValor
+					/ configTablaEntradas->tamanioEntradas;
+			int resto = tamanioTotalValor
+					% configTablaEntradas->tamanioEntradas;
+
+			if (resto > 0) {
+				entradasNecesariasParaGuardarValor++;
+			}
+			printf("\tGuardando un total de %d entradas...\n",
+					entradasNecesariasParaGuardarValor);
+
+			for (int i = 1; i <= entradasNecesariasParaGuardarValor; i++) {
+				printf("Guardando %d entrada requerida\n", i);
+				// guardarEntrada(sentenciaRecibida);
+
+				t_indice_entrada * indiceEntrada = malloc(
+						sizeof(t_indice_entrada));
+				strcpy(indiceEntrada->clave, sentenciaRecibida->clave);
+
+				// validar que no exceda canntidad total de entradas
+				indiceEntrada->numeroEntrada = numeroEntrada;
+				printf("\tGuardando entrada en indice: %d\n",
+						indiceEntrada->numeroEntrada);
+				numeroEntrada++;
+
+				indiceEntrada->esAtomica = false;
+
+				if (tamanioTotalValor > configTablaEntradas->tamanioEntradas) {
+					indiceEntrada->tamanioValor =
+							configTablaEntradas->tamanioEntradas;
+				} else {
+					indiceEntrada->tamanioValor = tamanioTotalValor;
+				}
+				tamanioTotalValor = tamanioTotalValor
+						- indiceEntrada->tamanioValor;
+				printf("\tTamanio de valor a guardar en indice: %d\n",
+						indiceEntrada->tamanioValor);
+				printf(
+						"\t\tAun queda pendiente guardar %d del tamanio total del valor\n",
+						tamanioTotalValor);
+
+				indiceEntrada->puntero = tablaEntradas
+						+ (indiceEntrada->numeroEntrada
+								* configTablaEntradas->tamanioEntradas);
+				printf("\tPuntero: %s\n", indiceEntrada->puntero);
+
+				list_add(l_indice_entradas, indiceEntrada);
+
+				printf("Indice agregado correctamente\n");
+
+				// TODO: Buscar la forma de modularizar el guardado de unica entrada o varias entradas
+				printf("Guardando valor...\n");
+
+				memcpy(indiceEntrada->puntero, sentenciaRecibida->valor,
+						strlen(sentenciaRecibida->valor));
+
+				printf("Valor guardado: %s\n", indiceEntrada->puntero);
+
+			}
 
 		} else {
 
@@ -207,6 +296,7 @@ void guardarClaveValor(t_sentencia * sentenciaRecibida) {
 
 			printf("Indice agregado correctamente\n");
 
+			printf("Guardando valor...\n");
 			memcpy(indiceEntrada->puntero, sentenciaRecibida->valor,
 					strlen(sentenciaRecibida->valor));
 
@@ -215,7 +305,7 @@ void guardarClaveValor(t_sentencia * sentenciaRecibida) {
 		}
 
 		printf(
-				"TODO: Se supera la cantidad maxima de entradas definida por el coordinador. Se requiere reemplazar o compactar");
+				"TODO: Se supera la cantidad maxima de entradas definida por el coordinador. Se requiere reemplazar o compactar\n");
 	}
 }
 
@@ -240,7 +330,10 @@ void interpretarOperacionCoordinador(t_content_header * header,
 
 		switch (sentenciaRecibida->keyword) {
 		case SET_KEYWORD:
+			// Imprimo tabla de entradas para verificar su estado
+			imprimirTablaEntradas();
 			guardarClaveValor(sentenciaRecibida);
+			imprimirTablaEntradas();
 			break;
 
 		case STORE_KEYWORD:
@@ -282,7 +375,7 @@ int main(void) {
 	int status = 1;
 
 	status = interpretarHeader(socketCoordinador, header);
-	while (status != -1) {
+	while (status != -1 && status !=0) {
 		switch (header->proceso_origen) {
 
 		// Recibir sentencias del coordinador
@@ -301,6 +394,8 @@ int main(void) {
 		status = interpretarHeader(socketCoordinador, header);
 
 	}
+
+	close(socketCoordinador);
 
 	return 0;
 }

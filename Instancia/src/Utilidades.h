@@ -64,4 +64,7 @@ int numeroEntrada = 0;
 
 char * tablaEntradas;
 
+// Constante auxiliar para la busqueda de una clave en la tabla de indices
+char claveBuscada[40];
+
 #endif /* SRC_UTILIDADES_H_ */
