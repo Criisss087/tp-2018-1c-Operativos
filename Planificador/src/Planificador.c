@@ -841,7 +841,7 @@ void consola_desbloquear_clave(char* clave){
 	return;
 }
 
-void consola_listar_recurso(char* recurso)
+void consola_listar_recurso(char* clave_buscada)
 {
 	/* listar recurso: Lista los procesos encolados esperando al recurso.
 	 *
@@ -852,10 +852,27 @@ void consola_listar_recurso(char* recurso)
 	 *
 	 */
 
-	if(recurso == NULL)
+	// TODO ELiminar esta funcion
+	crear_claves_bloqueadas_dummy();
+
+	printf("Listar clave_buscada: %s\n",clave_buscada);
+
+	if(clave_buscada == NULL){
 		printf("Parametros incorrectos (listar <recurso>)\n");
-	else
-		printf("Listar recurso: %s\n",recurso);
+	}
+	else{
+		t_list* lista_recursos;
+
+		bool esta_bloqueado_por_clave(t_pcb_esi* esi){
+			return strcmp(clave_buscada, esi->clave_bloqueo);
+		}
+
+		lista_recursos = list_filter(esi_bloqueados,(void*)esta_bloqueado_por_clave);
+
+		list_iterate(lista_recursos, (void*)mostrar_esi);
+
+		//TODO Liberar recursos
+	}
 
 	return;
 }
@@ -1554,4 +1571,26 @@ int destruir_clave_bloqueada(t_claves_bloqueadas * clave_bloqueada)
 	free(clave_bloqueada);
 	return 0;
 
+}
+
+void crear_claves_bloqueadas_dummy(){
+
+	t_pcb_esi* esi_1;
+	t_pcb_esi* esi_2;
+
+	esi_1->pid = 100;
+	esi_1->estado = nuevo;
+	esi_1->clave_bloqueo = "";
+
+	esi_2->pid = 101;
+	esi_2->estado = bloqueado;
+	esi_2->clave_bloqueo = "nombreClave";
+
+	list_add(claves_bloqueadas, esi_1);
+	list_add(claves_bloqueadas, esi_2);
+
+	free(esi_1);
+	free(esi_2);
+
+	return;
 }
