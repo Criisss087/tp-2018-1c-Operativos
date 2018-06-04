@@ -6,6 +6,14 @@
  Copyright   : Si nos copias nos desaprueban el coloquio
  ============================================================================
  */
+/*
+ ============================================================================
+ Name        : ESI.c
+ Author      : La Orden Del Socket
+ Version     :
+ Copyright   : Si nos copias nos desaprueban el coloquio
+ ============================================================================
+ */
 
 #include "Utilidades.h"
 
@@ -15,7 +23,6 @@ int main(int argc, char **argv){
 	char * linea_a_parsear = NULL;
 	size_t direccion_de_la_linea_a_parsear = 0;
 	ssize_t read = 1;
-	int rtaCoord;
 
 	//Me conecto al coordinador y al planificador
 	printf("Iniciando conexion a servidores... \n");
@@ -24,10 +31,6 @@ int main(int argc, char **argv){
 
 	printf("Abriendo archivo a leer...\n");
 	archivo_a_leer_por_el_ESI = fopen(argv[1], "r");
-
-
-
-
 
 	//Leo el archivo y parseo
 	while(read != -1){ //Mientras no sea fin del archivo
@@ -40,9 +43,11 @@ int main(int argc, char **argv){
 
 		t_confirmacion_sentencia *confirmacion = malloc(sizeof(t_confirmacion_sentencia));
 		read_size = recv(serverPlanif, confirmacion, sizeof(t_confirmacion_sentencia), 0);
+
 		if(content_header->operacion == RECIBIR_ORDEN_EJECUCION){
 			printf("Orden recibida, comienzo el parseo \n");
 		}
+
 		if ((read = getline(&linea_a_parsear, &direccion_de_la_linea_a_parsear, archivo_a_leer_por_el_ESI)) != -1){
 			t_esi_operacion parsed = parse(linea_a_parsear);
 
@@ -70,21 +75,25 @@ int main(int argc, char **argv){
 
 				//Recibo respuesta del coordinador
 				printf("Recibiendo respuesta del coordinador...\n");
-
+				respuesta_coordinador *respuesta_coordinador = malloc (sizeof(respuesta_coordinador));
+				recv(serverCoord, respuesta_coordinador, sizeof(respuesta_coordinador),0);
 
 				content_header = malloc(sizeof(t_content_header));
 				recv(serverCoord, content_header, sizeof(t_content_header),0);
 
 				//SI recibo orden de abortar
-				if(content_header->operacion == RECIBIR_ORDEN_ABORTAR_ESI){
+				if(content_header->operacion == RECIBIR_RESULTADO_SENTENCIA_COORD && respuesta_coordinador->resultado_del_parseado == ABORTAR){
 					printf("Recibi orden de aborto, aviso al planificador y fin de ejecucion. \n");
 					free(content_header);
 
-					//Aviso al planificador que recibi orden de abortar, enviando el header
-					content_header = crear_cabecera_mensaje(esi, planificador, AVISAR_ORDEN_ABORTAR_ESI, sizeof(t_content_header));
+					//Aviso al planificador que recibi orden de abortar
+					content_header = crear_cabecera_mensaje(esi, planificador, ENVIAR_RESULTADO_PLANIF, sizeof(t_content_header));
 					int enviar_aviso_abortar = send(serverPlanif, content_header, sizeof(t_content_header),0);
+					confirmacion->resultado = ABORTAR;
+					enviar_aviso_abortar = send(serverPlanif, confirmacion, sizeof(t_confirmacion_sentencia),0);
 
 					//Cierro!
+					free(respuesta_coordinador);
 					destruir_cabecera_mensaje(content_header);
 					free(confirmacion);
 					destruir_operacion(parsed);
@@ -100,14 +109,10 @@ int main(int argc, char **argv){
 					exit(EXIT_FAILURE);
 				}
 
-				if(content_header->operacion == RECIBIR_RESULTADO_SENTENCIA_COORD){
-					respuesta_coordinador *respuesta_coordinador = malloc (sizeof(respuesta_coordinador));
-					recv(serverCoord, respuesta_coordinador, sizeof(respuesta_coordinador),0);
+				if(content_header->operacion == RECIBIR_RESULTADO_SENTENCIA_COORD && respuesta_coordinador->resultado_del_parseado != ABORTAR){
 					confirmacion->resultado = respuesta_coordinador->resultado_del_parseado;
 					free(respuesta_coordinador);
-
 				}
-
 
 				free(content_header);
 
@@ -115,16 +120,12 @@ int main(int argc, char **argv){
 				//Envio al planificador lo que me mando el coordinador
 				printf("Enviando al planificador la respuesta del coordinador...\n");
 				content_header = crear_cabecera_mensaje(esi, planificador, ENVIAR_RESULTADO_PLANIF, sizeof(t_content_header));
-				send(serverPlanif, content_header, sizeof(t_content_header),0);
+				int enviar_rdo_planif = send(serverPlanif, content_header, sizeof(t_content_header),0);
+				enviar_rdo_planif = send(serverPlanif, confirmacion, sizeof(t_confirmacion_sentencia),0);
 
-				if(content_header->operacion == ENVIAR_RESULTADO_PLANIF){
-					send(serverPlanif, confirmacion, sizeof(t_confirmacion_sentencia),0);
-				}
-
-				free(content_header);
 				free(confirmacion);
-
 				destruir_operacion(parsed);
+				destruir_cabecera_mensaje(content_header);
 
 			}//if parsed valido
 
@@ -151,17 +152,16 @@ int main(int argc, char **argv){
 		content_header = crear_cabecera_mensaje(esi, planificador, ENVIAR_RESULTADO_PLANIF , sizeof(t_confirmacion_sentencia));
 
 		//Le aviso al planificador que termine de leer el archivo
-		send(serverPlanif, content_header, sizeof(t_content_header),0);
+		int finalice_lectura = send(serverPlanif, content_header, sizeof(t_content_header),0);
 		confirmacion->resultado = LISTO;
-		send(serverPlanif, confirmacion, sizeof(t_confirmacion_sentencia),0);
+		finalice_lectura = send(serverPlanif, confirmacion, sizeof(t_confirmacion_sentencia),0);
 
-
+		destruir_cabecera_mensaje(content_header);
 		printf("Fin de ejecucion por alcanzar el fin del archivo \n");
 	}
 
-
-	free(content_header);
 	free(confirmacion);
+	free(content_header);
 
 
 	fclose(archivo_a_leer_por_el_ESI);
@@ -250,4 +250,3 @@ int conectar_planificador(char * ip, char * puerto){
 
 	return serverPlanif;
 }
-

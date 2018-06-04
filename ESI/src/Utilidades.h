@@ -30,14 +30,13 @@
 //#define OK 1
 //#define HUBO_UN_PROBLEMA -1
 #define LISTO 2
+#define ABORTAR 3
 
 //Codigos de las operaciones:
 #define RECIBIR_ORDEN_EJECUCION 1
 #define ENVIAR_RESULTADO_PLANIF 2
 #define ENVIAR_SENTENCIA_COORD 1
 #define RECIBIR_RESULTADO_SENTENCIA_COORD 2
-#define RECIBIR_ORDEN_ABORTAR_ESI 3
-#define AVISAR_ORDEN_ABORTAR_ESI 3
 
 //Structs
 typedef struct{
