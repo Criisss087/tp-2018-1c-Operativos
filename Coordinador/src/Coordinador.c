@@ -10,8 +10,19 @@
 #include "FuncionesCoordinador.c"
 
 int enviarSentenciaInstancia(t_sentencia * sentencia){
-	log_info(logger,"Enviando a instancia: %s %s",sentencia->clave, sentencia->valor);
+	switch(sentencia->keyword){
+	/*case set:
+		break;*/
+	case STORE:
+		break;
+	default:
+		//set
+		//asignar instancia
+		break;
+	}
+
 	t_instancia * proxima = siguienteInstanciaSegunAlgoritmo();
+	log_info(logger,"Enviando a instancia: '%s' %s %s",proxima->nombre,sentencia->clave, sentencia->valor);
 
 	if (string_equals_ignore_case(proxima->nombre, "ERROR")){
 		free(proxima->nombre);
@@ -19,6 +30,7 @@ int enviarSentenciaInstancia(t_sentencia * sentencia){
 
 		return;
 	}
+
 	t_content_header * header = crear_cabecera_mensaje(coordinador,instancia,COORDINADOR_INSTANCIA_SENTENCIA, sizeof(t_content_header));
 	t_esi_operacion_sin_puntero * s_sin_p = armar_esi_operacion_sin_puntero(sentencia);
 	int header_envio = send(proxima->socket,header,sizeof(t_content_header),NULL);
@@ -31,7 +43,7 @@ int enviarSentenciaInstancia(t_sentencia * sentencia){
 	log_info(logger, "Esperando rta de Instancia");
 
 	int header_rta_instancia = recv(proxima->socket,header,sizeof(t_content_header), NULL);
-	log_info(logger, "Rta Instancia Header: ");//TODO
+	log_info(logger, "Rta Instancia Header: - Origen: %d, Receptor: %d, Operación: %d, Cantidad: %d",header->proceso_origen,header->proceso_receptor,header->operacion,header->cantidad_a_leer);
 
 //TODO: que enviarSentenciaInstancia devuelva el codigo de rdo a devolver al esi.
 	free(proxima->nombre);
@@ -91,6 +103,10 @@ void devolverResultadoInstanciaAESI(int socketCliente, int cod){
 	int status_hd_mensaje_error = send(socketCliente, cod_error, sizeof(respuesta_coordinador), NULL);
 }
 
+void indicarCompactacionATodasLasInstancias(){
+	//TODO
+}
+
 
 void interpretarOperacionESI(t_content_header * hd, int socketCliente){
 	log_info(logger, "Interpretando operación ESI - Origen: %d, Receptor: %d, Operación: %d, Cantidad: %d",hd->proceso_origen,hd->proceso_receptor,hd->operacion,hd->cantidad_a_leer);
@@ -123,6 +139,7 @@ void interpretarOperacionESI(t_content_header * hd, int socketCliente){
 		log_info(logger, "puedo ejecutar? %d", puedoEnviar);
 		switch(puedoEnviar){
 			case CORRECTO:
+				;
 				int rdo_ejecucion_instancia = enviarSentenciaInstancia(sentencia_con_punteros);
 				while (rdo_ejecucion_instancia == COMPACTACION){
 					indicarCompactacionATodasLasInstancias();

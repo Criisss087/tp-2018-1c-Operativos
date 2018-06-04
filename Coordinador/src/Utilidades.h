@@ -55,13 +55,9 @@
 #define ARCH_CONFIG_RETARDO "Retardo"
 //***
 
-//*** Enums
-	//Para rta sobre estado de clave
-enum{
-	CORRECTO,
-	CLAVE_BLOQUEADA,
-	ABORTAR
-};
+
+	//Rta de instancia
+#define COMPACTACION 2
 //***
 
 typedef struct{
