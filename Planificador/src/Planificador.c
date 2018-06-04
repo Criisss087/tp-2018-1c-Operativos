@@ -95,7 +95,7 @@ int main(void) { //* conexiones(void){
 			if (conexiones_esi[i].socket != NO_SOCKET)
 			{
 				FD_SET(conexiones_esi[i].socket, &readset);
-				FD_SET(conexiones_esi[i].socket, &writeset);
+				//FD_SET(conexiones_esi[i].socket, &writeset);
 				FD_SET(conexiones_esi[i].socket, &exepset);
 			}
 
@@ -365,7 +365,11 @@ int recibir_mensaje_coordinador(int coord_socket)
 				if(clave_bloqueada != NULL)
 				{
 					if(clave_bloqueada->pid == consulta_bloqueo->pid)
+					{
 						resultado_consulta = CORRECTO;
+						bloqueo_por_set++;
+						clave_a_bloquear_por_set = consulta_bloqueo;
+					}
 					else
 						resultado_consulta = ABORTAR;
 
@@ -376,10 +380,32 @@ int recibir_mensaje_coordinador(int coord_socket)
 				break;
 
 			case STORE:
+				/*  Si se hace STORE a una clave que no estaba bloqueada por ese esi, debe abortar */
+				clave_bloqueada = buscar_clave_bloqueada(consulta_bloqueo->clave);
+
+				if(clave_bloqueada != NULL)
+				{
+					if(clave_bloqueada->pid == consulta_bloqueo->pid)
+					{
+						resultado_consulta = CORRECTO;
+						desbloqueo_por_store++;
+						clave_a_desbloquear_por_store = consulta_bloqueo;
+					}
+
+					else
+						resultado_consulta = ABORTAR;
+
+				}
+				else
+					resultado_consulta = ABORTAR;
+
+				break;
+
+			/*case STORE:
 
 				//El store siempre va a ser correcto
 				resultado_consulta = CORRECTO;
-				break;
+				break;*/
 		}
 
 		enviar_resultado_consulta(coord_socket, resultado_consulta);
@@ -446,6 +472,16 @@ int recibir_mensaje_esi(int esi_socket)
 
 			}
 
+			if(bloqueo_por_set)
+			{
+				confirmar_bloqueo_por_set();
+			}
+
+			if(desbloqueo_por_store)
+			{
+				confirmar_desbloqueo_por_store();
+			}
+
 			//sem_wait(&sem_bloqueo_esi_ejec);
 
 			// Ordenar ejecutar siguiente sentencia del ESI
@@ -453,7 +489,6 @@ int recibir_mensaje_esi(int esi_socket)
 			{
 				enviar_confirmacion_sentencia(esi_en_ejecucion);
 			}
-
 
 			//sem_post(&sem_bloqueo_esi_ejec);
 		}
@@ -1378,7 +1413,7 @@ int finalizar_esi(int pid_esi)
 {
 	t_pcb_esi * esi_aux;
 
-	if(pid_esi == esi_en_ejecucion->pid)
+	if(esi_en_ejecucion!=NULL && pid_esi == esi_en_ejecucion->pid)
 	{
 		esi_aux = esi_en_ejecucion;
 		esi_en_ejecucion = NULL;
@@ -1398,6 +1433,11 @@ int finalizar_esi(int pid_esi)
 
 	if(esi_aux!=NULL)
 	{
+		/*
+		 * Si el esi tenia recursos tomados, debo liberarlos todos
+		 */
+
+		desbloquear_claves_bloqueadas_pid(esi_aux->pid);
 
 		esi_aux->estado = terminado;
 
@@ -1423,7 +1463,7 @@ int bloquear_clave(char* clave , char* id)
 	t_claves_bloqueadas * clave_bloqueada;
 
 	pid = atoi(id);
-	if(buscar_clave_bloqueada(clave) == NULL)
+	if((clave_bloqueada = buscar_clave_bloqueada(clave)) == NULL)
 	{
 		clave_bloqueada = malloc(sizeof(t_claves_bloqueadas));
 
@@ -1435,64 +1475,73 @@ int bloquear_clave(char* clave , char* id)
 		list_add(claves_bloqueadas, clave_bloqueada);
 
 		printf("Se creó la clave bloqueada %s\n",clave);
+
+
+		if(esi_en_ejecucion != NULL  && esi_en_ejecucion->pid == pid)
+		{
+			/*
+			 * Si el esi esta en ejecucion, esperar a que termine la instrucción y desalojar
+			 * Seguramente hay que usar un semaforo
+			 *
+			 */
+
+			printf("\nEsperando a que termine de ejecutar la sentencia\n");
+			if(esi_en_ejecucion->clave_bloqueo!=NULL)
+			{
+				free(esi_en_ejecucion->clave_bloqueo);
+				esi_en_ejecucion->clave_bloqueo = NULL;
+			}
+
+			esi_en_ejecucion->clave_bloqueo = strdup(clave);
+
+			bloqueo_en_ejecucion++;
+			/*
+			//sem_wait(&sem_bloqueo_esi_ejec);
+			//sem_wait(&sem_ejecucion_esi);
+			printf("\nSentencia terminada!\n");
+
+			//pthread_mutex_lock(&mutex_esi_en_ejecucion);
+			esi_en_ejecucion->clave_bloqueo = strdup(clave);
+			esi_en_ejecucion->estado = bloqueado;
+
+			list_add(esi_bloqueados,esi_en_ejecucion);
+
+			desalojar_ejecucion();
+			//pthread_mutex_unlock(&mutex_esi_en_ejecucion);
+
+			//sem_post(&sem_ejecucion_esi);
+			//sem_post(&sem_bloqueo_esi_ejec);
+			printf("El ESI %d estaba en ejecución, se pasó a bloqueados\n",pid);
+			*/
+
+		}
+		else if (buscar_esi_en_lista_pid(esi_listos, pid) && (clave_bloqueada != NULL) )
+		{
+			// Si el esi está en la lista de listos, hay que pasarlo a bloqueado
+			t_pcb_esi * esi_aux = sacar_esi_de_lista_pid(esi_listos,pid);
+
+			esi_aux->clave_bloqueo = strdup(clave);
+			esi_aux->estado = bloqueado;
+
+			list_add(esi_bloqueados,esi_aux);
+
+			printf("El ESI %d estaba en listos, se pasó a bloqueados\n",pid);
+
+		}
+		else
+		{
+			//Si el esi no existe, solo se crea la clave bloqueada
+			if(clave_bloqueada!=NULL)
+				clave_bloqueada->pid = -1;
+
+			printf("No existe el ESI de ID %d, solo se crea la clave bloqueada\n",pid);
+		}
+
 	}
 	else
 	{
 		printf("La clave %s ya está bloqueada! No se agrega a la lista\n",clave);
 
-	}
-
-	if(esi_en_ejecucion != NULL && esi_en_ejecucion->pid == pid)
-	{
-		/*
-		 * Si el esi esta en ejecucion, esperar a que termine la instrucción y desalojar
-		 * Seguramente hay que usar un semaforo
-		 *
-		 */
-
-		printf("\nEsperando a que termine de ejecutar la sentencia\n");
-		esi_en_ejecucion->clave_bloqueo = strdup(clave);
-		bloqueo_en_ejecucion++;
-		/*
-		//sem_wait(&sem_bloqueo_esi_ejec);
-		//sem_wait(&sem_ejecucion_esi);
-		printf("\nSentencia terminada!\n");
-
-		//pthread_mutex_lock(&mutex_esi_en_ejecucion);
-		esi_en_ejecucion->clave_bloqueo = strdup(clave);
-		esi_en_ejecucion->estado = bloqueado;
-
-		list_add(esi_bloqueados,esi_en_ejecucion);
-
-		desalojar_ejecucion();
-		//pthread_mutex_unlock(&mutex_esi_en_ejecucion);
-
-		//sem_post(&sem_ejecucion_esi);
-		//sem_post(&sem_bloqueo_esi_ejec);
-		printf("El ESI %d estaba en ejecución, se pasó a bloqueados\n",pid);
-		*/
-
-	}
-	else if (buscar_esi_en_lista_pid(esi_listos, pid))
-	{
-		// Si el esi está en la lista de listos, hay que pasarlo a bloqueado
-		t_pcb_esi * esi_aux = sacar_esi_de_lista_pid(esi_listos,pid);
-
-		esi_aux->clave_bloqueo = strdup(clave);
-		esi_aux->estado = bloqueado;
-
-		list_add(esi_bloqueados,esi_aux);
-
-		printf("El ESI %d estaba en listos, se pasó a bloqueados\n",pid);
-
-	}
-	else
-	{
-		//Si el esi no existe, solo se crea la clave bloqueada
-		if(clave_bloqueada!=NULL)
-			clave_bloqueada->pid = -1;
-
-		printf("No existe el ESI de ID %d, solo se crea la clave bloqueada\n",pid);
 	}
 
 	return 0;
@@ -1591,6 +1640,50 @@ void crear_claves_bloqueadas_dummy(){
 
 	free(esi_1);
 	free(esi_2);
+
+	return;
+}
+
+void desbloquear_claves_bloqueadas_pid(int pid)
+{
+	bool is_bloqueado_pid(t_claves_bloqueadas * clave)
+	{
+		return(clave->pid==pid);
+	}
+
+	void desbloquear_recursos(t_claves_bloqueadas * clave)
+	{
+		desbloquear_clave(clave->clave);
+	}
+
+
+	t_list * claves_bloqueadas_aux = list_filter(claves_bloqueadas, (void*)is_bloqueado_pid);
+
+	if(!list_is_empty(claves_bloqueadas_aux))
+	{
+		printf("El ESI %d tiene recursos tomados, liberando claves...\n",pid);
+		list_iterate(claves_bloqueadas_aux,(void*)desbloquear_recursos);
+		list_destroy(claves_bloqueadas_aux);
+
+	}
+
+}
+
+void confirmar_bloqueo_por_set(void)
+{
+	char buffer_pid[20];
+
+	sprintf(buffer_pid,"%d",clave_a_bloquear_por_set->pid);
+
+	bloquear_clave(clave_a_bloquear_por_set->clave,buffer_pid);
+	bloqueo_por_set = 0;
+	return;
+}
+
+void confirmar_desbloqueo_por_store(void)
+{
+	desbloquear_clave(clave_a_desbloquear_por_store->clave);
+	desbloqueo_por_store = 0;
 
 	return;
 }
