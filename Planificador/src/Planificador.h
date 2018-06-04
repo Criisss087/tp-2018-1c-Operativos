@@ -219,12 +219,10 @@ int desbloquear_clave(char* clave);
 void mostrar_clave_bloqueada(t_claves_bloqueadas * clave_bloqueada);
 int destruir_clave_bloqueada(t_claves_bloqueadas * clave_bloqueada);
 t_claves_bloqueadas * buscar_clave_bloqueada(char* clave); //, int pid);
-<<<<<<< HEAD
 
-// TODO Eliminar esta función
-void crear_claves_bloqueadas_dummy();
-=======
 void desbloquear_claves_bloqueadas_pid(int pid);
 void confirmar_bloqueo_por_set(void);
 void confirmar_desbloqueo_por_store(void);
->>>>>>> 4246842e77bc967c9aad0f613069ce6b5c897b90
+
+// TODO Eliminar esta función
+void crear_claves_bloqueadas_dummy();
