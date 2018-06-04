@@ -1361,7 +1361,7 @@ int finalizar_esi(int pid_esi)
 {
 	t_pcb_esi * esi_aux;
 
-	if(pid_esi == esi_en_ejecucion->pid)
+	if(esi_en_ejecucion!=NULL && pid_esi == esi_en_ejecucion->pid)
 	{
 		esi_aux = esi_en_ejecucion;
 		esi_en_ejecucion = NULL;
@@ -1423,73 +1423,73 @@ int bloquear_clave(char* clave , char* id)
 		list_add(claves_bloqueadas, clave_bloqueada);
 
 		printf("Se creó la clave bloqueada %s\n",clave);
+
+
+		if(esi_en_ejecucion != NULL  && esi_en_ejecucion->pid == pid)
+		{
+			/*
+			 * Si el esi esta en ejecucion, esperar a que termine la instrucción y desalojar
+			 * Seguramente hay que usar un semaforo
+			 *
+			 */
+
+			printf("\nEsperando a que termine de ejecutar la sentencia\n");
+			if(esi_en_ejecucion->clave_bloqueo!=NULL)
+			{
+				free(esi_en_ejecucion->clave_bloqueo);
+				esi_en_ejecucion->clave_bloqueo = NULL;
+			}
+
+			esi_en_ejecucion->clave_bloqueo = strdup(clave);
+
+			bloqueo_en_ejecucion++;
+			/*
+			//sem_wait(&sem_bloqueo_esi_ejec);
+			//sem_wait(&sem_ejecucion_esi);
+			printf("\nSentencia terminada!\n");
+
+			//pthread_mutex_lock(&mutex_esi_en_ejecucion);
+			esi_en_ejecucion->clave_bloqueo = strdup(clave);
+			esi_en_ejecucion->estado = bloqueado;
+
+			list_add(esi_bloqueados,esi_en_ejecucion);
+
+			desalojar_ejecucion();
+			//pthread_mutex_unlock(&mutex_esi_en_ejecucion);
+
+			//sem_post(&sem_ejecucion_esi);
+			//sem_post(&sem_bloqueo_esi_ejec);
+			printf("El ESI %d estaba en ejecución, se pasó a bloqueados\n",pid);
+			*/
+
+		}
+		else if (buscar_esi_en_lista_pid(esi_listos, pid) && (clave_bloqueada != NULL) )
+		{
+			// Si el esi está en la lista de listos, hay que pasarlo a bloqueado
+			t_pcb_esi * esi_aux = sacar_esi_de_lista_pid(esi_listos,pid);
+
+			esi_aux->clave_bloqueo = strdup(clave);
+			esi_aux->estado = bloqueado;
+
+			list_add(esi_bloqueados,esi_aux);
+
+			printf("El ESI %d estaba en listos, se pasó a bloqueados\n",pid);
+
+		}
+		else
+		{
+			//Si el esi no existe, solo se crea la clave bloqueada
+			if(clave_bloqueada!=NULL)
+				clave_bloqueada->pid = -1;
+
+			printf("No existe el ESI de ID %d, solo se crea la clave bloqueada\n",pid);
+		}
+
 	}
 	else
 	{
 		printf("La clave %s ya está bloqueada! No se agrega a la lista\n",clave);
 
-	}
-
-	if(esi_en_ejecucion != NULL && clave_bloqueada != NULL && esi_en_ejecucion->pid == pid)
-	{
-		/*
-		 * Si el esi esta en ejecucion, esperar a que termine la instrucción y desalojar
-		 * Seguramente hay que usar un semaforo
-		 *
-		 */
-
-		printf("\nEsperando a que termine de ejecutar la sentencia\n");
-		if(esi_en_ejecucion->clave_bloqueo!=NULL)
-		{
-			free(esi_en_ejecucion->clave_bloqueo);
-			esi_en_ejecucion->clave_bloqueo = NULL;
-		}
-
-		esi_en_ejecucion->clave_bloqueo = strdup(clave);
-		clave_bloqueada->pid = pid;
-		bloqueo_en_ejecucion++;
-		/*
-		//sem_wait(&sem_bloqueo_esi_ejec);
-		//sem_wait(&sem_ejecucion_esi);
-		printf("\nSentencia terminada!\n");
-
-		//pthread_mutex_lock(&mutex_esi_en_ejecucion);
-		esi_en_ejecucion->clave_bloqueo = strdup(clave);
-		esi_en_ejecucion->estado = bloqueado;
-
-		list_add(esi_bloqueados,esi_en_ejecucion);
-
-		desalojar_ejecucion();
-		//pthread_mutex_unlock(&mutex_esi_en_ejecucion);
-
-		//sem_post(&sem_ejecucion_esi);
-		//sem_post(&sem_bloqueo_esi_ejec);
-		printf("El ESI %d estaba en ejecución, se pasó a bloqueados\n",pid);
-		*/
-
-	}
-	else if (buscar_esi_en_lista_pid(esi_listos, pid) && (clave_bloqueada != NULL) )
-	{
-		// Si el esi está en la lista de listos, hay que pasarlo a bloqueado
-		t_pcb_esi * esi_aux = sacar_esi_de_lista_pid(esi_listos,pid);
-
-		esi_aux->clave_bloqueo = strdup(clave);
-		esi_aux->estado = bloqueado;
-
-		clave_bloqueada->pid = pid;
-
-		list_add(esi_bloqueados,esi_aux);
-
-		printf("El ESI %d estaba en listos, se pasó a bloqueados\n",pid);
-
-	}
-	else
-	{
-		//Si el esi no existe, solo se crea la clave bloqueada
-		if(clave_bloqueada!=NULL)
-			clave_bloqueada->pid = -1;
-
-		printf("No existe el ESI de ID %d, solo se crea la clave bloqueada\n",pid);
 	}
 
 	return 0;
