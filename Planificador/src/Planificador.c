@@ -824,6 +824,28 @@ void consola_desbloquear_clave(char* clave){
 	return;
 }
 
+void crear_claves_bloqueadas_dummy(){
+
+	t_pcb_esi* esi_1 = malloc(sizeof(t_pcb_esi));
+	t_pcb_esi* esi_2 = malloc(sizeof(t_pcb_esi));
+
+	memset(esi_1, 0, sizeof(t_pcb_esi));
+	memset(esi_2, 0, sizeof(t_pcb_esi));
+
+	esi_1->pid = 100;
+	esi_1->estado = bloqueado;
+	esi_1->clave_bloqueo = strdup("unaClave");
+
+	esi_2->pid = 101;
+	esi_2->estado = bloqueado;
+	esi_2->clave_bloqueo = strdup("unaClave");
+
+	list_add(esi_bloqueados, esi_1);
+	list_add(esi_bloqueados, esi_2);
+
+	return;
+}
+
 void consola_listar_recurso(char* recurso)
 {
 	/* listar recurso: Lista los procesos encolados esperando al recurso.
@@ -835,28 +857,36 @@ void consola_listar_recurso(char* recurso)
 	 *
 	 */
 
-	// TODO ELiminar esta funcion
+	// TODO Eliminar esta funcion
 	crear_claves_bloqueadas_dummy();
-
 
 	if(recurso == NULL){
 		log_warning(logger,"CONSOLA> Parametros incorrectos (listar <recurso>)");
 	}
 	else{
-		t_list* lista_recursos;
+		t_list* lista_recursos = list_create();
+
+		log_info(logger, "CONSOLA> COMANDO: Listar recurso encolados: %s",recurso);
 
 		bool esta_bloqueado_por_clave(t_pcb_esi* esi){
-			return strcmp(recurso, esi->clave_bloqueo);
+			return !strcmp(recurso, esi->clave_bloqueo);
 		}
 
 		lista_recursos = list_filter(esi_bloqueados,(void*)esta_bloqueado_por_clave);
 
-		list_iterate(lista_recursos, (void*)mostrar_esi);
+		void mostrar_esi_consola(t_pcb_esi* esi){
+			log_info(logger, "Proceso ESI bloqueado: %i", esi->pid);
+			return;
+		}
 
-		//TODO Liberar recursos
+		if(list_size(lista_recursos)>0){
+			list_iterate(lista_recursos, (void*)mostrar_esi_consola);
+		}
+		else{
+			log_info(logger, "NO se encontraron procesos ESI bloqueados por el recurso %s.", recurso);
+		}
 
-		log_info(logger,"CONSOLA> COMANDO: Listar recurso: %s",recurso);
-
+		free(lista_recursos);
 	}
 
 	return;
@@ -1586,28 +1616,6 @@ int destruir_clave_bloqueada(t_claves_bloqueadas * clave_bloqueada)
 	free(clave_bloqueada);
 	return 0;
 
-}
-
-void crear_claves_bloqueadas_dummy(){
-
-	t_pcb_esi* esi_1;
-	t_pcb_esi* esi_2;
-
-	esi_1->pid = 100;
-	esi_1->estado = nuevo;
-	esi_1->clave_bloqueo = "";
-
-	esi_2->pid = 101;
-	esi_2->estado = bloqueado;
-	esi_2->clave_bloqueo = "nombreClave";
-
-	list_add(claves_bloqueadas, esi_1);
-	list_add(claves_bloqueadas, esi_2);
-
-	free(esi_1);
-	free(esi_2);
-
-	return;
 }
 
 void desbloquear_claves_bloqueadas_pid(int pid)
