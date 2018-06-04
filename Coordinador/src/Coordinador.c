@@ -9,10 +9,9 @@
 #include "Utilidades.h"
 #include "FuncionesCoordinador.c"
 
-void enviarSentenciaInstancia(t_sentencia * sentencia){
+int enviarSentenciaInstancia(t_sentencia * sentencia){
 	log_info(logger,"Enviando a instancia: %s %s",sentencia->clave, sentencia->valor);
 	t_instancia * proxima = siguienteInstanciaSegunAlgoritmo();
-
 
 	if (string_equals_ignore_case(proxima->nombre, "ERROR")){
 		free(proxima->nombre);
@@ -29,10 +28,18 @@ void enviarSentenciaInstancia(t_sentencia * sentencia){
 	}
 	log_info(logger,"Enviada sentencia a instancia");
 
+	log_info(logger, "Esperando rta de Instancia");
+
+	int header_rta_instancia = recv(proxima->socket,header,sizeof(t_content_header), NULL);
+	log_info(logger, "Rta Instancia Header: ");//TODO
+
+//TODO: que enviarSentenciaInstancia devuelva el codigo de rdo a devolver al esi.
 	free(proxima->nombre);
 	free(proxima);
 	free(header);
 	free(s_sin_p);
+
+	return 1;
 }
 
 void interpretarOperacionInstancia(t_content_header * hd, int socketInstancia){
@@ -74,8 +81,7 @@ int puedoEjecutarSentencia(t_sentencia * sentencia){
 	if(	hay_instancias != 0){return CORRECTO;}else return ABORTAR;
 }
 
-void devolverErrorAESI(int socketCliente, int cod){
-	log_info(logger,"Devolviendo error al ESI");
+void devolverResultadoInstanciaAESI(int socketCliente, int cod){
 
 	t_content_header * cabecera_error = crear_cabecera_mensaje(coordinador,esi, RESULTADO_EJECUCION_SENTENCIA,sizeof(t_content_header));
 	int status_hd_error = send(socketCliente,cabecera_error,sizeof(t_content_header),NULL);
@@ -83,10 +89,6 @@ void devolverErrorAESI(int socketCliente, int cod){
 	respuesta_coordinador * cod_error = malloc(sizeof(respuesta_coordinador));
 	cod_error->resultado_del_parseado = cod;
 	int status_hd_mensaje_error = send(socketCliente, cod_error, sizeof(respuesta_coordinador), NULL);
-
-	if (cod==ABORTAR){log_info(logger,"Devuelto ABORTAR");}
-	else log_info(logger,"Devuelto CLAVE_BLOQUEADA");
-
 }
 
 
@@ -121,21 +123,28 @@ void interpretarOperacionESI(t_content_header * hd, int socketCliente){
 		log_info(logger, "puedo ejecutar? %d", puedoEnviar);
 		switch(puedoEnviar){
 			case CORRECTO:
-				enviarSentenciaInstancia(sentencia_con_punteros);
+				int rdo_ejecucion_instancia = enviarSentenciaInstancia(sentencia_con_punteros);
+				while (rdo_ejecucion_instancia == COMPACTACION){
+					indicarCompactacionATodasLasInstancias();
+					rdo_ejecucion_instancia = enviarSentenciaInstancia(sentencia_con_punteros);
+				}
+				devolverResultadoInstanciaAESI(socketCliente, CLAVE_BLOQUEADA);
 				break;
 			case CLAVE_BLOQUEADA:
-				devolverErrorAESI(socketCliente, CLAVE_BLOQUEADA);
+				log_info(logger,"Devolviendo error al ESI%d", sentencia->pid);
+				devolverResultadoInstanciaAESI(socketCliente, CLAVE_BLOQUEADA);
+				log_info(logger,"Devuelto CLAVE_BLOQUEADA");
 				log_error_operacion_esi(sentencia_con_punteros, puedoEnviar);
 				break;
 			case ABORTAR:
-				devolverErrorAESI(socketCliente, ABORTAR);
+				log_info(logger,"Devolviendo error al ESI %d", sentencia->pid);
+				devolverResultadoInstanciaAESI(socketCliente, ABORTAR);
+				log_warning(logger,"Devuelto ABORTAR al ESI %d", sentencia->pid);
 				log_error_operacion_esi(sentencia_con_punteros, puedoEnviar);
-				log_warning(logger, "ESI %d ABORTADO", sentencia->pid);
 				break;
 			default:
 				break;
 		}
-
 		free(sentencia);
 		break;
 	default:
