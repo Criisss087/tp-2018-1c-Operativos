@@ -37,7 +37,8 @@ void imprimirEntrada(t_indice_entrada * entrada) {
 
 void imprimirTablaEntradas() {
 	printf("Imprimiendo tabla administrativa:\n");
-	printf("\t| N° entrada |     Clave     | Tamanio | Valor Atomico | Puntero |\n");
+	printf(
+			"\t| N° entrada |     Clave     | Tamanio | Valor Atomico | Puntero |\n");
 	list_iterate(l_indice_entradas, (void*) imprimirEntrada);
 }
 
@@ -160,7 +161,7 @@ t_sentencia * recibirSentencia(int socketCoordinador) {
 			sentenciaPreliminarRecibida->tam_valor);
 
 	// TODO: Hacer verficiacion de keyword recibida (si es un SET pasar el valor, sino no)
-
+	if (sentenciaPreliminarRecibida->keyword == SET_KEYWORD) {
 	// Ahora se recibe el VALOR real de la sentencia
 
 	char * valorRecibido = malloc(sentenciaPreliminarRecibida->tam_valor);
@@ -182,8 +183,11 @@ t_sentencia * recibirSentencia(int socketCoordinador) {
 
 	printf(
 			"Se asigna la sentencia correctamente... Lista para ser procesada...\n");
-
 	return sentenciaRecibida;
+	}
+
+	else return sentenciaPreliminarRecibida;
+
 }
 
 t_indice_entrada * obtenerIndiceDeClave(t_sentencia * sentenciaRecibida) {
@@ -329,6 +333,7 @@ void interpretarOperacionCoordinador(t_content_header * header,
 		sentenciaRecibida = recibirSentencia(socketCoordinador);
 
 		switch (sentenciaRecibida->keyword) {
+
 		case SET_KEYWORD:
 			// Imprimo tabla de entradas para verificar su estado
 			imprimirTablaEntradas();
@@ -341,22 +346,8 @@ void interpretarOperacionCoordinador(t_content_header * header,
 			break;
 
 		case GET_KEYWORD:
-			printf("TODO: Leer clave y devolver valor\n");
-
-			// leerEntrada(sentenciaRecibida);
-			//////////////////////////////////////////////////////
-
-			printf("\n\nConsulta de valor:\n");
-
-			t_indice_entrada * entradaBuscada = malloc(
-					sizeof(t_indice_entrada));
-
-			entradaBuscada = list_find(l_indice_entradas, (void*) existeClave);
-
 			printf(
-					"La clave es: %s, el Numero de Entrada: %d, el tamaño de entrada: %d\n",
-					entradaBuscada->clave, entradaBuscada->numeroEntrada,
-					entradaBuscada->tamanioValor);
+					"TODO: Leer clave y devolver valor... (ver si corresponde implementar el GET)\n");
 			break;
 
 		}
@@ -375,7 +366,7 @@ int main(void) {
 	int status = 1;
 
 	status = interpretarHeader(socketCoordinador, header);
-	while (status != -1 && status !=0) {
+	while (status != -1 && status != 0) {
 		switch (header->proceso_origen) {
 
 		// Recibir sentencias del coordinador
