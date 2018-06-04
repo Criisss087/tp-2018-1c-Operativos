@@ -358,14 +358,40 @@ int recibir_mensaje_coordinador(int coord_socket)
 				break;
 
 			case SET:
-			case STORE:
+
 				/*  Si se hace set a una clave que no estaba bloqueada por ese esi, debe abortar */
 				clave_bloqueada = buscar_clave_bloqueada(consulta_bloqueo->clave);
 
 				if(clave_bloqueada != NULL)
 				{
 					if(clave_bloqueada->pid == consulta_bloqueo->pid)
+					{
 						resultado_consulta = CORRECTO;
+						bloqueo_por_set++;
+						clave_a_bloquear_por_set = consulta_bloqueo;
+					}
+					else
+						resultado_consulta = ABORTAR;
+
+				}
+				else
+					resultado_consulta = ABORTAR;
+
+				break;
+
+			case STORE:
+				/*  Si se hace STORE a una clave que no estaba bloqueada por ese esi, debe abortar */
+				clave_bloqueada = buscar_clave_bloqueada(consulta_bloqueo->clave);
+
+				if(clave_bloqueada != NULL)
+				{
+					if(clave_bloqueada->pid == consulta_bloqueo->pid)
+					{
+						resultado_consulta = CORRECTO;
+						desbloqueo_por_store++;
+						clave_a_desbloquear_por_store = consulta_bloqueo;
+					}
+
 					else
 						resultado_consulta = ABORTAR;
 
@@ -446,6 +472,16 @@ int recibir_mensaje_esi(int esi_socket)
 
 			}
 
+			if(bloqueo_por_set)
+			{
+				confirmar_bloqueo_por_set();
+			}
+
+			if(desbloqueo_por_store)
+			{
+				confirmar_desbloqueo_por_store();
+			}
+
 			//sem_wait(&sem_bloqueo_esi_ejec);
 
 			// Ordenar ejecutar siguiente sentencia del ESI
@@ -453,7 +489,6 @@ int recibir_mensaje_esi(int esi_socket)
 			{
 				enviar_confirmacion_sentencia(esi_en_ejecucion);
 			}
-
 
 			//sem_post(&sem_bloqueo_esi_ejec);
 		}
@@ -1595,4 +1630,22 @@ void desbloquear_claves_bloqueadas_pid(int pid)
 
 
 
+}
+
+void confirmar_bloqueo_por_set(void)
+{
+	char buffer_pid[20];
+
+	sprintf(buffer_pid,"%d",clave_a_bloquear_por_set->pid);
+
+	bloquear_clave(clave_a_bloquear_por_set->clave,buffer_pid);
+	bloqueo_por_set = 0;
+	return;
+}
+
+void confirmar_desbloqueo_por_store(void)
+{
+	desbloquear_clave(clave_a_desbloquear_por_store->clave);
+	desbloqueo_por_store = 0;
+	return;
 }
