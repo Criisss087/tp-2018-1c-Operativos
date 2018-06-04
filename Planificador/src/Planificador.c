@@ -10,6 +10,7 @@
 
 #include "Planificador.h"
 
+/*
 int main(void)
 {
 	pthread_t t_conexiones_id;
@@ -18,38 +19,39 @@ int main(void)
 	pthread_attr_t t_conexiones_attr;
 	//pthread_attr_t t_consola_attr;
 
-	/*
+
 	//Inicializa semáforo
-	sem_init(&sem_ejecucion_esi, 0, 1);
-	sem_init(&sem_bloqueo_esi_ejec, 0, 1);
-	*/
+	//sem_init(&sem_ejecucion_esi, 0, 1);
+	//sem_init(&sem_bloqueo_esi_ejec, 0, 1);
+
 
 	// Abrir la consola
-	/*
-	pthread_attr_init(&t_consola_attr);
-	pthread_create(&t_consola_id, &t_consola_attr, (void *)consola, NULL);
-	 */
+
+	//pthread_attr_init(&t_consola_attr);
+	//pthread_create(&t_consola_id, &t_consola_attr, (void *)consola, NULL);
+
 
 	pthread_attr_init(&t_conexiones_attr);
 	pthread_create(&t_conexiones_id, &t_conexiones_attr, (void *)conexiones, NULL);
 
-	/*
-	pthread_join(t_consola_id, NULL);
-	pthread_kill(t_conexiones_id,EINTR);
-	terminar_planificador();
-	 */
+
+	//pthread_join(t_consola_id, NULL);
+	//pthread_kill(t_conexiones_id,EINTR);
+	//terminar_planificador();
+
 
 	pthread_join(t_conexiones_id, NULL);
 
 	return 0;
 }
+*/
 
-int* conexiones(void){ //main(void) {
+int main(void) { //* conexiones(void){
 
 	fd_set readset, writeset, exepset;
 	int max_fd;
 	char read_buffer[MAX_LINEA];
-	struct timeval tv = {5, 0};
+	struct timeval tv = {0, 500};
 
 	//TODO Obtener datos del archivo de configuración
 
@@ -68,6 +70,9 @@ int* conexiones(void){ //main(void) {
 		FD_ZERO(&readset);
 		FD_ZERO(&writeset);
 		FD_ZERO(&exepset);
+
+		tv.tv_sec = 5;
+		tv.tv_usec = 0;
 
 		//Agrega el fd del socket servidor al set de lectura y excepciones
 		FD_SET(serv_socket, &readset);
@@ -103,6 +108,7 @@ int* conexiones(void){ //main(void) {
 			max_fd = coord_socket;
 
 		int result = select(max_fd+1, &readset, &writeset, &exepset, &tv);
+		//printf("Resultado del select: %d\n",result); //Revisar rendimiento del CPU cuando select da > 1
 
 		//if(result == 0)
 		//	printf("Select time out\n");
@@ -192,8 +198,8 @@ int* conexiones(void){ //main(void) {
 		} //if result select
 	} //while
 
-	pthread_exit(0);
-	//return EXIT_SUCCESS;
+	//pthread_exit(0);
+	return EXIT_SUCCESS;
 }
 
 //*************************//
