@@ -21,6 +21,7 @@
 #include <readline/readline.h> // Para usar readline
 #include <readline/history.h> // Para usar readline
 #include <commons/string.h> // Para manejo de strings
+#include <commons/log.h> // Para Logger
 #include <commons/collections/list.h> // Para manejo de listas
 #include <errno.h>			//errorno
 #include <fcntl.h>			// std no block
@@ -131,6 +132,7 @@ typedef struct consulta_bloqueo t_consulta_bloqueo;
 /**********************************************/
 t_conexion_esi conexiones_esi[MAX_CLIENTES];
 
+t_log * logger;
 t_list * esi_listos;
 t_list * esi_bloqueados;
 t_list * esi_terminados;
@@ -192,12 +194,13 @@ void mostrar_bloqueos(void);
 //Manejo de ESI
 void inicializar_conexiones_esi(void);
 int atender_nuevo_esi(int serv_socket);
-int recibir_mensaje_esi(int esi_socket);
+int recibir_mensaje_esi(t_conexion_esi esi);
 int cerrar_conexion_esi(t_conexion_esi * esi);
 int enviar_confirmacion_sentencia(t_pcb_esi * pcb_esi);
 t_pcb_esi * crear_esi(t_conexion_esi * conexion);
 int destruir_esi(t_pcb_esi * esi);
 void mostrar_esi(t_pcb_esi * esi);
+int bloquear_esi_pid(char * clave,int pid);
 t_pcb_esi * buscar_esi_en_lista_pid(t_list *lista,int pid);
 t_pcb_esi * sacar_esi_de_lista_pid(t_list *lista,int pid);
 t_pcb_esi * buscar_esi_bloqueado_por_clave(char* clave);
@@ -214,7 +217,7 @@ int cerrar_conexion_coord(int coord_socket);
 int enviar_resultado_consulta(int socket, int resultado);
 
 //Manejo de claves
-int bloquear_clave(char* clave , char* id);
+int bloquear_clave(char* clave , int pid);
 int desbloquear_clave(char* clave);
 void mostrar_clave_bloqueada(t_claves_bloqueadas * clave_bloqueada);
 int destruir_clave_bloqueada(t_claves_bloqueadas * clave_bloqueada);
