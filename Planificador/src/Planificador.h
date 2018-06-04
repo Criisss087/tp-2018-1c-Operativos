@@ -213,3 +213,4 @@ int desbloquear_clave(char* clave);
 void mostrar_clave_bloqueada(t_claves_bloqueadas * clave_bloqueada);
 int destruir_clave_bloqueada(t_claves_bloqueadas * clave_bloqueada);
 t_claves_bloqueadas * buscar_clave_bloqueada(char* clave); //, int pid);
+void desbloquear_claves_bloqueadas_pid(int pid);
