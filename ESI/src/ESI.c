@@ -6,14 +6,6 @@
  Copyright   : Si nos copias nos desaprueban el coloquio
  ============================================================================
  */
-/*
- ============================================================================
- Name        : ESI.c
- Author      : La Orden Del Socket
- Version     :
- Copyright   : Si nos copias nos desaprueban el coloquio
- ============================================================================
- */
 
 #include "Utilidades.h"
 
@@ -35,6 +27,8 @@ int main(int argc, char **argv){
 	//Leo el archivo y parseo
 	while(read != -1){ //Mientras no sea fin del archivo
 
+		t_esi_operacion parsed;
+
 		//Recibo orden del planificador
 		printf("Esperando orden del planificador para comenzar...\n");
 
@@ -44,22 +38,25 @@ int main(int argc, char **argv){
 		t_confirmacion_sentencia *confirmacion = malloc(sizeof(t_confirmacion_sentencia));
 		read_size = recv(serverPlanif, confirmacion, sizeof(t_confirmacion_sentencia), 0);
 
+		t_esi_operacion_sin_puntero  *parse_sin_punteros = malloc(sizeof(t_esi_operacion_sin_puntero));
+
 		if(content_header->operacion == RECIBIR_ORDEN_EJECUCION){
 			printf("Orden recibida, comienzo el parseo \n");
 		}
 
+		free(content_header);
+
 		if ((read = getline(&linea_a_parsear, &direccion_de_la_linea_a_parsear, archivo_a_leer_por_el_ESI)) != -1){
-			t_esi_operacion parsed = parse(linea_a_parsear);
+			parsed = parse(linea_a_parsear);
 
 			if(parsed.valido){
 
 				//Transformo el t_esi_operacion a un tipo que se pueda enviar correctamente
-				t_esi_operacion_sin_puntero  *parse_sin_punteros = malloc(sizeof(t_esi_operacion_sin_puntero));
 				parse_sin_punteros = transformarSinPunteroYagregarpID(parsed, confirmacion->pid);
+
 				printf("Enviando linea parseada al coordinador... \n");
 				content_header = crear_cabecera_mensaje(esi, coordinador, ENVIAR_SENTENCIA_COORD, sizeof(t_esi_operacion_sin_puntero));
 				int resultado = send(serverCoord, content_header, sizeof(t_content_header), 0);
-
 				resultado = send(serverCoord, parse_sin_punteros, sizeof(t_esi_operacion_sin_puntero),0);
 
 				if(parse_sin_punteros->keyword == SET){
@@ -69,7 +66,6 @@ int main(int argc, char **argv){
 					int envio_valor_clave = send(serverCoord, parsed.argumentos.SET.valor , strlen(parsed.argumentos.SET.valor),0);
 				}
 
-				free(parse_sin_punteros);
 				destruir_cabecera_mensaje(content_header);
 
 
@@ -109,6 +105,7 @@ int main(int argc, char **argv){
 					exit(EXIT_FAILURE);
 				}
 
+
 				if(content_header->operacion == RECIBIR_RESULTADO_SENTENCIA_COORD && respuesta_coordinador->resultado_del_parseado != ABORTAR){
 					confirmacion->resultado = respuesta_coordinador->resultado_del_parseado;
 					free(respuesta_coordinador);
@@ -123,13 +120,91 @@ int main(int argc, char **argv){
 				int enviar_rdo_planif = send(serverPlanif, content_header, sizeof(t_content_header),0);
 				enviar_rdo_planif = send(serverPlanif, confirmacion, sizeof(t_confirmacion_sentencia),0);
 
-				free(confirmacion);
-				destruir_operacion(parsed);
 				destruir_cabecera_mensaje(content_header);
 
 			}//if parsed valido
 
 		}//if read=getline...
+
+
+		//Si recibo la orden de volver a ejecutar la linea
+		if(confirmacion->ejec_anterior == 1){
+
+			printf("Recibi orden de volver a ejecutar la linea. \n");
+
+			//Envio la linea parseada al coordinador
+			printf("Enviando linea parseada al coordinador... \n");
+			content_header = crear_cabecera_mensaje(esi, coordinador, ENVIAR_SENTENCIA_COORD, sizeof(t_esi_operacion_sin_puntero));
+			int resultado = send(serverCoord, content_header, sizeof(t_content_header), 0);
+			resultado = send(serverCoord, parse_sin_punteros, sizeof(t_esi_operacion_sin_puntero),0);
+
+			if(parse_sin_punteros->keyword == SET){
+				printf("Enviando valor de la clave necesaria para el coordinador... \n");
+				printf("La clave es: %s\n", parsed.argumentos.SET.valor);
+
+				int envio_valor_clave = send(serverCoord, parsed.argumentos.SET.valor , strlen(parsed.argumentos.SET.valor),0);
+			}
+
+			destruir_cabecera_mensaje(content_header);
+
+
+			//Recibo respuesta del coordinador
+			printf("Recibiendo respuesta del coordinador...\n");
+			respuesta_coordinador *respuesta_coordinador = malloc (sizeof(respuesta_coordinador));
+			recv(serverCoord, respuesta_coordinador, sizeof(respuesta_coordinador),0);
+
+			content_header = malloc(sizeof(t_content_header));
+			recv(serverCoord, content_header, sizeof(t_content_header),0);
+
+			//SI recibo orden de abortar
+			if(content_header->operacion == RECIBIR_RESULTADO_SENTENCIA_COORD && respuesta_coordinador->resultado_del_parseado == ABORTAR){
+				printf("Recibi orden de aborto, aviso al planificador y fin de ejecucion. \n");
+				free(content_header);
+
+				//Aviso al planificador que recibi orden de abortar
+				content_header = crear_cabecera_mensaje(esi, planificador, ENVIAR_RESULTADO_PLANIF, sizeof(t_content_header));
+				int enviar_aviso_abortar = send(serverPlanif, content_header, sizeof(t_content_header),0);
+				confirmacion->resultado = ABORTAR;
+				enviar_aviso_abortar = send(serverPlanif, confirmacion, sizeof(t_confirmacion_sentencia),0);
+
+				//Cierro!
+				free(respuesta_coordinador);
+				destruir_cabecera_mensaje(content_header);
+				free(confirmacion);
+				destruir_operacion(parsed);
+
+				if(linea_a_parsear){
+					free(linea_a_parsear);
+				}
+
+				fclose(archivo_a_leer_por_el_ESI);
+				close(serverCoord);
+				close(serverPlanif);
+
+				exit(EXIT_FAILURE);
+			}
+
+
+			if(content_header->operacion == RECIBIR_RESULTADO_SENTENCIA_COORD && respuesta_coordinador->resultado_del_parseado != ABORTAR){
+				confirmacion->resultado = respuesta_coordinador->resultado_del_parseado;
+				free(respuesta_coordinador);
+			}
+
+			free(content_header);
+
+
+			//Envio al planificador lo que me mando el coordinador
+			printf("Enviando al planificador la respuesta del coordinador...\n");
+			content_header = crear_cabecera_mensaje(esi, planificador, ENVIAR_RESULTADO_PLANIF, sizeof(t_content_header));
+			int enviar_rdo_planif = send(serverPlanif, content_header, sizeof(t_content_header),0);
+			enviar_rdo_planif = send(serverPlanif, confirmacion, sizeof(t_confirmacion_sentencia),0);
+
+			destruir_cabecera_mensaje(content_header);
+
+		}//if recibo orden de volver a ejecutar la linea
+
+		free(confirmacion);
+		destruir_operacion(parsed);
 
 	}//while...
 
