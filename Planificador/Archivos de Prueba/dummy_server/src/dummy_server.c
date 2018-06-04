@@ -33,6 +33,13 @@ struct content_header {
 typedef struct __attribute__((packed)) content_header t_content_header  ;
 enum procesos { esi, instancia, planificador, coordinador };
 
+struct consulta_bloqueo{
+	int pid;
+	char clave[40];
+	int sentencia;
+};
+typedef struct consulta_bloqueo t_consulta_bloqueo;
+
 int main(int argc , char *argv[])
 {
     int socket_desc , client_sock , c , read_size;
@@ -91,17 +98,35 @@ int main(int argc , char *argv[])
     }
      */
 
+    //Handshake
+    t_content_header * header = malloc(sizeof(t_content_header));
+
+    recv(client_sock, header, sizeof(t_content_header), (int)NULL);
+
+
     while(1)
     {
-    	printf("Enter message : ");
-    	scanf("%s" , message);
+    	t_consulta_bloqueo * consulta_bloqueo = malloc(sizeof(t_consulta_bloqueo));
+
+    	printf("\nPid del esi: ");
+    	scanf("%d" , &consulta_bloqueo->pid);
+    	//printf(" ingresado %d" , consulta_bloqueo->pid);
+
+    	printf("\nSentencia: ");
+    	scanf("%d" , &consulta_bloqueo->sentencia);
+    	//printf(" ingresado %d" , consulta_bloqueo->sentencia);
+
+    	printf("\nClave: ");
+    	scanf("%s" , consulta_bloqueo->clave);
+    	//printf(" ingresado %s" , consulta_bloqueo->clave);
+
 
     	t_content_header *content_header = malloc(sizeof(t_content_header));
 
     	content_header->proceso_origen = coordinador;
     	content_header->proceso_receptor = planificador;
-    	content_header->operacion = 1;
-    	content_header->cantidad_a_leer = sizeof(message);
+    	content_header->operacion = 2;
+    	content_header->cantidad_a_leer = sizeof(t_consulta_bloqueo);
 
 		//Envio primero la cabecera
 		if( send(client_sock  , content_header , sizeof(t_content_header) , 0) < 0)
@@ -110,25 +135,24 @@ int main(int argc , char *argv[])
 			return 1;
 		}
 
-		if( send(client_sock  , message , strlen(message) , 0) < 0)
+		//Luego el bloqueo
+		if( send(client_sock  , consulta_bloqueo, sizeof(t_consulta_bloqueo) , 0) < 0)
 		{
 			puts("Send failed 2");
 			return 1;
 		}
 
-		printf("sending message : %s ",message);
+		content_header = malloc(sizeof(t_content_header));
 
-		/*
-		//Receive a reply from the server
-		if( recv(client_sock  , client_message, 2000 , 0) < 0)
+		int read_size = recv(client_sock, content_header, sizeof(t_content_header), (int)NULL);
+		if(content_header->operacion == 3)
 		{
-			puts("recv failed");
-			break;
+			int resultado;
+			read_size = recv(client_sock, &resultado, sizeof(int), (int)NULL);
+
+			printf("\nEl resultado de la consulta fue: %d\n", resultado);
 		}
 
-		puts("Server reply :");
-		puts(client_message);
-		*/
 
     }
 

@@ -32,7 +32,7 @@ struct content_header {
 	size_t cantidad_a_leer;
 };
 typedef struct __attribute__((packed)) content_header t_content_header  ;
-enum procesos { esi, instancia, planificador, coordinador };
+enum procesos {  esi, instancia, planificador, coordinador };
 
 struct confirmacion_sentencia{
 	int pid;

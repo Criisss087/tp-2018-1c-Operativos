@@ -309,7 +309,9 @@ void inicializar_conexiones_esi(void)
 int recibir_mensaje_coordinador(int coord_socket)
 {
 	int read_size;
+	int resultado_consulta;
 	char client_message[2000];
+	t_claves_bloqueadas * clave_bloqueada;
 
 	//Recepcion de mensaje comun de texto, con la cabecera (para no bloquear) Borrar mas adelante
 	t_content_header *content_header = malloc(sizeof(t_content_header));
@@ -322,7 +324,7 @@ int recibir_mensaje_coordinador(int coord_socket)
 
 
 	//TODO Recibir mensaje de "Puedo bloquear esta clave desde este esi?" (punto 4.3)
-	if(content_header->operacion == OPERACION_BLOQUEO_COORD)
+	if(content_header->operacion == OPERACION_CONSULTA_CLAVE_COORD)
 	{
 
 		/* 4.1 El COORDINADOR le solicita al PLANIFICADOR aprobación para bloquear dicha
@@ -334,23 +336,55 @@ int recibir_mensaje_coordinador(int coord_socket)
 		 * con la ejecución de la sentencia y registra la clave bloqueada en su lista.
 		 */
 
-		t_consulta_bloqueo * bloqueo_clave = malloc(sizeof(t_consulta_bloqueo));
+		t_consulta_bloqueo * consulta_bloqueo = malloc(sizeof(t_consulta_bloqueo));
 
-		read_size = recv(coord_socket, bloqueo_clave, sizeof(t_consulta_bloqueo),0);
+		read_size = recv(coord_socket, consulta_bloqueo , sizeof(t_consulta_bloqueo),0);
 		if(read_size < 0)
 		{
 			printf("Error recv coord 2 \n");
 		}
 
-	}
-	//TODO Recibir mensaje de "Puedo des-bloquear esta clave desde este esi?" (Punto 5.1)
-	else if (content_header->operacion == OPERACION_DESBLOQUEO_COORD)
-	{
-		/* Se debe sacar de la lista de bloqueados la clave recibida, y se debe pasar a ready
-		 * el primer esi en lista de bloqueados que espere a la clave que se acaba
-		 * de desbloquear
-		 */
+		switch(consulta_bloqueo->sentencia)
+		{
+			case GET:
 
+				//Si la clave esta bloqueada, el esi pasa a bloqueado
+				if(buscar_clave_bloqueada(consulta_bloqueo->clave))
+					resultado_consulta = CLAVE_BLOQUEADA;
+				else
+					resultado_consulta = CORRECTO;
+
+
+				break;
+
+			case SET:
+
+				/*  Si se hace set a una clave que no estaba bloqueada por ese esi, debe abortar */
+				clave_bloqueada = buscar_clave_bloqueada(consulta_bloqueo->clave);
+
+				if(clave_bloqueada != NULL)
+				{
+					if(clave_bloqueada->pid == consulta_bloqueo->pid)
+						resultado_consulta = CORRECTO;
+					else
+						resultado_consulta = ABORTAR;
+
+				}
+				else
+					resultado_consulta = ABORTAR;
+
+				break;
+
+			case STORE:
+
+				//El store siempre va a ser correcto
+				resultado_consulta = CORRECTO;
+				break;
+		}
+
+		enviar_resultado_consulta(coord_socket, resultado_consulta);
+
+		free(consulta_bloqueo);
 	}
 	else
 	{
@@ -363,7 +397,7 @@ int recibir_mensaje_coordinador(int coord_socket)
 	}
 
 
-	free(content_header);
+	destruir_cabecera_mensaje(content_header);
 
 	return read_size;
 
@@ -1086,6 +1120,36 @@ int enviar_confirmacion_sentencia(t_pcb_esi * pcb_esi)
 	}
 
 	free(conf);
+	destruir_cabecera_mensaje(header);
+	return res_send;
+
+}
+
+int enviar_resultado_consulta(int socket, int resultado)
+{
+	t_content_header * header = crear_cabecera_mensaje(planificador,coordinador,OPERACION_RES_CLAVE_COORD,sizeof(int));
+
+	int * res = 0;
+
+	res = malloc(sizeof(int));
+
+	*res = resultado;
+
+	printf("Envío resultado (%d) de la consulta al coordinador\n\n",*res);
+
+	int res_send = send(socket, header, sizeof(t_content_header), 0);
+	if(res_send < 0)
+	{
+		printf("Error send header \n");
+	}
+
+	res_send = send(socket, res, sizeof(int), 0);
+	if(res_send < 0)
+	{
+		printf("Error send ejec \n");
+	}
+
+	free(res);
 	destruir_cabecera_mensaje(header);
 	return res_send;
 

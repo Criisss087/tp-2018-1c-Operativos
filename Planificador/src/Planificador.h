@@ -56,8 +56,9 @@
 #define OPERACION_CONF_SENTENCIA 1
 #define OPERACION_RES_SENTENCIA 2
 #define OPERACION_HANDSHAKE_COORD 1
-#define OPERACION_BLOQUEO_COORD 2
-#define OPERACION_DESBLOQUEO_COORD 3
+#define OPERACION_CONSULTA_CLAVE_COORD 2
+#define OPERACION_RES_CLAVE_COORD 3
+
 
 //Enumeracion de los comandos de la consola
 enum comandos { pausar, continuar, bloquear, desbloquear, listar, ckill, status, deadlock, salir,
@@ -65,7 +66,11 @@ enum comandos { pausar, continuar, bloquear, desbloquear, listar, ckill, status,
 //enum procesos { esi, instancia, planificador, coordinador };
 enum estados { nuevo, listo, en_ejecucion, bloqueado, terminado };
 
-enum sentencias { get, set, store };
+//Sentencias recibidas desde el Coordinador
+enum sentencias { GET, SET, STORE };
+
+//Resultado a enviar al coordinador cuando consulta clave
+enum resultado_consulta_bloqueo { CORRECTO, CLAVE_BLOQUEADA, ABORTAR};
 
 /**********************************************/
 /* ESTUCTURAS								  */
@@ -116,8 +121,8 @@ typedef struct confirmacion_sentencia t_confirmacion_sentencia;
 
 struct consulta_bloqueo{
 	int pid;
+	char clave[40];
 	int sentencia;
-	char * clave;
 };
 typedef struct consulta_bloqueo t_consulta_bloqueo;
 
@@ -200,6 +205,7 @@ int finalizar_esi(int pid_esi);
 //Manejo de Coordinador
 int recibir_mensaje_coordinador(int coord_socket);
 int cerrar_conexion_coord(int coord_socket);
+int enviar_resultado_consulta(int socket, int resultado);
 
 //Manejo de claves
 int bloquear_clave(char* clave , char* id);
