@@ -23,10 +23,6 @@
 #define INTERVALO_DUMP 10 // Intervalo dado en segundos para guardar la tabla de entradas en archivo de texto plano
 #define PUNTO_DE_MONTAJE "home/utnso/instanciaX"
 
-#define GET_KEYWORD 0
-#define SET_KEYWORD 1
-#define STORE_KEYWORD 2
-
 //***Cod ops
 #define INSTANCIA_COORDINADOR_CONEXION 1
 #define COORDINADOR_INSTANCIA_CONFIG_INICIAL 2

@@ -8,7 +8,6 @@
  ============================================================================
  */
 
-// offset
 #include  "Utilidades.h"
 
 int conexionConCoordinador() {
@@ -30,7 +29,7 @@ int conexionConCoordinador() {
 }
 
 void imprimirEntrada(t_indice_entrada * entrada) {
-	printf("\t| %d        | %s    |   %d    |   %d      |   %s   |\n",
+	printf("\t| %d        | %s    |   %d    |   %d      |   %p   |\n",
 			entrada->numeroEntrada, entrada->clave, entrada->tamanioValor,
 			entrada->esAtomica, entrada->puntero);
 }
@@ -94,6 +93,48 @@ void enviarNombreInstanciaACoordinador(int socketCoordinador) {
 
 }
 
+void enviarResultadoSentencia(int socketCoordinador, int keyword) {
+	printf("Envio de header para respuesta de sentencia...\n");
+
+	int resultado;
+	int resultadoEjecucion;
+
+	switch (keyword) {
+	case SET_:
+		enviarHeader(socketCoordinador, instancia, coordinador,
+		INSTANCIA_COORDINADOR_RESPUESTA_SENTENCIA, sizeof(int));
+
+		printf("Enviando Respuesta de sentencia SET...\n");
+
+		resultadoEjecucion = EXITO_I;
+
+		resultado = send(socketCoordinador, resultadoEjecucion, sizeof(int),
+				0);
+
+		printf("\tResultado: %d\n", resultado);
+		printf("\tResultado de ejecucion enviado: %d\n", resultadoEjecucion);
+		break;
+
+	case STORE_:
+		enviarHeader(socketCoordinador, instancia, coordinador,
+		INSTANCIA_COORDINADOR_RESPUESTA_SENTENCIA, sizeof(int));
+
+		printf("Enviando Respuesta de sentencia STORE...\n");
+
+		resultadoEjecucion = EXITO_I;
+
+		resultado = send(socketCoordinador, resultadoEjecucion, sizeof(int),
+				0);
+
+		printf("\tResultado: %d\n", resultado);
+		printf("\tResultado de ejecucion enviado: %d\n", resultadoEjecucion);
+		break;
+
+	default:
+		break;
+	}
+}
+
 int interpretarHeader(int socketCoordinador, t_content_header * header) {
 	printf("Esperando mensajes:\n");
 	header->proceso_origen = 0;
@@ -133,15 +174,15 @@ void crearTablaEntradas(t_configTablaEntradas * config) {
 
 	l_indice_entradas = list_create();
 
-	int tamanio = config->cantTotalEntradas * config->tamanioEntradas;
+	int tamanioTotal = config->cantTotalEntradas * config->tamanioEntradas;
 
-	tablaEntradas = malloc(tamanio);
+	tablaEntradas = malloc(tamanioTotal);
 
 	if (tablaEntradas != NULL) {
-		printf("\tAlocado memoria para tabla de entradas\n");
+		printf("\tAlocado memoria para guardada de Valores\n");
 
 	} else {
-		printf("\tNo se pudo alocar la memoria para tabla de entradas\n");
+		printf("\tNo se pudo alocar la memoria para el guardado de Valores\n");
 	}
 }
 
@@ -160,33 +201,34 @@ t_sentencia * recibirSentencia(int socketCoordinador) {
 			sentenciaPreliminarRecibida->clave,
 			sentenciaPreliminarRecibida->tam_valor);
 
-	// TODO: Hacer verficiacion de keyword recibida (si es un SET pasar el valor, sino no)
-	if (sentenciaPreliminarRecibida->keyword == SET_KEYWORD) {
-	// Ahora se recibe el VALOR real de la sentencia
+	// TODO: Como deberiamos manejar el STORE?
+	if (sentenciaPreliminarRecibida->keyword == SET_) {
+		// Ahora se recibe el VALOR real de la sentencia
 
-	char * valorRecibido = malloc(sentenciaPreliminarRecibida->tam_valor);
+		char * valorRecibido = malloc(sentenciaPreliminarRecibida->tam_valor);
 
-	int statusValorSentencia = recv(socketCoordinador, valorRecibido,
-			sentenciaPreliminarRecibida->tam_valor, (int) NULL);
+		int statusValorSentencia = recv(socketCoordinador, valorRecibido,
+				sentenciaPreliminarRecibida->tam_valor, (int) NULL);
 
-	printf("status header: %d \n", statusValorSentencia);
-	printf("Valor de Sentencia recibido: \n");
-	printf("\tValor: %s\n", valorRecibido);
+		printf("status header: %d \n", statusValorSentencia);
+		printf("Valor de Sentencia recibido: \n");
+		printf("\tValor: %s\n", valorRecibido);
 
-	// Armado de sentencia definitiva
+		// Armado de sentencia definitiva
 
-	t_sentencia * sentenciaRecibida = malloc(sizeof(t_sentencia));
+		t_sentencia * sentenciaRecibida = malloc(sizeof(t_sentencia));
 
-	strcpy(sentenciaRecibida->clave, sentenciaPreliminarRecibida->clave);
-	sentenciaRecibida->keyword = sentenciaPreliminarRecibida->keyword;
-	sentenciaRecibida->valor = strdup(valorRecibido);
+		strcpy(sentenciaRecibida->clave, sentenciaPreliminarRecibida->clave);
+		sentenciaRecibida->keyword = sentenciaPreliminarRecibida->keyword;
+		sentenciaRecibida->valor = strdup(valorRecibido);
 
-	printf(
-			"Se asigna la sentencia correctamente... Lista para ser procesada...\n");
-	return sentenciaRecibida;
+		printf(
+				"Se asigna la sentencia correctamente... Lista para ser procesada...\n");
+		return sentenciaRecibida;
 	}
 
-	else return sentenciaPreliminarRecibida;
+	else
+		return sentenciaPreliminarRecibida;
 
 }
 
@@ -262,7 +304,7 @@ void guardarClaveValor(t_sentencia * sentenciaRecibida) {
 				indiceEntrada->puntero = tablaEntradas
 						+ (indiceEntrada->numeroEntrada
 								* configTablaEntradas->tamanioEntradas);
-				printf("\tPuntero: %s\n", indiceEntrada->puntero);
+				printf("\tPuntero: %p\n", indiceEntrada->puntero);
 
 				list_add(l_indice_entradas, indiceEntrada);
 
@@ -300,11 +342,14 @@ void guardarClaveValor(t_sentencia * sentenciaRecibida) {
 
 			printf("Indice agregado correctamente\n");
 
+			imprimirTablaEntradas();
+
 			printf("Guardando valor...\n");
+
 			memcpy(indiceEntrada->puntero, sentenciaRecibida->valor,
 					strlen(sentenciaRecibida->valor));
 
-			printf("Valor guardado: %s\n", indiceEntrada->puntero);
+			printf("Valor guardado: %s\n", *indiceEntrada->puntero);
 
 		}
 
@@ -334,20 +379,23 @@ void interpretarOperacionCoordinador(t_content_header * header,
 
 		switch (sentenciaRecibida->keyword) {
 
-		case SET_KEYWORD:
+		case SET_:
 			// Imprimo tabla de entradas para verificar su estado
-			imprimirTablaEntradas();
 			guardarClaveValor(sentenciaRecibida);
 			imprimirTablaEntradas();
+			enviarResultadoSentencia(socketCoordinador, SET_);
 			break;
 
-		case STORE_KEYWORD:
+		case STORE_:
 			// grabarArchivo(sentenciaRecibida);
+			// Liberar el indice y la entrada
+			// enviarResultadoSentencia(socketCoordinador, STORE_);
 			break;
 
-		case GET_KEYWORD:
+		case GET_:
 			printf(
 					"TODO: Leer clave y devolver valor... (ver si corresponde implementar el GET)\n");
+			// enviarResultadoSentencia(socketCoordinador, GET_);
 			break;
 
 		}
