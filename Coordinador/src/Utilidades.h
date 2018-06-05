@@ -103,7 +103,6 @@ signed int indice_actual_lista; //que item de la lista fue el ultimo al que se a
 t_instancia PROCESO_PLANIFICADOR;
 int total_hilos = 0; //borrable
 int hay_instancias = 0; //No se porque si uso lista.element_count tira segmentation fault. que mierda pasa la concha de la lora.
-int debug_var = 1;
 //***
 
 #include "Utilidades.c"

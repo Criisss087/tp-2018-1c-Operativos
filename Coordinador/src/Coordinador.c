@@ -10,7 +10,7 @@
 #include "FuncionesCoordinador.c"
 
 void guardarClaveInternamente(char clave[40]){
-	log_warning(logger,"TODO");
+	log_warning(logger,"TODO - guardarClaveInternamente");
 }
 rta_envio enviarSentenciaInstancia(t_sentencia * sentencia){
 
@@ -32,7 +32,7 @@ rta_envio enviarSentenciaInstancia(t_sentencia * sentencia){
 	t_instancia * proxima = siguienteInstanciaSegunAlgoritmo();
 	log_info(logger,"Enviando a instancia: '%s' %s %s",proxima->nombre,sentencia->clave, sentencia->valor);
 
-
+//TODO Que siguienteInstanciaSegunAlgortimo devuelva null en vez de esto
 	if (string_equals_ignore_case(proxima->nombre, "ERROR")){
 		free(proxima->nombre);
 		free(proxima);
@@ -71,6 +71,8 @@ rta_envio enviarSentenciaInstancia(t_sentencia * sentencia){
 		rta.valor = strdup(valor);
 	}
 
+	log_info(logger,"Recibido valor de instancia '%s': Clave '%s' - Valor '%s'",rta.instancia->nombre,sentencia->clave,sentencia->valor);
+
 	free(proxima->nombre);
 	free(proxima);
 	free(header);
@@ -80,7 +82,6 @@ rta_envio enviarSentenciaInstancia(t_sentencia * sentencia){
 }
 
 void interpretarOperacionInstancia(t_content_header * hd, int socketInstancia){
-	log_info(logger,"%d",debug_var); debug_var++;
 	switch(hd->operacion){
 		case INSTANCIA_COORDINADOR_CONEXION:
 			;
@@ -157,6 +158,8 @@ void proseguirOperacionNormal(int socketCliente, t_sentencia * sentencia_con_pun
 			rdo_ejecucion_instancia = enviarSentenciaInstancia(sentencia_con_punteros);
 			contador--;
 		}
+		//TODO Que enviarSentenciaInstancia 
+		//TODO Verificar si después de las 3 veces sigue devolviendo COMPACTAR. Si es asi ver que hacer. Abortar esi y mostrar log_error por consola?
 		devolverResultadoInstanciaAESI(socketCliente, rdo_ejecucion_instancia, sentencia_con_punteros->pid);
 		break;
 	}
