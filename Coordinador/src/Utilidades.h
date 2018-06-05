@@ -55,9 +55,6 @@
 #define ARCH_CONFIG_RETARDO "Retardo"
 //***
 
-
-	//Rta de instancia
-#define COMPACTACION 2
 //***
 
 typedef struct{
@@ -72,6 +69,12 @@ typedef struct{
 	int keyword;
 	int pid;
 } t_sentencia;
+
+typedef struct {
+	int cod;
+	t_instancia * instancia;
+	char * valor;
+} rta_envio;
 
 typedef struct{
 	int resultado_del_parseado;
