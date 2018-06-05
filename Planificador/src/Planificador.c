@@ -18,6 +18,9 @@ int main(void) {
 	struct timeval tv = {0, 500};
 
 	//TODO Obtener datos del archivo de configuración
+
+
+	//Configura el Logger
 	logger = log_create("Log_Planificador.txt","Planificador",true,LOG_LEVEL_TRACE);
 	log_trace(logger,"Iniciando Planificador...");
 
