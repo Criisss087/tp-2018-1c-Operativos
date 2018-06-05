@@ -832,24 +832,22 @@ void consola_continuar(void)
 
 void consola_bloquear_clave(char* clave , char* id){
 
-	/* Se bloqueará el proceso ESI hasta ser desbloqueado (ver más adelante),
-	 * especificado por dicho ID(^3) en la cola del recurso clave. Vale recordar
-	 * que cada línea del script a ejecutar es atómica, y no podrá ser interrumpida;
-	 * si no que se bloqueará en la próxima oportunidad posible. Solo se podrán bloquear
-	 * de esta manera ESIs que estén en el estado de listo o ejecutando.
-	 *
-	 * ^3: El Planificador empezará con una serie de claves bloqueadas de esta manera.
-	 *
-	 * Entiendo que este comando debe pasar a bloqueado un esi, e indicar por cual clave llego
-	 * a bloqueados en su pcb, o lista (como hagamos para listar recurso)
-	 */
+	int pid;
 
-	if(clave == NULL || id == NULL){
+	/* Debe simular GET CLAVE PID */
+	if(clave == NULL || id == NULL)
+	{
 		printf("Parametros incorrectos (bloquear <clave> <id>)\n");
 	}
-	else{
-		printf("Bloquear clave: %s id: %s\n",clave, id);
-		bloquear_clave(clave, id);
+	else
+	{
+
+		pid = atoi(id);
+		printf("Bloquear clave: %s id: %d\n",clave, pid);
+
+		//Si al intentar bloquear la clave falla, bloqueo el esi
+		if(bloquear_clave(clave, pid))
+			bloquear_esi_pid(clave,pid);
 	}
 
 
@@ -1031,8 +1029,9 @@ void mostrar_bloqueos(void)
 
 void mostrar_clave_bloqueada(t_claves_bloqueadas * clave_bloqueada)
 {
-	printf("PID esi: %d\n", clave_bloqueada->pid);
+
 	printf("Clave Bloqueada: %s\n", clave_bloqueada->clave);
+	printf("PID esi que la tiene asignada: %d\n", clave_bloqueada->pid);
 	printf("\n");
 
 	return;
@@ -1257,12 +1256,54 @@ void mostrar_esi(t_pcb_esi * esi)
 	printf("Estimacion Real: %f\n", esi->estimacion_real);
 	printf("Estimacion anterior: %f\n", esi->estimacion_anterior);
 
-	if(esi->clave_bloqueo!=NULL)
+	//if(esi->clave_bloqueo!=NULL)
 		printf("Clave que lo bloqueó: %s\n", esi->clave_bloqueo);
 
 	printf("\n");
 
 	return;
+}
+
+int bloquear_esi_pid(char * clave,int pid)
+{
+
+	if(esi_en_ejecucion != NULL  && esi_en_ejecucion->pid == pid)
+	{
+		/* Si el esi esta en ejecucion, esperar a que termine la instrucción y desalojar */
+
+		printf("\nEsperando a que termine de ejecutar la sentencia\n");
+		if(esi_en_ejecucion->clave_bloqueo!=NULL)
+		{
+			free(esi_en_ejecucion->clave_bloqueo);
+			esi_en_ejecucion->clave_bloqueo = NULL;
+		}
+
+		esi_en_ejecucion->clave_bloqueo = strdup(clave);
+
+		bloqueo_en_ejecucion++;
+
+
+	}
+	else if (buscar_esi_en_lista_pid(esi_listos, pid) )
+	{
+		// Si el esi está en la lista de listos, hay que pasarlo a bloqueado
+		t_pcb_esi * esi_aux = sacar_esi_de_lista_pid(esi_listos,pid);
+
+		esi_aux->clave_bloqueo = strdup(clave);
+		esi_aux->estado = bloqueado;
+
+		list_add(esi_bloqueados,esi_aux);
+
+		printf("El ESI %d estaba en listos, se pasó a bloqueados\n",pid);
+
+	}
+	else
+	{
+		printf("No existe el ESI de ID %d en READY ni en EJECUCION\n",pid);
+		return 1;
+	}
+
+	return 0;
 }
 
 int destruir_esi(t_pcb_esi * esi)
@@ -1422,6 +1463,12 @@ int finalizar_esi(int pid_esi)
 
 		desbloquear_claves_bloqueadas_pid(esi_aux->pid);
 
+		if(esi_aux->clave_bloqueo!=NULL)
+		{
+			free(esi_aux->clave_bloqueo);
+			esi_aux->clave_bloqueo = NULL;
+		}
+
 		esi_aux->estado = terminado;
 
 		list_add(esi_terminados, esi_aux);
@@ -1439,13 +1486,11 @@ int finalizar_esi(int pid_esi)
 //FUNCIONES DE CLAVES BLOQUEADAS //
 //*******************************//
 
-int bloquear_clave(char* clave , char* id)
+int bloquear_clave(char* clave , int pid)
 {
 
-	int pid = -1;
 	t_claves_bloqueadas * clave_bloqueada;
 
-	pid = atoi(id);
 	if((clave_bloqueada = buscar_clave_bloqueada(clave)) == NULL)
 	{
 		clave_bloqueada = malloc(sizeof(t_claves_bloqueadas));
@@ -1459,71 +1504,34 @@ int bloquear_clave(char* clave , char* id)
 
 		printf("Se creó la clave bloqueada %s\n",clave);
 
-
-		if(esi_en_ejecucion != NULL  && esi_en_ejecucion->pid == pid)
+		//Busco si existe el ESI en el sistema
+		if((esi_en_ejecucion != NULL  && esi_en_ejecucion->pid == pid) || 	// EJEC
+		  (buscar_esi_en_lista_pid(esi_listos, pid) ) )						// READY
 		{
-			/*
-			 * Si el esi esta en ejecucion, esperar a que termine la instrucción y desalojar
-			 * Seguramente hay que usar un semaforo
-			 *
-			 */
-
-			printf("\nEsperando a que termine de ejecutar la sentencia\n");
-			if(esi_en_ejecucion->clave_bloqueo!=NULL)
-			{
-				free(esi_en_ejecucion->clave_bloqueo);
-				esi_en_ejecucion->clave_bloqueo = NULL;
-			}
-
-			esi_en_ejecucion->clave_bloqueo = strdup(clave);
-
-			bloqueo_en_ejecucion++;
-			/*
-			//sem_wait(&sem_bloqueo_esi_ejec);
-			//sem_wait(&sem_ejecucion_esi);
-			printf("\nSentencia terminada!\n");
-
-			//pthread_mutex_lock(&mutex_esi_en_ejecucion);
-			esi_en_ejecucion->clave_bloqueo = strdup(clave);
-			esi_en_ejecucion->estado = bloqueado;
-
-			list_add(esi_bloqueados,esi_en_ejecucion);
-
-			desalojar_ejecucion();
-			//pthread_mutex_unlock(&mutex_esi_en_ejecucion);
-
-			//sem_post(&sem_ejecucion_esi);
-			//sem_post(&sem_bloqueo_esi_ejec);
-			printf("El ESI %d estaba en ejecución, se pasó a bloqueados\n",pid);
-			*/
-
-		}
-		else if (buscar_esi_en_lista_pid(esi_listos, pid) && (clave_bloqueada != NULL) )
-		{
-			// Si el esi está en la lista de listos, hay que pasarlo a bloqueado
-			t_pcb_esi * esi_aux = sacar_esi_de_lista_pid(esi_listos,pid);
-
-			esi_aux->clave_bloqueo = strdup(clave);
-			esi_aux->estado = bloqueado;
-
-			list_add(esi_bloqueados,esi_aux);
-
-			printf("El ESI %d estaba en listos, se pasó a bloqueados\n",pid);
-
+			printf("Se asigna la clave al ESI %d \n",pid);
 		}
 		else
 		{
-			//Si el esi no existe, solo se crea la clave bloqueada
-			if(clave_bloqueada!=NULL)
-				clave_bloqueada->pid = -1;
-
-			printf("No existe el ESI de ID %d, solo se crea la clave bloqueada\n",pid);
+			clave_bloqueada->pid = -1;
+			printf("No existe el ESI de ID %d en READY ni en EJECUCION, se asigna la clave a sistema\n",pid);
 		}
+
 
 	}
 	else
 	{
 		printf("La clave %s ya está bloqueada! No se agrega a la lista\n",clave);
+		if(clave_bloqueada->pid == pid)
+		{
+			printf("La clave %s ya está asignada al ESI %d\n",clave,pid);
+			return 0;
+		}
+		else if(clave_bloqueada->pid > -1)
+			printf("La clave %s está asignada al ESI %d\n",clave,clave_bloqueada->pid);
+		else
+			printf("La clave %s está asignada a sistema\n",clave);
+
+		return 1;
 
 	}
 
@@ -1569,8 +1577,9 @@ int desbloquear_clave(char* clave)
 		//Si no existe otro esi bloqueado por esa clave, hay que eliminar la clave de la lista de claves bloqueadas
 		if(buscar_esi_bloqueado_por_clave(clave)==NULL)
 		{
-			printf("Borrar la clave %s de la lista de claves bloqueadas\n",clave);
+			printf("No hay otro ESI bloqueados por la clave %s, se elimina de la lista de claves bloqueadas\n",clave);
 			list_remove_and_destroy_by_condition(claves_bloqueadas,(void*)is_clave_bloqueada,(void*)destruir_clave_bloqueada);
+			return 2;
 		}
 
 
@@ -1578,7 +1587,9 @@ int desbloquear_clave(char* clave)
 	else
 	{
 		//Si no hay esi bloqueado por esa clave, solamente lo elimino de las claves bloqueadas
+		printf("No hay ningun ESIs bloqueados por la clave %s, se elimina de la lista de claves bloqueadas\n",clave);
 		list_remove_and_destroy_by_condition(claves_bloqueadas,(void*)is_clave_bloqueada,(void*)destruir_clave_bloqueada);
+		return 2;
 	}
 
 
@@ -1607,6 +1618,8 @@ int destruir_clave_bloqueada(t_claves_bloqueadas * clave_bloqueada)
 
 void desbloquear_claves_bloqueadas_pid(int pid)
 {
+	t_list * claves_bloqueadas_aux;
+
 	bool is_bloqueado_pid(t_claves_bloqueadas * clave)
 	{
 		return(clave->pid==pid);
@@ -1614,31 +1627,30 @@ void desbloquear_claves_bloqueadas_pid(int pid)
 
 	void desbloquear_recursos(t_claves_bloqueadas * clave)
 	{
-		desbloquear_clave(clave->clave);
+		//Si desbloqueo la clave, pero no la destruyó de la lista, detruyo el local
+		if(!desbloquear_clave(clave->clave))
+			destruir_clave_bloqueada(clave);
+
 	}
 
 
-	t_list * claves_bloqueadas_aux = list_filter(claves_bloqueadas, (void*)is_bloqueado_pid);
+	claves_bloqueadas_aux = list_filter(claves_bloqueadas, (void*)is_bloqueado_pid);
 
 	if(!list_is_empty(claves_bloqueadas_aux))
 	{
 		printf("El ESI %d tiene recursos tomados, liberando claves...\n",pid);
 		list_iterate(claves_bloqueadas_aux,(void*)desbloquear_recursos);
-		list_destroy(claves_bloqueadas_aux);
 
 	}
 
-
+	list_destroy(claves_bloqueadas_aux); //,(void*)destruir_clave_bloqueada);
 
 }
 
 void confirmar_bloqueo_por_set(void)
 {
-	char buffer_pid[20];
 
-	sprintf(buffer_pid,"%d",clave_a_bloquear_por_set->pid);
-
-	bloquear_clave(clave_a_bloquear_por_set->clave,buffer_pid);
+	bloquear_clave(clave_a_bloquear_por_set->clave, clave_a_bloquear_por_set->pid);
 	bloqueo_por_set = 0;
 	return;
 }
