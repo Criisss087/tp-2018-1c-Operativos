@@ -14,7 +14,10 @@ void guardarClaveInternamente(char clave[40]){
 }
 rta_envio enviarSentenciaInstancia(t_sentencia * sentencia){
 
-	rta_envio rta;/*
+	rta_envio rta;
+	rta.instancia = malloc(sizeof(t_instancia));
+	/*
+
 	switch(sentencia->keyword){
 	case SET:
 		//asignar instancia
@@ -41,7 +44,6 @@ rta_envio enviarSentenciaInstancia(t_sentencia * sentencia){
 	rta.instancia->id = proxima->id;
 	rta.instancia->nombre = strdup(proxima->nombre);
 	rta.instancia->socket = proxima->socket;
-
 	t_content_header * header = crear_cabecera_mensaje(coordinador,instancia,COORDINADOR_INSTANCIA_SENTENCIA, sizeof(t_content_header));
 	t_esi_operacion_sin_puntero * s_sin_p = armar_esi_operacion_sin_puntero(sentencia);
 	int header_envio = send(proxima->socket,header,sizeof(t_content_header),NULL);
@@ -49,6 +51,7 @@ rta_envio enviarSentenciaInstancia(t_sentencia * sentencia){
 	if (sentencia->keyword == SET_){
 		int valor_envio = send(proxima->socket,sentencia->valor,strlen(sentencia->valor),NULL);
 	}
+
 	log_info(logger,"Enviada sentencia a instancia");
 	log_info(logger, "Esperando rta de Instancia");
 //Espero rta de Instancia
