@@ -433,6 +433,11 @@ int recibir_mensaje_esi(t_conexion_esi conexion_esi)
 				confirmar_desbloqueo_por_store();
 			}
 
+			if(estado_pausa_por_consola == pausado){
+				confirmar_pausa_por_consola();
+
+			}
+
 			// Ordenar ejecutar siguiente sentencia del ESI
 			if(esi_en_ejecucion!=NULL)
 			{
@@ -771,12 +776,20 @@ void consola_pausar(void)
 	 */
 
 	log_info(logger,"CONSOLA> COMANDO: pausar");
+
+	estado_pausa_por_consola = pausado;
+	log_info(logger,"Se pausó la ejecución.");
+
 	return;
 }
 
 void consola_continuar(void)
 {
 	log_info(logger,"CONSOLA> COMANDO: continuar");
+
+	estado_pausa_por_consola = no_pausado;
+	log_info(logger,"Se reanudó la ejecución.");
+
 	return;
 }
 
@@ -1051,7 +1064,11 @@ void planificar(void)
 
 	log_info(logger,"Replanificando...\n");
 	if(esi_en_ejecucion == NULL){
-		obtener_proximo_ejecucion();
+
+		//Si no está pausada la ejecución por consola
+		if(estado_pausa_por_consola != pausado){
+			obtener_proximo_ejecucion();
+		}
 	}
 
 }
@@ -1663,4 +1680,19 @@ void confirmar_desbloqueo_por_store(void)
 	desbloqueo_por_store = 0;
 
 	return;
+}
+
+
+int confirmar_pausa_por_consola(){
+
+	log_info(logger,"Sentencia pausada.");
+
+	esi_en_ejecucion->estado = listo;
+
+	list_add(esi_listos, esi_en_ejecucion);
+	esi_en_ejecucion = NULL;
+
+	log_info(logger,"Proceso desalojado.\n");
+
+	return 0;
 }
