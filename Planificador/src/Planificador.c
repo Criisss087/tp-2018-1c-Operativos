@@ -16,9 +16,10 @@ int main(void) {
 	int max_fd;
 	char read_buffer[MAX_LINEA];
 	struct timeval tv = {0, 500};
+	char* path_archivo;
 
 	//TODO Obtener datos del archivo de configuración
-
+	leer_configuracion_desde_archivo(path_archivo);
 
 	//Configura el Logger
 	logger = log_create("Log_Planificador.txt","Planificador",true,LOG_LEVEL_TRACE);
@@ -1698,4 +1699,36 @@ int confirmar_pausa_por_consola(){
 	log_info(logger,"Proceso desalojado.\n");
 
 	return 0;
+}
+
+void leer_configuracion_desde_archivo(char* path_archivo){
+
+	arch_config = config_create(path_archivo);
+	char* atributo;
+
+	atributo = "ALGORITMO";
+	if(config_has_property(arch_config, atributo)){
+		config_algoritmo = config_get_string_value(arch_config, atributo);
+	}
+	else{
+		log_error(logger,"ERROR. No se pudo recuperar el atributo %s.", atributo);
+	}
+
+	atributo = "ALFA";
+	if(config_has_property(arch_config, atributo)){
+		config_alfa = config_get_int_value(arch_config, atributo);
+	}
+	else{
+		log_error(logger,"ERROR. No se pudo recuperar el atributo %s.", atributo);
+	}
+
+	atributo = "ESTIMACION_INICIAL";
+	if(config_has_property(arch_config, atributo)){
+		config_estim_ini = config_get_int_value(arch_config, atributo);
+	}
+	else{
+		log_error(logger,"ERROR. No se pudo recuperar el atributo %s.", atributo);
+	}
+
+	return;
 }
