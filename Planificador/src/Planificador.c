@@ -129,7 +129,6 @@ int main(void) {
 				}
 			}
 
-
 			//Manejo de conexiones esi ya existentes
 			for (int i = 0; i < MAX_CLIENTES; ++i) {
 				if (conexiones_esi[i].socket != NO_SOCKET ){
@@ -788,6 +787,7 @@ void consola_continuar(void)
 	log_info(logger,"CONSOLA> COMANDO: continuar");
 
 	estado_pausa_por_consola = no_pausado;
+	planificar();
 	log_info(logger,"Se reanudó la ejecución.");
 
 	return;
