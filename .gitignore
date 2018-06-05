@@ -58,3 +58,7 @@ dkms.conf
 #all project cproject
 .project
 .cproject
+
+# Ejecutables de ReDistinto
+dummyclient
+coordinador
