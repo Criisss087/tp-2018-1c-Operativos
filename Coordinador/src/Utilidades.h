@@ -22,12 +22,11 @@
 #include <parsi/parser.h>
 #include <commons/collections/list.h>
 #include <commons/config.h>
+#include <semaphore.h>
 
 #define IP "127.0.0.1"
 
 #define BACKLOG 10			// Define cuantas conexiones vamos a mantener pendientes al mismo tiempo
-#define PACKAGESIZE 1024
-#define HEADER_LENGTH 10
 
 //***Cod ops
 #define ESI_COORDINADOR_SENTENCIA 1
@@ -36,6 +35,7 @@
 #define INSTANCIA_COORDINADOR_CONEXION 1
 #define COORDINADOR_INSTANCIA_CONFIG_INICIAL 2
 #define COORDINADOR_INSTANCIA_SENTENCIA 3
+#define INSTANCIA_COORDINADOR_RTA 4
 
 #define PLANIFICADOR_COORDINADOR_HEADER_IDENTIFICACION 1
 
@@ -81,6 +81,11 @@ typedef struct{
 } respuesta_coordinador;
 
 //****** Estructuras internas de Coordinador
+//Semaforos
+pthread_mutex_t mutexInstancias;
+sem_t semInstancias;
+pthread_mutex_t bloqueo_de_Instancias;
+
 //Algoritmos
 #define LEAST_SPACE_USED 0
 #define EQUITATIVE_LOAD 1
@@ -90,8 +95,8 @@ typedef struct{
 
 int ALGORITMO_DISTRIBUCION = EQUITATIVE_LOAD;
 char * PUERTO = "8888";
-int TAMANIO_ENTRADAS = 8;
-int CANT_MAX_ENTRADAS = 5;
+int TAMANIO_ENTRADAS = 300;
+int CANT_MAX_ENTRADAS = 50;
 int RETARDO = 0; //ms
 
 t_log * logger;

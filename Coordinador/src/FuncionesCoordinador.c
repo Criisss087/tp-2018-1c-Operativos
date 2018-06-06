@@ -128,10 +128,9 @@ void log_error_operacion_esi(t_sentencia * sentencia, int puedoEnviar){
 	if (sentencia->keyword == GET) {keyw = strdup("GET");}
 	else if(sentencia->keyword == SET) {keyw = strdup("SET");}
 	else {keyw = strdup("STORE");}
-
 	char * error;
-	if (puedoEnviar == ABORTAR) {keyw = strdup("ABORTAR");}
-	else {keyw = strdup("CLAVE BLOQUEADA");}
+	if (puedoEnviar == ABORTAR) {error = strdup("ABORTAR");}
+	else {error = strdup("CLAVE BLOQUEADA");}
 
 	log_info(logger_operaciones, "ESI %d = %s %s %v - ERROR: %s",sentencia->pid,keyw,sentencia->clave,sentencia->valor, error);
 	free(keyw);

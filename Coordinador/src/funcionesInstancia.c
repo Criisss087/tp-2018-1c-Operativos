@@ -16,6 +16,7 @@ void enviarConfiguracionInicial(int socketInstancia){
 	log_info(logger,"Enviando configuracion inicial a Instancia");
 
 	t_configTablaEntradas * config = malloc(sizeof(t_configTablaEntradas));
+
 	config->cantTotalEntradas = CANT_MAX_ENTRADAS;
 	config->tamanioEntradas= TAMANIO_ENTRADAS;
 

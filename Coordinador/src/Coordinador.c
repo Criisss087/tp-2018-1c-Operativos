@@ -55,12 +55,17 @@ rta_envio enviarSentenciaInstancia(t_sentencia * sentencia){
 	log_info(logger,"Enviada sentencia a instancia");
 	log_info(logger, "Esperando rta de Instancia");
 //Espero rta de Instancia
+
+//	sem_wait(&semInstancias);
 	int header_rta_instancia = recv(proxima->socket,header,sizeof(t_content_header), NULL);
+//	sem_post(&semInstancias);
+
 	log_info(logger, "Rta Instancia Header: - Origen: %d, Receptor: %d, Operación: %d, Cantidad: %d",header->proceso_origen,header->proceso_receptor,header->operacion,header->cantidad_a_leer);
 
 	int * cod_rta = malloc(sizeof(int));
+//	sem_wait(&semInstancias);
 	header_rta_instancia = recv(proxima->socket,cod_rta,sizeof(int), NULL);
-
+	//sem_post(&semInstancias);
 	rta.cod= *cod_rta;
 	log_info(logger, "Rta Instancia '%s'respuesta: - %d ",proxima->nombre,rta.cod);
 	//Si estoy pidiendo el valor de la clave, recibo la clave:
@@ -82,6 +87,7 @@ rta_envio enviarSentenciaInstancia(t_sentencia * sentencia){
 }
 
 void interpretarOperacionInstancia(t_content_header * hd, int socketInstancia){
+	log_warning(logger,"aca - %d",hd->operacion);
 	switch(hd->operacion){
 		case INSTANCIA_COORDINADOR_CONEXION:
 			;
@@ -94,6 +100,7 @@ void interpretarOperacionInstancia(t_content_header * hd, int socketInstancia){
 
 			free(nombre);
 			break;
+
 		default:
 			break;
 	}
@@ -115,7 +122,7 @@ int puedoEjecutarSentencia(t_sentencia * sentencia){
 	//	   Si existe, verificar conexión de instancia.
 	//	   Si no está conectada abortar esi.
 	//TODO Preguntarle a Planificador si la clave no esta bloqueada.
-	log_info(logger,"Puedo ejecutar?");
+	log_info(logger,"Puedo ejecutar?  %d",list_size(lista_instancias)>0);
 	if(	list_size(lista_instancias)>0){return CORRECTO;}else return ABORTAR;
 }
 devolverResultadoInstanciaAESI(int socketEsi, rta_envio rta, int idEsi){
@@ -130,6 +137,7 @@ void devolverCodigoResultadoInstanciaAESI(int socketCliente, int cod, int idEsi)
 
 	respuesta_coordinador * cod_error = malloc(sizeof(respuesta_coordinador));
 	cod_error->resultado_del_parseado = cod;
+	log_info(logger, "Devolviendo rdo '%d' a ESI '%d'..", cod_error->resultado_del_parseado, idEsi );
 	int status_hd_mensaje_error = send(socketCliente, cod_error, sizeof(respuesta_coordinador), NULL);
 
 	log_info(logger, "Rdo devuelto a %d",idEsi);
@@ -148,6 +156,7 @@ void proseguirOperacionNormal(int socketCliente, t_sentencia * sentencia_con_pun
 		break;
 	default:
 		;
+		log_info(logger,"Enviando sentencia a instancia");
 		//Tanto para set o store le pregunté al planificador si podía continuar. El planificador ya hizo chequeos necesarios/operaciones necesarias.
 		rta_envio rdo_ejecucion_instancia = enviarSentenciaInstancia(sentencia_con_punteros);
 		//Reintenta hasta 3 veces si debe compactar.
@@ -158,6 +167,7 @@ void proseguirOperacionNormal(int socketCliente, t_sentencia * sentencia_con_pun
 			rdo_ejecucion_instancia = enviarSentenciaInstancia(sentencia_con_punteros);
 			contador--;
 		}
+		log_info(logger,"Obtenido resultado");
 		//TODO Que enviarSentenciaInstancia 
 		//TODO Verificar si después de las 3 veces sigue devolviendo COMPACTAR. Si es asi ver que hacer. Abortar esi y mostrar log_error por consola?
 		devolverResultadoInstanciaAESI(socketCliente, rdo_ejecucion_instancia, sentencia_con_punteros->pid);
@@ -210,6 +220,7 @@ void interpretarOperacionESI(t_content_header * hd, int socketCliente){
 				devolverCodigoResultadoInstanciaAESI(socketCliente, ABORTAR, sentencia_con_punteros->pid);
 				log_warning(logger,"Devuelto ABORTAR al ESI %d", sentencia->pid);
 				log_error_operacion_esi(sentencia_con_punteros, puedoEnviar);
+				log_info(logger,"fin aboortar");
 				break;
 			default:
 				break;
@@ -231,6 +242,7 @@ void interpretarHeader(t_content_header * hd, int socketCliente){
 		interpretarOperacionESI(hd,socketCliente);
 		break;
 	case instancia:
+//		pthread_mutex_lock(&bloqueo_de_Instancias);
 		interpretarOperacionInstancia(hd,socketCliente);
 		break;
 	case planificador:
@@ -253,7 +265,7 @@ void *escucharMensajesEntrantes(int socketCliente){
 
     t_content_header * header = malloc(sizeof(t_content_header));
 
-    while (status_header != 0){
+    while (status_header != -1){
 
     	status_header = recv(socketCliente, header, sizeof(t_content_header), NULL);
     	log_info(logger, "Recv - Status Header: %d", status_header);
@@ -264,14 +276,33 @@ void *escucharMensajesEntrantes(int socketCliente){
     		log_info(logger, "Interpretando header...");
     		interpretarHeader(header, socketCliente);
     	};
+    	//Si es instancia, solamente le mando la configuracion y cierro el hilo.
+    	if (header->proceso_origen == instancia){
+    		status_header =-1;
+    		log_warning(logger,	"cerrando hilo para instancia");
+    	}
    	}
+
+	if (header->proceso_origen != instancia){
+	    close(socketCliente);
+	}
+
     free(header);
-    close(socketCliente);
+
 }
 
 int main(int argc, char **argv){
 
 	seteosIniciales(argv[1]);
+
+	pthread_mutex_init(&mutexInstancias, NULL);
+	sem_init(&semInstancias, 0, 1);
+	//pthread_mutex_init(&bloqueo_de_Instancias, NULL);
+//	pthread_mutex_lock(&bloqueo_de_Instancias);
+//	pthread_mutex_unlock(&bloqueo_de_Instancias;
+	//sem_wait(&semInstancias);
+//	sem_post(&semInstancias);
+
 
 	struct addrinfo *serverInfo = crear_addrinfo();
 	int listenningSocket = socket(serverInfo->ai_family, serverInfo->ai_socktype, serverInfo->ai_protocol);
