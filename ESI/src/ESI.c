@@ -19,13 +19,21 @@ int main(int argc, char **argv){
 	ssize_t sentencia_actual = 1;
 	ssize_t sentencia_anterior;
 
+	//Obtengo los datos del archivo de configuracion
+	cargar_archivo_de_config(argv[1]);
+
 	//Me conecto al coordinador y al planificador
 	printf("Iniciando conexion a servidores... \n");
 	int serverCoord = conectar_coordinador(IP_COORDINADOR, PUERTO_COORDINADOR);
 	int serverPlanif = conectar_planificador(IP_PLANIFICADOR, PUERTO_PLANIFICADOR);
+	printf("\n");
 
-	printf("Abriendo archivo a leer...\n");
-	archivo_a_leer_por_el_ESI = fopen(argv[1], "r");
+	archivo_a_leer_por_el_ESI = fopen(argv[2], "r");
+
+	if(archivo_a_leer_por_el_ESI == NULL){
+		printf("Error al intentar abrir el archivo a leer.\n");
+		exit(EXIT_FAILURE);
+	}
 
 	//Leo el archivo y parseo
 	while(!feof(archivo_a_leer_por_el_ESI)){
@@ -40,8 +48,9 @@ int main(int argc, char **argv){
 		read_size = recv(serverPlanif, confirmacion, sizeof(t_confirmacion_sentencia), 0);
 
 		if(content_header->operacion == RECIBIR_ORDEN_EJECUCION){
-			printf("Orden recibida, comienzo el parseo \n");
+			printf("Orden recibida, comienzo el parseo. \n");
 		}
+		printf("\n");
 
 		free(content_header);
 
@@ -58,6 +67,9 @@ int main(int argc, char **argv){
 				sentencia_actual = sentencia_anterior;
 			}
 
+			printf("Ejecutar línea anterior? : %d\n", confirmacion->ejec_anterior);
+			printf("\n");
+
 			t_esi_operacion parsed = parse(linea_a_parsear);
 
 			if(parsed.valido){
@@ -72,22 +84,20 @@ int main(int argc, char **argv){
 				resultado = send(serverCoord, parse_sin_punteros, sizeof(t_esi_operacion_sin_puntero),0);
 
 				if(parse_sin_punteros->keyword == SET){
-					printf("Enviando valor de la clave necesaria para el coordinador... \n");
-					printf("La clave es: %s\n", parsed.argumentos.SET.valor);
-
+					printf("Enviando valor de la clave necesaria para el coordinador, la cual es:  %s\n", parsed.argumentos.SET.valor);
 					int envio_valor_clave = send(serverCoord, parsed.argumentos.SET.valor , strlen(parsed.argumentos.SET.valor),0);
 				}
 
 				destruir_cabecera_mensaje(content_header);
-
+				printf("\n");
 
 				//Recibo respuesta del coordinador
 				printf("Recibiendo respuesta del coordinador...\n");
-				respuesta_coordinador *respuesta_coordinador = malloc (sizeof(respuesta_coordinador));
-				recv(serverCoord, respuesta_coordinador, sizeof(respuesta_coordinador),0);
-
 				content_header = malloc(sizeof(t_content_header));
 				recv(serverCoord, content_header, sizeof(t_content_header),0);
+
+				respuesta_coordinador *respuesta_coordinador = malloc (sizeof(respuesta_coordinador));
+				recv(serverCoord, respuesta_coordinador, sizeof(respuesta_coordinador),0);
 
 				//SI recibo orden de abortar
 				if(content_header->operacion == RECIBIR_RESULTADO_SENTENCIA_COORD && respuesta_coordinador->resultado_del_parseado == ABORTAR){
@@ -117,6 +127,7 @@ int main(int argc, char **argv){
 					exit(EXIT_FAILURE);
 				}
 
+				printf("La respuesta que recibi del coordinador es: %d \n", respuesta_coordinador->resultado_del_parseado);
 
 				if(content_header->operacion == RECIBIR_RESULTADO_SENTENCIA_COORD && respuesta_coordinador->resultado_del_parseado != ABORTAR){
 					confirmacion->resultado = respuesta_coordinador->resultado_del_parseado;
@@ -124,6 +135,9 @@ int main(int argc, char **argv){
 				}
 
 				free(content_header);
+
+				printf("\n");
+				printf("Lo que envío al planificador es: %d \n", confirmacion->resultado);
 
 
 				//Envio al planificador lo que me mando el coordinador
@@ -137,6 +151,10 @@ int main(int argc, char **argv){
 				free(confirmacion);
 				destruir_operacion(parsed);
 
+				printf("\n");
+				printf("FIN LINEA\n");
+				printf("\n");
+
 			}//if parsed valido
 
 		}//if read=getline...
@@ -148,7 +166,7 @@ int main(int argc, char **argv){
 		free(linea_a_parsear);
 	}
 
-
+	printf("\n");
 	printf("Esperando orden del planificador para finalizar...\n");
 	t_content_header* content_header = malloc(sizeof(t_content_header));
 	int read_size = recv(serverPlanif, content_header, sizeof(t_content_header), (int)NULL);

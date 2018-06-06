@@ -5,6 +5,20 @@
  *      Author: utnso
  */
 
+#include <commons/config.h>
+
+//Configuracion
+char * IP_COORDINADOR;
+char * PUERTO_COORDINADOR;
+char * IP_PLANIFICADOR;
+char * PUERTO_PLANIFICADOR;
+
+//Nombres para el archivo de configuracion
+#define ARCH_CONFIG_PUERTO_COORD "PUERTO COORDINADOR"
+#define ARCH_CONFIG_PUERTO_PLANIF "PUERTO PLANIFICADOR"
+#define ARCH_CONFIG_IP_COORD "IP COORDINADOR"
+#define ARCH_CONFIG_IP_PLANIF "IP PLANIFICADOR"
+
 t_esi_operacion_sin_puntero  *transformarSinPunteroYagregarpID(t_esi_operacion t, int id){
 	char * valorp = NULL;
 	char * clavep = NULL;
@@ -45,3 +59,31 @@ t_esi_operacion_sin_puntero  *transformarSinPunteroYagregarpID(t_esi_operacion t
 	return tsp;
 }
 
+void cargar_archivo_de_config(char *path){
+	if (path != NULL){
+
+		t_config * config_file = config_create(path);
+
+		if (config_has_property(config_file,ARCH_CONFIG_PUERTO_COORD)){
+			PUERTO_COORDINADOR = strdup(config_get_string_value(config_file, ARCH_CONFIG_PUERTO_COORD));
+		}
+
+		if (config_has_property(config_file,ARCH_CONFIG_PUERTO_PLANIF)){
+			PUERTO_PLANIFICADOR = strdup(config_get_string_value(config_file, ARCH_CONFIG_PUERTO_PLANIF));
+		}
+
+		if (config_has_property(config_file,ARCH_CONFIG_IP_COORD)){
+			IP_COORDINADOR = strdup(config_get_string_value(config_file, ARCH_CONFIG_IP_COORD));
+		}
+
+		if (config_has_property(config_file,ARCH_CONFIG_IP_PLANIF)){
+			IP_PLANIFICADOR = strdup(config_get_string_value(config_file, ARCH_CONFIG_IP_PLANIF));
+		}
+
+		config_destroy(config_file);
+	}
+	else {
+		printf("Error al cargar el archivo de configuracion \n");
+		exit(1);
+	}
+}

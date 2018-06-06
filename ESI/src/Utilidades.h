@@ -19,12 +19,9 @@
 #include <parsi/parser.h>
 #include <redis_lib.h>
 
+//Esto es para los dummys...
 #define PACKAGESIZE 1024
 #define HEADER_LENGTH 10
-#define IP_COORDINADOR "127.0.0.1"
-#define PUERTO_COORDINADOR "8888"//8080
-#define IP_PLANIFICADOR "127.0.0.1"
-#define PUERTO_PLANIFICADOR "8080"//8082
 
 //Respuestas del coordinador
 //#define OK 1
