@@ -107,12 +107,14 @@ void enviarResultadoSentencia(int socketCoordinador, int keyword) {
 		printf("Enviando Respuesta de sentencia SET...\n");
 
 		resultadoEjecucion = EXITO_I;
-
-		resultado = send(socketCoordinador, resultadoEjecucion, sizeof(int),
-				0);
+int * r;
+int a =  EXITO_I;
+r = &a;
+		resultado = send(socketCoordinador, r, sizeof(int),
+				NULL);
 
 		printf("\tResultado: %d\n", resultado);
-		printf("\tResultado de ejecucion enviado: %d\n", resultadoEjecucion);
+		printf("\tResultado de ejecucion enviado: %d\n", *r);
 		break;
 
 	case STORE_:
