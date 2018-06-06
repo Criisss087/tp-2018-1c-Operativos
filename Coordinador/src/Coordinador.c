@@ -131,12 +131,13 @@ devolverResultadoInstanciaAESI(int socketEsi, rta_envio rta, int idEsi){
 
 void devolverCodigoResultadoInstanciaAESI(int socketCliente, int cod, int idEsi){
 
-	log_info(logger, "Devolviendo rdo '%d' a ESI '%d'..", cod, idEsi );
 	t_content_header * cabecera_rdo = crear_cabecera_mensaje(coordinador,esi, RESULTADO_EJECUCION_SENTENCIA,sizeof(t_content_header));
 	int status_hd_error = send(socketCliente,cabecera_rdo,sizeof(t_content_header),NULL);
 
 	respuesta_coordinador * cod_error = malloc(sizeof(respuesta_coordinador));
-	cod_error->resultado_del_parseado = cod;
+	if (cod ==ERROR_I){	cod_error->resultado_del_parseado = ABORTAR;}
+	if (cod ==EXITO_I){	cod_error->resultado_del_parseado = CORRECTO;}
+
 	log_info(logger, "Devolviendo rdo '%d' a ESI '%d'..", cod_error->resultado_del_parseado, idEsi );
 	int status_hd_mensaje_error = send(socketCliente, cod_error, sizeof(respuesta_coordinador), NULL);
 
