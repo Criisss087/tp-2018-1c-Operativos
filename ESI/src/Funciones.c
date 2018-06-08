@@ -53,9 +53,8 @@ t_esi_operacion_sin_puntero  *transformarSinPunteroYagregarpID(t_esi_operacion t
 	}
 
 	strncpy(tsp->clave, clavep, sizeof (clave) - 1);
-	tsp->clave[strlen(clavep)-1] = '\0';
+	tsp->clave[strlen(clavep)] = '\0';
 
-	//tsp->clave = strdup(clavep);
 	return tsp;
 }
 
