@@ -74,7 +74,7 @@ int main(int argc , char *argv[])
     puts("Connected\n");
 
     //keep communicating with server
-    while(resultado!=2)
+    while(resultado<2)
     {
 
     	printf("Esperando turno para ejecutar... \n ");

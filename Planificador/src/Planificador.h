@@ -50,10 +50,10 @@
 #define ALGORITMO_PLAN_SJFSD "SJF-SD"
 #define ALGORITMO_PLAN_HRRN "HRRN"
 
-#define RESULTADO_ESI_OK_SIG 1
-#define RESULTADO_ESI_OK_FINAL 2
-#define RESULTADO_ESI_ABORTADO 3
-#define RESULTADO_ESI_BLOQUEADA -1
+#define RESULTADO_ESI_OK_SIG 0
+#define RESULTADO_ESI_BLOQUEADA 1
+#define RESULTADO_ESI_ABORTADO 2
+#define RESULTADO_ESI_OK_FINAL 3
 #define OPERACION_CONF_SENTENCIA 1
 #define OPERACION_RES_SENTENCIA 2
 #define OPERACION_HANDSHAKE_COORD 1
@@ -71,7 +71,7 @@ enum estados { nuevo, listo, en_ejecucion, bloqueado, terminado };
 enum sentencias { GET, SET, STORE };
 
 //Resultado a enviar al coordinador cuando consulta clave
-enum resultado_consulta_bloqueo { CORRECTO, CLAVE_BLOQUEADA, ABORTAR};
+//enum resultado_consulta_bloqueo { CORRECTO, CLAVE_BLOQUEADA, ABORTAR};
 
 //Estado de la ejecución de ESI según comando de la consola (Pausa/Continuar)
 enum estado_pausa_ejec { no_pausado, pausado };

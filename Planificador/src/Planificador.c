@@ -17,22 +17,19 @@ int main(void) {
 	char read_buffer[MAX_LINEA];
 	struct timeval tv = {0, 500};
 
-	//TODO Obtener datos del archivo de configuración
-
-
 	//Configura el Logger
 	logger = log_create("Log_Planificador.txt","Planificador",true,LOG_LEVEL_TRACE);
 	log_trace(logger,"Iniciando Planificador...");
+
+	crear_listas_planificador();
+	inicializar_conexiones_esi();
+	stdin_no_bloqueante();
 
 	//Creo el socket servidor para recibir ESIs (ya bindeado y escuchando)
 	int serv_socket = iniciar_servidor(PORT_ESCUCHA);
 
 	//Creo el socket cliente para conectarse al coordinador
 	int coord_socket = conectar_coordinador(IP_COORD, PORT_COORD);
-
-	crear_listas_planificador();
-	inicializar_conexiones_esi();
-	stdin_no_bloqueante();
 
 	while(TRUE){
 		//Inicializa los file descriptor
@@ -318,7 +315,7 @@ int recibir_mensaje_coordinador(int coord_socket)
 		{
 			case GET:
 
-				//Si la clave esta bloqueada, el esi pasa a bloqueado
+				//Si la clave sesta bloqueada, el esi pasa a bloqueado
 				if(buscar_clave_bloqueada(consulta_bloqueo->clave))
 					resultado_consulta = CLAVE_BLOQUEADA;
 				else
@@ -407,7 +404,7 @@ int recibir_mensaje_esi(t_conexion_esi conexion_esi)
 
 		log_info(logger,"Resultado de (%d) = %d",conexion_esi.pid,confirmacion->resultado);
 
-		if(confirmacion->resultado == RESULTADO_ESI_OK_SIG){
+		if(confirmacion->resultado == CORRECTO){
 
 			esi_en_ejecucion->instruccion_actual++;
 			esi_en_ejecucion->estimacion_actual--;
@@ -422,7 +419,6 @@ int recibir_mensaje_esi(t_conexion_esi conexion_esi)
 			if(desalojo_en_ejecucion)
 			{
 				confirmar_desalojo_ejecucion();
-
 			}
 
 			if(bloqueo_por_set)
@@ -446,15 +442,14 @@ int recibir_mensaje_esi(t_conexion_esi conexion_esi)
 				enviar_confirmacion_sentencia(esi_en_ejecucion);
 			}
 
-			//sem_post(&sem_bloqueo_esi_ejec);
 		}
-		else if(confirmacion->resultado == RESULTADO_ESI_OK_FINAL){
+		else if(confirmacion->resultado == LISTO){
 
 			esi_aux = esi_en_ejecucion;
 			finalizar_esi(esi_aux->pid);
 
 		}
-		else if(confirmacion->resultado == RESULTADO_ESI_BLOQUEADA){
+		else if(confirmacion->resultado == CLAVE_BLOQUEADA){
 
 			/* TODO: Chequear con lautaro si luego de que el coordinador reciba que la clave que
 			 * el esi esta intentando bloquear se le envia una respuesta al esi, y ese esi envia
@@ -474,7 +469,7 @@ int recibir_mensaje_esi(t_conexion_esi conexion_esi)
 			esi_en_ejecucion = NULL;
 
 		}
-		else if(confirmacion->resultado == RESULTADO_ESI_ABORTADO){
+		else if(confirmacion->resultado == ABORTAR){
 
 			esi_aux = esi_en_ejecucion;
 			finalizar_esi(esi_aux->pid);
@@ -840,28 +835,6 @@ void consola_desbloquear_clave(char* clave){
 	return;
 }
 
-void crear_claves_bloqueadas_dummy(){
-
-	t_pcb_esi* esi_1 = malloc(sizeof(t_pcb_esi));
-	t_pcb_esi* esi_2 = malloc(sizeof(t_pcb_esi));
-
-	memset(esi_1, 0, sizeof(t_pcb_esi));
-	memset(esi_2, 0, sizeof(t_pcb_esi));
-
-	esi_1->pid = 100;
-	esi_1->estado = bloqueado;
-	esi_1->clave_bloqueo = strdup("unaClave");
-
-	esi_2->pid = 101;
-	esi_2->estado = bloqueado;
-	esi_2->clave_bloqueo = strdup("unaClave");
-
-	list_add(esi_bloqueados, esi_1);
-	list_add(esi_bloqueados, esi_2);
-
-	return;
-}
-
 void consola_listar_recurso(char* recurso)
 {
 	/* listar recurso: Lista los procesos encolados esperando al recurso.
@@ -873,14 +846,11 @@ void consola_listar_recurso(char* recurso)
 	 *
 	 */
 
-	// TODO Eliminar esta funcion
-	crear_claves_bloqueadas_dummy();
-
 	if(recurso == NULL){
 		log_warning(logger,"CONSOLA> Parametros incorrectos (listar <recurso>)");
 	}
 	else{
-		t_list* lista_recursos = list_create();
+		t_list* lista_recursos;
 
 		log_info(logger, "CONSOLA> COMANDO: Listar recurso encolados: %s",recurso);
 
@@ -902,7 +872,7 @@ void consola_listar_recurso(char* recurso)
 			log_info(logger, "NO se encontraron procesos ESI bloqueados por el recurso %s.", recurso);
 		}
 
-		free(lista_recursos);
+		list_destroy(lista_recursos);
 	}
 
 	return;
