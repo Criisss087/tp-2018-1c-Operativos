@@ -1,3 +1,0 @@
-SET futbol:messi TraemeLaCopa
-GET futbol:messi
-STORE futbol:messi
