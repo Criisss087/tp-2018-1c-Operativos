@@ -9,9 +9,6 @@
 #include "Utilidades.h"
 #include "FuncionesCoordinador.c"
 
-void guardarClaveInternamente(char clave[40]){
-	log_warning(logger,"TODO - guardarClaveInternamente");
-}
 rta_envio enviarSentenciaInstancia(t_sentencia * sentencia){
 
 	rta_envio rta;
@@ -92,7 +89,6 @@ void interpretarOperacionInstancia(t_content_header * hd, int socketInstancia){
 	switch(hd->operacion){
 		case INSTANCIA_COORDINADOR_CONEXION:
 			;
-			//TODO leer packete para obtener nombre.
 			char * nombre = malloc(hd->cantidad_a_leer);
 			int status_recv = recv(socketInstancia, nombre, hd->cantidad_a_leer, NULL);
 			log_info(logger,"Tamaño nombre: %d - Nombre: %s",strlen(nombre),nombre);
@@ -116,30 +112,75 @@ void interpretarOperacionPlanificador(t_content_header * hd, int socketCliente){
 	}
 }
 
+t_instancia * guardarClaveInternamente(char clave[40]){
+	log_warning(logger,"TODO - guardarClaveInternamente");
+	//TODO
+	//Chequear que no exista internamente
+	//Si existe, devolver la instancia que la tiene.
+	//Si no existe,
+	t_instancia * instancia_con_clave;
+	return instancia_con_clave;
+}
+
+int chequearConectividadProceso(t_instancia * instancia){
+	//TODO
+	return 1;
+}
+
+int consultarPlanificador(t_sentencia * sentencia){
+	//TODO
+	log_info(logger,"Consultando planificador..");
+
+	t_consulta_bloqueo * consulta_a_planif = malloc(sizeof(t_consulta_bloqueo));
+
+	strncpy(consulta_a_planif->clave,sentencia->clave,40);
+	consulta_a_planif->pid = sentencia->pid;
+	consulta_a_planif->sentencia = sentencia->keyword;
+log_info(logger,"Le mandé: clave %s - pid %d - key %d", consulta_a_planif->clave, consulta_a_planif->pid, consulta_a_planif->sentencia);
+	t_content_header * header = crear_cabecera_mensaje(coordinador, planificador, COORD_PLANIFICADOR_OPERACION_CONSULTA_CLAVE_COORD,0);
+	int status_head = send(PROCESO_PLANIFICADOR.socket, header, sizeof(t_content_header), NULL);
+
+	int status_pack = send(PROCESO_PLANIFICADOR.socket, consulta_a_planif, sizeof(t_consulta_bloqueo), NULL);
+	//recibo rta
+	int status_recv = recv(PROCESO_PLANIFICADOR.socket, header, sizeof(t_content_header),NULL);
+	int * rta = malloc(sizeof(int));
+	status_recv = recv(PROCESO_PLANIFICADOR.socket,rta, sizeof(int),NULL);
+	log_info(logger,"Respuesta de Planificador: %d", *rta);
+	return *rta;
+}
+
 int puedoEjecutarSentencia(t_sentencia * sentencia){
+	//	Si existe, verificar conexión de instancia.
+	//	Si no está conectada abortar esi.
+	// 	Preguntarle a Planificador si la clave no esta bloqueada.
+	log_info(logger,"Chequeando si puedo ejecutar la sentencia...");
+	if(	list_size(lista_instancias)==0){return ABORTAR;}
 
-	//TODO Verificar existencia de clave en alguna instancia.
-	//	   Si no existe, crearla (internamente?)
-	//	   Si existe, verificar conexión de instancia.
-	//	   Si no está conectada abortar esi.
-	//TODO Preguntarle a Planificador si la clave no esta bloqueada.
-	log_info(logger,"Puedo ejecutar?  %d",list_size(lista_instancias)>0);
-	if(	list_size(lista_instancias)>0){return CORRECTO;}else return ABORTAR;
-}
-devolverResultadoInstanciaAESI(int socketEsi, rta_envio rta, int idEsi){
-	devolverCodigoResultadoInstanciaAESI(socketEsi, rta.cod, idEsi);
+	t_instancia * instancia_con_clave = guardarClaveInternamente(sentencia->clave);
+
+	if (chequearConectividadProceso(instancia_con_clave)==0){
+		return ABORTAR;
+	}
+
+	return CORRECTO;//consultarPlanificador(sentencia);
 }
 
-void devolverCodigoResultadoInstanciaAESI(int socketCliente, int cod, int idEsi){
+devolverResultadoAESI(int socketEsi, rta_envio rta, int idEsi){
+	devolverCodigoResultadoAESI(socketEsi, rta.cod, idEsi);
+}
+
+void devolverCodigoResultadoAESI(int socketCliente, int cod, int idEsi){
 
 	t_content_header * cabecera_rdo = crear_cabecera_mensaje(coordinador,esi, RESULTADO_EJECUCION_SENTENCIA,sizeof(t_content_header));
 	int status_hd_error = send(socketCliente,cabecera_rdo,sizeof(t_content_header),NULL);
 
 	respuesta_coordinador * cod_error = malloc(sizeof(respuesta_coordinador));
 	if (cod ==ERROR_I){	cod_error->resultado_del_parseado = ABORTAR;}
-	if (cod ==EXITO_I){	cod_error->resultado_del_parseado = CORRECTO;}
+	if (cod ==EXITO_I || cod == CORRECTO){	cod_error->resultado_del_parseado = CORRECTO;}
+	if (cod == ABORTAR){	cod_error->resultado_del_parseado = ABORTAR;}
 
 	log_info(logger, "Devolviendo rdo '%d' a ESI '%d'..", cod_error->resultado_del_parseado, idEsi );
+	log_info(logger, "El codigo es CORRECTO? %d", CORRECTO == cod_error->resultado_del_parseado);
 	int status_hd_mensaje_error = send(socketCliente, cod_error, sizeof(respuesta_coordinador), NULL);
 
 	log_info(logger, "Rdo devuelto a %d",idEsi);
@@ -151,10 +192,11 @@ void indicarCompactacionATodasLasInstancias(){
 }
 
 void proseguirOperacionNormal(int socketCliente, t_sentencia * sentencia_con_punteros){
+	printf("adsf");
 	switch(sentencia_con_punteros->keyword){
 	case GET_:
-		guardarClaveInternamente(sentencia_con_punteros->clave);
-		devolverCodigoResultadoInstanciaAESI(socketCliente, CORRECTO, sentencia_con_punteros->pid );
+		//guardarClaveInternamente(sentencia_con_punteros->clave); ya guardé cuando chequeé si podia ejecutar
+		devolverCodigoResultadoAESI(socketCliente, CORRECTO, sentencia_con_punteros->pid );
 		//Ya pregunté anteriormente al planificador, y ya la bloqueó
 		break;
 	default:
@@ -173,7 +215,7 @@ void proseguirOperacionNormal(int socketCliente, t_sentencia * sentencia_con_pun
 		log_info(logger,"Obtenido resultado");
 		//TODO Que enviarSentenciaInstancia 
 		//TODO Verificar si después de las 3 veces sigue devolviendo COMPACTAR. Si es asi ver que hacer. Abortar esi y mostrar log_error por consola?
-		devolverResultadoInstanciaAESI(socketCliente, rdo_ejecucion_instancia, sentencia_con_punteros->pid);
+		devolverResultadoAESI(socketCliente, rdo_ejecucion_instancia, sentencia_con_punteros->pid);
 		break;
 	}
 }
@@ -206,7 +248,7 @@ void interpretarOperacionESI(t_content_header * hd, int socketCliente){
 		log_operacion_esi(sentencia_con_punteros, logger_operaciones);
 
 		int puedoEnviar = puedoEjecutarSentencia(sentencia_con_punteros);
-		log_info(logger, "puedo ejecutar? %d", puedoEnviar);
+		log_info(logger, "Puedo ejecutar? %d", CORRECTO==puedoEnviar);
 		switch(puedoEnviar){
 			case CORRECTO:
 				;
@@ -214,16 +256,16 @@ void interpretarOperacionESI(t_content_header * hd, int socketCliente){
 				break;
 			case CLAVE_BLOQUEADA:
 				log_info(logger,"Devolviendo error al ESI%d", sentencia->pid);
-				devolverCodigoResultadoInstanciaAESI(socketCliente, CLAVE_BLOQUEADA, sentencia_con_punteros->pid);
+				devolverCodigoResultadoAESI(socketCliente, CLAVE_BLOQUEADA, sentencia_con_punteros->pid);
 				log_info(logger,"Devuelto CLAVE_BLOQUEADA");
 				log_error_operacion_esi(sentencia_con_punteros, puedoEnviar);
 				break;
 			case ABORTAR:
 				log_info(logger,"Devolviendo error al ESI %d", sentencia->pid);
-				devolverCodigoResultadoInstanciaAESI(socketCliente, ABORTAR, sentencia_con_punteros->pid);
+				devolverCodigoResultadoAESI(socketCliente, ABORTAR, sentencia_con_punteros->pid);
 				log_warning(logger,"Devuelto ABORTAR al ESI %d", sentencia->pid);
 				log_error_operacion_esi(sentencia_con_punteros, puedoEnviar);
-				log_info(logger,"fin aboortar");
+				log_info(logger,"Fin abortar");
 				break;
 			default:
 				break;
@@ -234,7 +276,7 @@ void interpretarOperacionESI(t_content_header * hd, int socketCliente){
 		//TODO no se reconoció el tipo operación
 		break;
 	}
-	log_info(logger,"fin interpret");
+	log_info(logger,"Fin interpretación");
 }
 
 void interpretarHeader(t_content_header * hd, int socketCliente){
@@ -249,7 +291,9 @@ void interpretarHeader(t_content_header * hd, int socketCliente){
 		interpretarOperacionInstancia(hd,socketCliente);
 		break;
 	case planificador:
-		interpretarOperacionPlanificador(hd,socketCliente);
+		//if (leer_planificador_request){
+			interpretarOperacionPlanificador(hd,socketCliente);
+		//}
 		break;
 	default:
 		//TODO no se reconoció el tipo proceso
@@ -280,13 +324,13 @@ void *escucharMensajesEntrantes(int socketCliente){
     		interpretarHeader(header, socketCliente);
     	};
     	//Si es instancia, solamente le mando la configuracion y cierro el hilo.
-    	if (header->proceso_origen == instancia){
+    	if (header->proceso_origen == instancia || header->proceso_origen == planificador){
     		status_header =-1;
-    		log_warning(logger,	"cerrando hilo para instancia");
+    		log_warning(logger,	"Cerrando hilo para proceso no ESI");
     	}
    	}
 
-	if (header->proceso_origen != instancia){
+	if (header->proceso_origen == esi){
 	    close(socketCliente);
 	}
 

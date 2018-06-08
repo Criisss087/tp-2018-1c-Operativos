@@ -38,13 +38,14 @@
 #define INSTANCIA_COORDINADOR_RTA 4
 
 #define PLANIFICADOR_COORDINADOR_HEADER_IDENTIFICACION 1
+#define COORD_PLANIFICADOR_OPERACION_CONSULTA_CLAVE_COORD 2
+#define PLANIF_COORD_OPERACION_RES_CLAVE_COORD 3
 
 //Codigos de las operaciones de esi:
 #define ENVIA_ORDEN 1
 #define ENVIA_SENTENCIA 1
 #define RESULTADO_EJECUCION_SENTENCIA 2
 #define RESPUESTA_EJECUCION_SENTENCIA 2
-
 //***
 
 //*** Nombres claves de archivo de configuración
@@ -64,6 +65,11 @@ typedef struct{
 } t_instancia;
 
 typedef struct{
+	char clave[40];
+	t_instancia * instancia;
+} t_clave;
+
+typedef struct{
 	char * valor;
 	char clave[40];
 	int keyword;
@@ -78,7 +84,13 @@ typedef struct {
 
 typedef struct{
 	int resultado_del_parseado;
-} respuesta_coordinador;
+} respuesta_coordinador;//para el esi
+
+typedef struct {
+	int pid;
+	char clave[40];
+	int sentencia;
+} t_consulta_bloqueo;//para el planif
 
 //****** Estructuras internas de Coordinador
 //Semaforos
@@ -102,6 +114,7 @@ int RETARDO = 0; //ms
 t_log * logger;
 t_log * logger_operaciones;
 t_list * lista_instancias;
+t_list * lista_claves;
 int id_counter = 0;
 
 signed int indice_actual_lista; //que item de la lista fue el ultimo al que se asigno trabajo
