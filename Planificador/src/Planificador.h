@@ -22,6 +22,7 @@
 #include <readline/history.h> // Para usar readline
 #include <commons/string.h> // Para manejo de strings
 #include <commons/log.h> // Para Logger
+#include <commons/config.h> // Para Archivo de configuración
 #include <commons/collections/list.h> // Para manejo de listas
 #include <errno.h>			//errorno
 #include <fcntl.h>			// std no block
@@ -100,13 +101,13 @@ struct pcb_esi {
 typedef struct pcb_esi t_pcb_esi;
 
 struct config{
-	char puerto_escucha[5];
-	char algoritmo[7];
+	char * puerto_escucha;
+	char * algoritmo;
 	int desalojo;
 	float alfa;
 	int estimacion_inicial;
 	char* ip_coordinador;
-	char puerto_coordinador[5];
+	char * puerto_coordinador;
 	char ** claves_bloqueadas;
 };
 
@@ -146,6 +147,7 @@ t_consulta_bloqueo * clave_a_bloquear_por_set = NULL;
 t_consulta_bloqueo * clave_a_desbloquear_por_store = NULL;
 
 int esi_seq_pid = 0;
+int estado_pausa_por_consola = no_pausado; // Pausa la ejecución de ESI y desaloja al proceso.
 
 // Globales para capturar eventos al recibir el resultado de la sentencia del ESI
 int bloqueo_en_ejecucion = 0;		// Bloquear al ESI en ejecucion
@@ -153,9 +155,15 @@ int desalojo_en_ejecucion = 0;		// Desalojar al ESI en ejecucion por SJF-CD
 int bloqueo_por_set = 0;			// Bloquear clave por resultado positivo de SET
 int desbloqueo_por_store = 0;		// Desbloquear clave por resultado positivo de STORE
 
-int estado_pausa_por_consola = no_pausado; // Pausa la ejecución de ESI y desaloja al proceso
-
 struct config config;
+
+//Globales para la configuracion del archivo.
+t_config* arch_config = NULL;
+char* config_algoritmo;
+int config_alfa;
+int config_estim_ini = 0;
+char** config_claves_bloq; //TODO Corroborar que funcione
+
 
 /*
 sem_t sem_ejecucion_esi;
@@ -176,6 +184,8 @@ void terminar_planificador(void);
 void planificar(void);
 void obtener_proximo_ejecucion(void);
 void desalojar_ejecucion(void);
+
+void leer_configuracion_desde_archivo(char* path_archivo);
 
 //Utilidades para la consola
 int consola_derivar_comando(char * buffer);

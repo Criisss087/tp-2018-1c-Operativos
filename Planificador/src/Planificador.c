@@ -10,18 +10,19 @@
 
 #include "Planificador.h"
 
-int main(void) {
+int main(int argc, char **argv) {
 
 	fd_set readset, writeset, exepset;
 	int max_fd;
 	char read_buffer[MAX_LINEA];
 	struct timeval tv = {0, 500};
+	//char* path_archivo;
 
-	//Configura el Logger
 	logger = log_create("Log_Planificador.txt","Planificador",true,LOG_LEVEL_TRACE);
 	log_trace(logger,"Iniciando Planificador...");
 
 	crear_listas_planificador();
+	leer_configuracion_desde_archivo(argv[1]);
 	inicializar_conexiones_esi();
 	stdin_no_bloqueante();
 
@@ -310,6 +311,8 @@ int recibir_mensaje_coordinador(int coord_socket)
 			terminar_planificador();
 			exit(EXIT_FAILURE);
 		}
+
+		log_info(logger,"Recibí la consulta PID: %d Sentencia: %d",consulta_bloqueo->pid,consulta_bloqueo->sentencia);
 
 		switch(consulta_bloqueo->sentencia)
 		{
@@ -1213,6 +1216,12 @@ void terminar_planificador(void)
 
 	log_destroy(logger);
 
+	if(config.algoritmo!=NULL)
+	{
+		free(config.algoritmo);
+		config.algoritmo = NULL;
+	}
+
 }
 
 //***********************//
@@ -1505,7 +1514,10 @@ int bloquear_clave(char* clave , int pid)
 		else
 		{
 			clave_bloqueada->pid = -1;
-			log_info(logger,"No existe el ESI de ID %d en READY ni en EJECUCION, se asigna la clave a sistema\n",pid);
+			if(pid>-1)
+				log_info(logger,"No existe el ESI de ID %d en READY ni en EJECUCION, se asigna la clave a sistema\n",pid);
+			else
+				log_info(logger,"Se asigna la clave a sistema\n");
 		}
 
 
@@ -1668,4 +1680,74 @@ int confirmar_pausa_por_consola(){
 	log_info(logger,"Proceso desalojado.\n");
 
 	return 0;
+}
+
+void leer_configuracion_desde_archivo(char* path_archivo){
+
+	arch_config = config_create(path_archivo);
+	char* atributo=NULL;
+	char** claves_bloqueadas_config=NULL;
+
+	log_info(logger,"Obteniendo configuraciones iniciales desde %s",path_archivo);
+
+	atributo = strdup("ALGORITMO");
+	if(config_has_property(arch_config, atributo)){
+		config.algoritmo = strdup(config_get_string_value(arch_config, atributo));
+		log_info(logger,"Algoritmo: %s",config.algoritmo);
+	}
+	else{
+		log_warning(logger,"ERROR. No se pudo recuperar el atributo %s, default: %s", atributo,ALGORITMO_PLAN_SJFSD);
+		config.algoritmo = strdup(ALGORITMO_PLAN_SJFSD);
+	}
+
+	free(atributo);
+	atributo = NULL;
+
+	atributo = strdup("ALFA");
+	if(config_has_property(arch_config, atributo)){
+		int alfa = config_get_int_value(arch_config, atributo);
+		config.alfa = alfa;
+		log_info(logger,"Alpha: %f",config.alfa);
+	}
+	else{
+		log_warning(logger,"ERROR. No se pudo recuperar el atributo %s. Default: %d", atributo,ALPHA);
+		config.alfa = ALPHA;
+	}
+
+	free(atributo);
+	atributo = NULL;
+
+	atributo = strdup("ESTIMACION_INICIAL");
+	if(config_has_property(arch_config, atributo)){
+		config.estimacion_inicial = config_get_int_value(arch_config, atributo);
+		log_info(logger,"Estimación inicial: %d",config.estimacion_inicial);
+	}
+	else{
+		log_warning(logger,"ERROR. No se pudo recuperar el atributo %s. Default: %d", atributo,ESTIMACION_INICIAL);
+		config.estimacion_inicial = ESTIMACION_INICIAL;
+	}
+
+	free(atributo);
+	atributo = NULL;
+
+	atributo = strdup("CLAVES_BLOQUEADAS");
+	claves_bloqueadas_config = config_get_array_value(arch_config, atributo);
+	log_info(logger,"Bloqueando claves por config...",config.estimacion_inicial);
+	int i=0;
+
+	while(claves_bloqueadas_config[i]!=NULL)
+	{
+		bloquear_clave(claves_bloqueadas_config[i],-1);
+		free(claves_bloqueadas_config[i]);
+		i++;
+	}
+
+	free(claves_bloqueadas_config);
+
+	free(atributo);
+	atributo = NULL;
+
+	config_destroy(arch_config);
+
+	return;
 }
