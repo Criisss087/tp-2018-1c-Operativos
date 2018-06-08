@@ -103,6 +103,7 @@ int main(int argc, char **argv) {
 				{
 					cerrar_conexion_coord(coord_socket);
 					terminar_planificador();
+					break;
 				}
 			}
 
@@ -113,6 +114,7 @@ int main(int argc, char **argv) {
 				{
 					cerrar_conexion_coord(coord_socket);
 					terminar_planificador();
+					break;
 				}
 			}
 
@@ -1214,10 +1216,12 @@ void terminar_planificador(void)
 
 	log_destroy(logger);
 
+
 	if(config.algoritmo!=NULL)
 	{
 		free(config.algoritmo);
 		config.algoritmo = NULL;
+
 	}
 
 }
@@ -1683,10 +1687,17 @@ int confirmar_pausa_por_consola(){
 void leer_configuracion_desde_archivo(char* path_archivo){
 
 	arch_config = config_create(path_archivo);
+
+	if(arch_config==NULL){
+		log_error(logger, "ERROR. No se pudo obtener un archivo de configuración.");
+		terminar_planificador();
+		exit(EXIT_FAILURE);
+	}
+
 	char* atributo=NULL;
 	char** claves_bloqueadas_config=NULL;
 
-	log_info(logger,"Obteniendo configuraciones iniciales desde %s",path_archivo);
+	log_info(logger,"Obteniendo configuraciones iniciales desde archivo %s",path_archivo);
 
 	atributo = strdup("ALGORITMO");
 	if(config_has_property(arch_config, atributo)){
@@ -1694,7 +1705,7 @@ void leer_configuracion_desde_archivo(char* path_archivo){
 		log_info(logger,"Algoritmo: %s",config.algoritmo);
 	}
 	else{
-		log_warning(logger,"ERROR. No se pudo recuperar el atributo %s, default: %s", atributo,ALGORITMO_PLAN_SJFSD);
+		log_warning(logger,"ERROR. No se pudo recuperar el atributo %s, default: %s", atributo, ALGORITMO_PLAN_SJFSD);
 		config.algoritmo = strdup(ALGORITMO_PLAN_SJFSD);
 	}
 
@@ -1708,7 +1719,7 @@ void leer_configuracion_desde_archivo(char* path_archivo){
 		log_info(logger,"Alpha: %f",config.alfa);
 	}
 	else{
-		log_warning(logger,"ERROR. No se pudo recuperar el atributo %s. Default: %d", atributo,ALPHA);
+		log_warning(logger,"ERROR. No se pudo recuperar el atributo %s. Default: %d", atributo, ALPHA);
 		config.alfa = ALPHA;
 	}
 
