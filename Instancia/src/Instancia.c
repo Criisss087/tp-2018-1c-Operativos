@@ -312,7 +312,7 @@ void guardarClaveValor(t_sentencia * sentenciaRecibida) {
 			printf("Guardando valor: %s en puntero: %p...\n", sentenciaRecibida->valor, indiceEntrada->puntero);
 			memcpy(indiceEntrada->puntero, sentenciaRecibida->valor, strlen(sentenciaRecibida->valor));
 
-			printf("Valor guardado: %s\n", *indiceEntrada->puntero);
+			printf("Valor guardado: %s\n", indiceEntrada->puntero);
 			imprimirTablaEntradas();
 		}
 
@@ -381,7 +381,7 @@ void grabarArchivo(char clave[40]) {
 		printf("mmap se realizo correctamente y se guardo en %p",
 				addressOfNewMapping);
 	} else {
-		printf("Error en el mmap");
+		printf("Error en el mmap\n");
 	}
 }
 
