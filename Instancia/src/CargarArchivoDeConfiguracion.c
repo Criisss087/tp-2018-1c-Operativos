@@ -13,6 +13,7 @@ int PUERTO_COORDINADOR;
 char * PUNTO_DE_MONTAJE;
 char * NOMBRE_INSTANCIA;
 int INTERVALO_DUMP; // Debe ser int
+char * ALGORITMO_DE_REEMPLAZO;
 
 //Nombres para el archivo de configuracion
 #define ARCH_CONFIG_IP_COORD "IP COORDINADOR"
@@ -20,6 +21,7 @@ int INTERVALO_DUMP; // Debe ser int
 #define ARCH_CONFIG_PUNTO_MONTAJE "PUNTO DE MONTAJE"
 #define ARCH_CONFIG_NOMBRE_INSTANCIA "NOMBRE INSTANCIA"
 #define ARCH_CONFIG_INTERVALO_DUMP "INTERVALO DUMP"
+#define ARCH_CONFIG_ALGORITMO_REEMPLAZO "ALGORITMO DE REEMPLAZO"
 
 void cargarArchivoDeConfig(char *path) {
 	if (path != NULL) {
@@ -49,6 +51,11 @@ void cargarArchivoDeConfig(char *path) {
 		if (config_has_property(config_file,ARCH_CONFIG_INTERVALO_DUMP)){
 			INTERVALO_DUMP = config_get_int_value(config_file, ARCH_CONFIG_INTERVALO_DUMP);
 			printf("\tIntervalo dump: %d\n", INTERVALO_DUMP);
+		}
+
+		if (config_has_property(config_file,ARCH_CONFIG_ALGORITMO_REEMPLAZO)){
+			ALGORITMO_DE_REEMPLAZO = strdup(config_get_string_value(config_file, ARCH_CONFIG_ALGORITMO_REEMPLAZO));
+			printf("\tAlgoritmo de reemplazo: %s\n", ALGORITMO_DE_REEMPLAZO);
 		}
 
 		config_destroy(config_file);
