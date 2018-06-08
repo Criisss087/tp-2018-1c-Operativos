@@ -124,29 +124,11 @@ t_sentencia * recibirSentencia(int socketCoordinador) {
 			sentenciaPreliminarRecibida->clave,
 			sentenciaPreliminarRecibida->tam_valor);
 
-	// TODO: Como deberiamos manejar el STORE?
-	if (sentenciaPreliminarRecibida->keyword == SET_) {
-		// Ahora se recibe el VALOR real de la sentencia
+	if (sentenciaPreliminarRecibida->keyword == SET_ || sentenciaPreliminarRecibida->keyword == STORE_) {
+		// Se obtiene el valor y se forma la sentencia completa
+		char * valorRecibido = recibirValor(socketCoordinador, sentenciaPreliminarRecibida->tam_valor);
+		t_sentencia * sentenciaRecibida = construirSentenciaConValor(sentenciaPreliminarRecibida, valorRecibido);
 
-		char * valorRecibido = malloc(sentenciaPreliminarRecibida->tam_valor);
-
-		int statusValorSentencia = recv(socketCoordinador, valorRecibido,
-				sentenciaPreliminarRecibida->tam_valor, (int) NULL);
-
-		printf("status header: %d \n", statusValorSentencia);
-		printf("Valor de Sentencia recibido: \n");
-		printf("\tValor: %s\n", valorRecibido);
-
-		// Armado de sentencia definitiva
-
-		t_sentencia * sentenciaRecibida = malloc(sizeof(t_sentencia));
-
-		strcpy(sentenciaRecibida->clave, sentenciaPreliminarRecibida->clave);
-		sentenciaRecibida->keyword = sentenciaPreliminarRecibida->keyword;
-		sentenciaRecibida->valor = strdup(valorRecibido);
-
-		printf(
-				"Se asigna la sentencia correctamente... Lista para ser procesada...\n");
 		return sentenciaRecibida;
 	}
 
@@ -157,7 +139,7 @@ t_sentencia * recibirSentencia(int socketCoordinador) {
 
 t_list * obtenerIndicesDeClave(char clave[40]) {
 	printf("Obteniendo indices que contienen la clave: %s\n", clave);
-	bool existeClave(t_indice_entrada * entrada) {
+	_Bool existeClave(t_indice_entrada * entrada) {
 		return (strcmp(entrada->clave, clave) == 0);
 	}
 
