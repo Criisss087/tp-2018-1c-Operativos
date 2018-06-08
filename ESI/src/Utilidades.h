@@ -23,12 +23,6 @@
 #define PACKAGESIZE 1024
 #define HEADER_LENGTH 10
 
-//Respuestas del coordinador
-//#define OK 1
-//#define HUBO_UN_PROBLEMA -1
-#define LISTO 2
-#define ABORTAR 3
-
 //Codigos de las operaciones:
 #define RECIBIR_ORDEN_EJECUCION 1
 #define ENVIAR_RESULTADO_PLANIF 2
