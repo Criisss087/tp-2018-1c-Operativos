@@ -159,11 +159,6 @@ struct config config;
 
 //Globales para la configuracion del archivo.
 t_config* arch_config = NULL;
-char* config_algoritmo;
-int config_alfa;
-int config_estim_ini = 0;
-char** config_claves_bloq; //TODO Corroborar que funcione
-
 
 /*
 sem_t sem_ejecucion_esi;

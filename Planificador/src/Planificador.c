@@ -235,8 +235,7 @@ int atender_nuevo_esi(int serv_socket)
 			 * Si el algoritmo es con desalojo, (solo SJF) debo chequear si la estimacion del esi nuevo es
 			 * menor a la rafaga pendiente del que esta en ejecucion, si lo es reemplazarlo por el nuevo.
 			 */
-			//if(!strcmp(config.algoritmo, "SJF-CD"))
-			if(1)
+			if(!strcmp(config.algoritmo, "SJF-CD"))
 			{
 				if((esi_en_ejecucion!=NULL) && (nuevo_esi->estimacion_real < esi_en_ejecucion->estimacion_actual))
 				{
@@ -1063,10 +1062,9 @@ void obtener_proximo_ejecucion(void)
 
 	lista_aux = list_duplicate(esi_listos);
 
-	//if((!strcmp(config.algoritmo, "SJF-CD")) || (!strcmp(config.algoritmo, "SJF-SD") ) )
-	if(1)
+	if( (!strcmp(config.algoritmo, "SJF-SD")) || (!strcmp(config.algoritmo, "SJF-CD")))
 	{
-		log_info(logger,"Planificando por SJF...");
+		log_info(logger,"Planificando por %s...",config.algoritmo);
 		ordenar_lista_estimacion(lista_aux);
 
 	}
