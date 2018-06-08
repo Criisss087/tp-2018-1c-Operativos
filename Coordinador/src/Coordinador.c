@@ -268,7 +268,7 @@ void *escucharMensajesEntrantes(int socketCliente){
 
     t_content_header * header = malloc(sizeof(t_content_header));
 
-    while (status_header != -1){
+    while (status_header > 0){
 
     	status_header = recv(socketCliente, header, sizeof(t_content_header), NULL);
     	log_info(logger, "Recv - Status Header: %d", status_header);
