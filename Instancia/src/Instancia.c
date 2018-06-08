@@ -15,7 +15,7 @@ int conexionConCoordinador() {
 	struct sockaddr_in direccionServidor;
 	direccionServidor.sin_family = AF_INET;
 	direccionServidor.sin_addr.s_addr = inet_addr(IP_COORDINADOR);
-	direccionServidor.sin_port = htons(PUERTO_COORDINADOR);
+	direccionServidor.sin_port = htons( (int) PUERTO_COORDINADOR);
 
 	int socketCoordinador = socket(AF_INET, SOCK_STREAM, 0);
 
@@ -424,7 +424,9 @@ void interpretarOperacionCoordinador(t_content_header * header,
 	}
 }
 
-int main(void) {
+int main(int argc, char **argv) {
+
+	cargarArchivoDeConfig(argv[1]);
 
 	int socketCoordinador = conexionConCoordinador();
 

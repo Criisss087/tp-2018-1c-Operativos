@@ -5,6 +5,7 @@
  *      Author: utnso
  */
 
+
 #ifndef SRC_UTILIDADES_H_
 #define SRC_UTILIDADES_H_
 
@@ -17,12 +18,9 @@
 #include <commons/collections/list.h> // Para manejo de strings
 #include <sys/mman.h> // Para el uso de mmap()
 
-#define IP_COORDINADOR "127.0.0.1"
-#define PUERTO_COORDINADOR 8888
+#include "CargarArchivoDeConfiguracion.c"
+
 #define PACKAGESIZE 1024
-#define PUNTO_DE_MONTAJE "home/utnso/instancia1/"
-#define NOMBRE_INSTANCIA "Instancia1"
-#define INTERVALO_DUMP 10 // Intervalo dado en segundos para guardar la tabla de entradas en archivo de texto plano
 
 //***Cod ops
 #define INSTANCIA_COORDINADOR_CONEXION 1

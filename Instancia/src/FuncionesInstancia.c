@@ -6,6 +6,7 @@
  */
 
 #include "Instancia.h"
+// #include "CargarArchivoDeConfiguracion.c"
 
 void enviarHeader(int socketCoordinador, int procesoOrigen, int procesoReceptor,
 		int operacion, int cantidadALeer) {
