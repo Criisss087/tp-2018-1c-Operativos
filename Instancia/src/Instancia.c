@@ -284,8 +284,12 @@ void guardarClaveValor(t_sentencia * sentenciaRecibida) {
 
 				printf("Indice agregado correctamente\n");
 
-				guardarValorEnEntrada(sentenciaRecibida->valor,
-						indiceEntrada->puntero);
+				// guardarValorEnEntrada(sentenciaRecibida->valor,	indiceEntrada->puntero);
+
+				printf("Guardando valor: %s en puntero: %p...\n", sentenciaRecibida->valor, indiceEntrada->puntero);
+				memcpy(indiceEntrada->puntero, sentenciaRecibida->valor, strlen(sentenciaRecibida->valor));
+
+				printf("Valor guardado: %s\n", indiceEntrada->puntero);
 			}
 
 		} else {
@@ -302,8 +306,13 @@ void guardarClaveValor(t_sentencia * sentenciaRecibida) {
 			t_indice_entrada * indiceEntrada = guardarIndiceAtomicoEnTabla(
 					sentenciaRecibida);
 
-			guardarValorEnEntrada(sentenciaRecibida->valor,
-					indiceEntrada->puntero);
+			// guardarValorEnEntrada(sentenciaRecibida->valor,indiceEntrada->puntero);
+
+
+			printf("Guardando valor: %s en puntero: %p...\n", sentenciaRecibida->valor, indiceEntrada->puntero);
+			memcpy(indiceEntrada->puntero, sentenciaRecibida->valor, strlen(sentenciaRecibida->valor));
+
+			printf("Valor guardado: %s\n", *indiceEntrada->puntero);
 			imprimirTablaEntradas();
 		}
 
