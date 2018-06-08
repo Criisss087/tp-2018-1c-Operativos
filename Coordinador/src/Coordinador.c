@@ -27,7 +27,7 @@ rta_envio enviarSentenciaInstancia(t_sentencia * sentencia){
 	}*/
 
 	t_instancia * proxima = siguienteInstanciaSegunAlgoritmo();
-	log_info(logger,"Enviando a instancia: '%s' %s %s",proxima->nombre,sentencia->clave, sentencia->valor);
+	log_info(logger,"Enviando a instancia: %s %s %s",proxima->nombre,sentencia->clave, sentencia->valor);
 
 //TODO Que siguienteInstanciaSegunAlgortimo devuelva null en vez de esto
 	if (string_equals_ignore_case(proxima->nombre, "ERROR")){
@@ -64,7 +64,7 @@ rta_envio enviarSentenciaInstancia(t_sentencia * sentencia){
 	header_rta_instancia = recv(proxima->socket,cod_rta,sizeof(int), NULL);
 	//sem_post(&semInstancias);
 	rta.cod= *cod_rta;
-	log_info(logger, "Rta Instancia '%s'respuesta: - %d ",proxima->nombre,rta.cod);
+	log_info(logger, "Rta Instancia %srespuesta: - %d ",proxima->nombre,rta.cod);
 	//Si estoy pidiendo el valor de la clave, recibo la clave:
 	//GET - Sé que no tiene que ir a la instancia. Voy a usar este código cuando necesite sabes el valor de la clave
 	if (sentencia->keyword == GET_){
@@ -73,7 +73,7 @@ rta_envio enviarSentenciaInstancia(t_sentencia * sentencia){
 		rta.valor = strdup(valor);
 	}
 
-	log_info(logger,"Recibido valor de instancia '%s': Clave '%s' - Valor '%s'",rta.instancia->nombre,sentencia->clave,sentencia->valor);
+	log_info(logger,"Recibido valor de instancia %s: Clave %s - Valor %s",rta.instancia->nombre,sentencia->clave,sentencia->valor);
 
 	//free(proxima->nombre);
 	//free(proxima);
@@ -208,7 +208,7 @@ void proseguirOperacionNormal(int socketCliente, t_sentencia * sentencia_con_pun
 		int contador = 3;
 		while (rdo_ejecucion_instancia.cod == COMPACTAR && contador>0){
 			indicarCompactacionATodasLasInstancias();
-			log_info(logger, "Reenviando última sentencia a Instancia '%s'...", rdo_ejecucion_instancia.instancia->nombre);
+			log_info(logger, "Reenviando última sentencia a Instancia %s...", rdo_ejecucion_instancia.instancia->nombre);
 			rdo_ejecucion_instancia = enviarSentenciaInstancia(sentencia_con_punteros);
 			contador--;
 		}
@@ -238,6 +238,7 @@ void interpretarOperacionESI(t_content_header * hd, int socketCliente){
 		if (sentencia->keyword == SET){
 			//Recibo el valor - El esi me lo manda "pelado", directamente el string, ningún struct
 			valor = malloc(sentencia->tam_valor);
+			printf("TAMANIO VALOR %d", sentencia->tam_valor);
 			int valor_status = recv(socketCliente, valor, sentencia->tam_valor,NULL);
 			//valor[strlen(valor)-1] = '\0';
 			log_info(logger,"esi valor recibido: %s", valor);
