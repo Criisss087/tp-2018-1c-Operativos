@@ -78,8 +78,9 @@ rta_envio enviarSentenciaInstancia(t_sentencia * sentencia){
 
 	log_info(logger,"Recibido valor de instancia '%s': Clave '%s' - Valor '%s'",rta.instancia->nombre,sentencia->clave,sentencia->valor);
 
-	free(proxima->nombre);
-	free(proxima);
+	//free(proxima->nombre);
+	//free(proxima);
+	//NO libero la instancia "proxima" porque apunnta a la lista de instancias. si la libero al estoy borrando de la lista.
 	free(header);
 	free(s_sin_p);
 
@@ -94,7 +95,7 @@ void interpretarOperacionInstancia(t_content_header * hd, int socketInstancia){
 			//TODO leer packete para obtener nombre.
 			char * nombre = malloc(hd->cantidad_a_leer);
 			int status_recv = recv(socketInstancia, nombre, hd->cantidad_a_leer, NULL);
-			log_info(logger,"Tamaño nombre: %d - Nombre: %s",sizeof(nombre),nombre);
+			log_info(logger,"Tamaño nombre: %d - Nombre: %s",strlen(nombre),nombre);
 			enviarConfiguracionInicial(socketInstancia);
 			guardarEnListaDeInstancias(socketInstancia, nombre);
 
@@ -153,6 +154,7 @@ void proseguirOperacionNormal(int socketCliente, t_sentencia * sentencia_con_pun
 	switch(sentencia_con_punteros->keyword){
 	case GET_:
 		guardarClaveInternamente(sentencia_con_punteros->clave);
+		devolverCodigoResultadoInstanciaAESI(socketCliente, CORRECTO, sentencia_con_punteros->pid );
 		//Ya pregunté anteriormente al planificador, y ya la bloqueó
 		break;
 	default:
