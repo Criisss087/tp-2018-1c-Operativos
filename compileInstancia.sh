@@ -1,6 +1,7 @@
 mkdir  Instancia/src/valgrind/
 
-gcc Instancia/src/Instancia.c -lpthread -lcommons -lparsi
+rm instancia
 
+gcc Instancia/src/Instancia.c -lpthread -lcommons -lparsi -lredis_lib -o instancia
 
-valgrind --leak-check=yes --log-file=Instancia/src/valgrind/valgrind.log ./a.out
+valgrind --leak-check=yes --log-file=Instancia/src/valgrind/valgrind.log ./instancia Instancia/src/config.txt
