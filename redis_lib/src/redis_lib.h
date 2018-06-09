@@ -26,7 +26,33 @@ struct content_header {
 };
 typedef struct __attribute__((packed)) content_header t_content_header  ;
 
-enum procesos { esi, instancia, planificador, coordinador };
+/**********************************************/
+/* STRUCTS									  */
+/**********************************************/
+typedef struct {
+	int cantTotalEntradas;
+	int tamanioEntradas;
+} __attribute__((packed)) t_configTablaEntradas;
+
+typedef struct{
+	int keyword;
+	char clave[40];
+	int tam_valor;
+	int pid;
+} __attribute__((packed)) t_esi_operacion_sin_puntero;
+
+/**********************************************/
+/* ENUMS									  */
+/**********************************************/
+//Procesos
+enum procesos {dummy, esi, instancia, planificador, coordinador };
+//Rta Instancia a Coordinador
+enum {ERROR_I,EXITO_I,COMPACTAR};
+//Rta Coordinador ESI Planificador
+enum {CORRECTO, CLAVE_BLOQUEADA, ABORTAR, LISTO};
+//Operaciones de sentencias (keywords)
+enum{GET_,SET_,STORE_};
+
 
 /**********************************************/
 /* FUNCIONES								  */
