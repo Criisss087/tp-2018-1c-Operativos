@@ -50,7 +50,7 @@ void enviarResultadoSentencia(int socketCoordinador, int keyword) {
 		resultado = send(socketCoordinador, r, sizeof(int), 0);
 
 		printf("\tResultado: %d\n", resultado);
-		printf("\tResultado de ejecucion enviado: %d\n", resultadoEjecucion);
+		printf("\tResultado de ejecucion enviado: %d\n", *r);
 		break;
 
 	case STORE_:
