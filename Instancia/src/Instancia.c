@@ -15,7 +15,7 @@ int conexionConCoordinador() {
 	struct sockaddr_in direccionServidor;
 	direccionServidor.sin_family = AF_INET;
 	direccionServidor.sin_addr.s_addr = inet_addr(IP_COORDINADOR);
-	direccionServidor.sin_port = htons( (int) PUERTO_COORDINADOR);
+	direccionServidor.sin_port = htons((int) PUERTO_COORDINADOR);
 
 	int socketCoordinador = socket(AF_INET, SOCK_STREAM, 0);
 
@@ -59,7 +59,7 @@ void enviarResultadoSentencia(int socketCoordinador, int keyword) {
 
 		printf("Enviando Respuesta de sentencia STORE...\n");
 
-		resultadoEjecucion = EXITO_I;
+		resultadoEjecucion = ERROR_I;
 
 		r = &resultadoEjecucion;
 
@@ -124,10 +124,12 @@ t_sentencia * recibirSentencia(int socketCoordinador) {
 			sentenciaPreliminarRecibida->clave,
 			sentenciaPreliminarRecibida->tam_valor);
 
-	if (sentenciaPreliminarRecibida->keyword == SET_ || sentenciaPreliminarRecibida->keyword == STORE_) {
+	if (sentenciaPreliminarRecibida->keyword == SET_) {
 		// Se obtiene el valor y se forma la sentencia completa
-		char * valorRecibido = recibirValor(socketCoordinador, sentenciaPreliminarRecibida->tam_valor);
-		t_sentencia * sentenciaRecibida = construirSentenciaConValor(sentenciaPreliminarRecibida, valorRecibido);
+		char * valorRecibido = recibirValor(socketCoordinador,
+				sentenciaPreliminarRecibida->tam_valor);
+		t_sentencia * sentenciaRecibida = construirSentenciaConValor(
+				sentenciaPreliminarRecibida, valorRecibido);
 
 		return sentenciaRecibida;
 	}
@@ -164,7 +166,7 @@ t_indice_entrada * guardarIndiceAtomicoEnTabla(t_sentencia * sentenciaRecibida) 
 	strcpy(indiceEntrada->clave, sentenciaRecibida->clave);
 
 	// verificar si el indice ya contiene valor, eliminar todas las entradas asociadas
-	if(entradaExistenteEnIndice(numeroEntrada)) {
+	if (entradaExistenteEnIndice(numeroEntrada)) {
 		// TODO en lugar de puntero a char debe ser un char[40]
 		char * clave = obtenerClaveExistenteEnEntrada(numeroEntrada);
 		eliminarEntradasAsociadasAClave(clave);
@@ -286,8 +288,10 @@ void guardarClaveValor(t_sentencia * sentenciaRecibida) {
 
 				// guardarValorEnEntrada(sentenciaRecibida->valor,	indiceEntrada->puntero);
 
-				printf("Guardando valor: %s en puntero: %p...\n", sentenciaRecibida->valor, indiceEntrada->puntero);
-				memcpy(indiceEntrada->puntero, sentenciaRecibida->valor, strlen(sentenciaRecibida->valor));
+				printf("Guardando valor: %s en puntero: %p...\n",
+						sentenciaRecibida->valor, indiceEntrada->puntero);
+				memcpy(indiceEntrada->puntero, sentenciaRecibida->valor,
+						strlen(sentenciaRecibida->valor));
 
 				printf("Valor guardado: %s\n", indiceEntrada->puntero);
 			}
@@ -308,9 +312,10 @@ void guardarClaveValor(t_sentencia * sentenciaRecibida) {
 
 			// guardarValorEnEntrada(sentenciaRecibida->valor,indiceEntrada->puntero);
 
-
-			printf("Guardando valor: %s en puntero: %p...\n", sentenciaRecibida->valor, indiceEntrada->puntero);
-			memcpy(indiceEntrada->puntero, sentenciaRecibida->valor, strlen(sentenciaRecibida->valor));
+			printf("Guardando valor: %s en puntero: %p...\n",
+					sentenciaRecibida->valor, indiceEntrada->puntero);
+			memcpy(indiceEntrada->puntero, sentenciaRecibida->valor,
+					strlen(sentenciaRecibida->valor));
 
 			printf("Valor guardado: %s\n", indiceEntrada->puntero);
 			imprimirTablaEntradas();
@@ -321,30 +326,94 @@ void guardarClaveValor(t_sentencia * sentenciaRecibida) {
 	}
 }
 
+void make_directory(const char* name) {
+	char * check;
+	check = mkdir(name, 0777);
+
+	if (!check)
+		printf("Directorio creado: %s\n", name);
+
+	else {
+		printf("No se puede crear el directorio... o ya existe...\n");
+	}
+}
+
+char * obtenerPathArchivo(char clave[40]) {
+	char * puntoDeMontaje = strdup(PUNTO_DE_MONTAJE);
+	printf("Directorio donde se guardara el archivo: %s\n", puntoDeMontaje);
+
+	char * archivo = string_new();
+	string_append(&archivo, clave);
+	string_append(&archivo, ".txt");
+	printf("Nombre del archivo que se creara: %s\n", archivo);
+
+	char * path = string_new();
+	string_append(&path, puntoDeMontaje);
+	string_append(&path, archivo);
+	printf("Path del archivo a crear: %s\n", path);
+
+	return path;
+}
+
+size_t getFileSize(const char* filename) {
+	struct stat st;
+	stat(filename, &st);
+	return st.st_size;
+}
 // crearArchivoParaClave debe devolver un puntero a memoria del archivo creado (mmap)
-/*char * crearArchivoParaClave(char clave[40]) {
- char * nombreArchivo = string_new();
- printf("Se creo el string nombreArchivo\n");
- string_append(&nombreArchivo, PUNTO_DE_MONTAJE);
- string_append(&nombreArchivo, clave);
+char * crearArchivoParaClave(char clave[40]) {
+	char * path = obtenerPathArchivo(clave);
 
- FILE * archivoFisicoCreado = fopen(nombreArchivo, "w+");
- printf("Se creo el archivo FISICO para la clave: %s\n", nombreArchivo);
+	make_directory(PUNTO_DE_MONTAJE);
 
- // int fileDescriptor = open(clave);
- // printf("File Descriptor: %d\n", fileDescriptor);
+	int fileDescriptor = open(path, "w+");
+	if (fileDescriptor != -1) {
+		printf("File Descriptor: %d\n", fileDescriptor);
 
- char * punteroDeArchivo =  mmap(0, 1, PROT_WRITE, MAP_SHARED,
- nombreArchivo, 0);
+	} else {
+		printf("No se pudo crear el archivo: %s\n", path);
+	}
 
- if ((int) punteroDeArchivo != -1) {
- printf("El Mapeo se efectuo correctamente\n\n");
- printf("Puntero de archivo: %p", punteroDeArchivo);
- } else
- printf("Error en el Mapeo de archivo\n\n");
+	size_t tamanioArchivo = getFileSize(path);
+	printf("Tamanio de Archivo creado: %d\n", tamanioArchivo);
 
- return punteroDeArchivo;
- }*/
+	void * punteroDeArchivo = mmap(NULL, tamanioArchivo, PROT_READ, MAP_PRIVATE | MAP_POPULATE,
+			fileDescriptor, 0); // MAP_SHARED
+
+	if ((int) punteroDeArchivo != MAP_FAILED) {
+		printf("El Mapeo se efectuo correctamente\n\n");
+		printf("Puntero de archivo: %p", punteroDeArchivo);
+	} else {
+		printf("Error en el Mapeo de archivo\n");
+		switch (errno) {
+		case EINVAL:
+			printf(
+					"\tEither address was unusable, or inconsistent flags were given.\n");
+			break;
+		case EACCES:
+			printf(
+					"\tfiledes was not open for the type of access specified in protect.\n");
+			break;
+
+			/*		- ENOMEM
+
+			 Either there is not enough memory for the operation, or the process is out of address space.
+
+
+			 - ENODEV
+
+			 This file is of a type that doesn't support mapping.
+
+
+			 - ENOEXEC
+
+			 The file is on a filesystem that doesn't support mapping.
+			 == */
+		}
+	}
+
+	return punteroDeArchivo;
+}
 
 void grabarArchivo(char clave[40]) {
 	printf("Preparandose para grabar en archivo...\n");
@@ -361,19 +430,7 @@ void grabarArchivo(char clave[40]) {
 
 	int tamanio = obtenerTamanioTotalDeValorGuardado(listaDeIndices);
 
-	char * puntoDeMontaje = strdup(PUNTO_DE_MONTAJE);
-	printf("Directorio donde se guardara el archivo: %s\n", puntoDeMontaje);
-
-	char * archivo = string_new();
-	printf("Se creo el string archivo\n");
-	string_append(&archivo, clave);
-	string_append(&archivo, ".txt");
-	printf("Nombre del archivo que se creara: %s\n", archivo);
-
-	char * path = string_new();
-	string_append(&path, puntoDeMontaje);
-	string_append(&path, archivo);
-	printf("Path del archivo a crear: %s\n", path);
+	char * path = obtenerPathArchivo(clave);
 
 	char * addressOfNewMapping = (void *) mmap(0, tamanio, PROT_WRITE,
 	MAP_SHARED, (int) path, 0);
@@ -389,6 +446,8 @@ void interpretarOperacionCoordinador(t_content_header * header,
 		int socketCoordinador) {
 
 	t_sentencia * sentenciaRecibida;
+
+	char * punteroArchivo;
 
 	switch (header->operacion) {
 
@@ -409,16 +468,17 @@ void interpretarOperacionCoordinador(t_content_header * header,
 		case SET_:
 			// Imprimo tabla de entradas para verificar su estado
 
+			punteroArchivo = crearArchivoParaClave(sentenciaRecibida->clave);
 			guardarClaveValor(sentenciaRecibida);
 			imprimirTablaEntradas();
-			grabarArchivo(sentenciaRecibida->clave); //TODO: La funcion grabarArchivo se debe llamar unicamente en STORE y en dump
+			// grabarArchivo(sentenciaRecibida->clave); //TODO: La funcion grabarArchivo se debe llamar unicamente en STORE y en dump
 			enviarResultadoSentencia(socketCoordinador, SET_);
 			break;
 
 		case STORE_:
 			grabarArchivo(sentenciaRecibida->clave);
 			// Liberar el indice y la entrada
-			// enviarResultadoSentencia(socketCoordinador, STORE_);
+			enviarResultadoSentencia(socketCoordinador, STORE_);
 			break;
 
 		case GET_:
