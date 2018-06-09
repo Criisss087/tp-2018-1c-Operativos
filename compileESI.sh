@@ -1,0 +1,1 @@
+gcc ESI/src/ESI.c -lcommons -lparsi -lredis_lib -lreadline -o esi_ejecutable
