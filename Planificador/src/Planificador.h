@@ -101,13 +101,13 @@ struct pcb_esi {
 typedef struct pcb_esi t_pcb_esi;
 
 struct config{
-	char * puerto_escucha;
-	char * algoritmo;
+	char* ip_coordinador;
+	char* puerto_coordinador;
+	char* puerto_escucha;
+	char* algoritmo;
 	int desalojo;
 	float alfa;
 	int estimacion_inicial;
-	char* ip_coordinador;
-	char * puerto_coordinador;
 	char ** claves_bloqueadas;
 };
 
