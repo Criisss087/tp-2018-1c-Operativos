@@ -17,6 +17,8 @@
 #include <sys/socket.h>
 #include <commons/collections/list.h> // Para manejo de strings
 #include <sys/mman.h> // Para el uso de mmap()
+#include <sys/stat.h>
+#include <errno.h>
 
 #include "CargarArchivoDeConfiguracion.c"
 
