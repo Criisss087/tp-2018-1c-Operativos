@@ -49,11 +49,11 @@
 //***
 
 //*** Nombres claves de archivo de configuración
-#define ARCH_CONFIG_ALGORITMO_DISTRIBUCION "Algoritmo"
-#define ARCH_CONFIG_PUERTO "Puerto"
-#define ARCH_CONFIG_TAMANIO_ENTRADAS "Tamanio Entradas"
-#define ARCH_CONFIG_CANTIDAD_ENTRADAS "Cantidad Entradas"
-#define ARCH_CONFIG_RETARDO "Retardo"
+#define ARCH_CONFIG_ALGORITMO_DISTRIBUCION "algoritmo"
+#define ARCH_CONFIG_PUERTO "puerto"
+#define ARCH_CONFIG_TAMANIO_ENTRADAS "tamanio_entradas"
+#define ARCH_CONFIG_CANTIDAD_ENTRADAS "cantidad_entradas"
+#define ARCH_CONFIG_RETARDO "retardo"
 //***
 
 //***

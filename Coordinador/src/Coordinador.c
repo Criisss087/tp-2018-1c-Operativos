@@ -222,7 +222,8 @@ void proseguirOperacionNormal(int socketCliente, t_sentencia * sentencia_con_pun
 
 void interpretarOperacionESI(t_content_header * hd, int socketCliente){
 	log_info(logger, "Interpretando operación ESI - Origen: %d, Receptor: %d, Operación: %d, Cantidad: %d",hd->proceso_origen,hd->proceso_receptor,hd->operacion,hd->cantidad_a_leer);
-
+//Retardo:
+	sleep((float) RETARDO/(float )1000);
 	switch(hd->operacion){
 	case ESI_COORDINADOR_SENTENCIA:
 		;
