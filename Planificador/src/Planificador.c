@@ -168,7 +168,7 @@ int main(int argc, char **argv) {
 
 int conectar_coordinador(char * ip, char * port) {
 
-	int coord_socket = conectar_a_server(IP_COORD, PORT_COORD);
+	int coord_socket = conectar_a_server(ip, port);
 	if (coord_socket < 0)
 	{
 		log_error(logger,"Error al intentar conectar al coordinador\n");
@@ -429,7 +429,6 @@ int recibir_mensaje_esi(t_conexion_esi conexion_esi)
 
 			if(estado_pausa_por_consola == pausado){
 				confirmar_pausa_por_consola();
-
 			}
 
 			// Ordenar ejecutar siguiente sentencia del ESI
@@ -439,7 +438,7 @@ int recibir_mensaje_esi(t_conexion_esi conexion_esi)
 			}
 
 		}
-		else if(confirmacion->resultado == 3) { //LISTO){ TODO-> Correcion temporal para no reinstalar redis
+		else if(confirmacion->resultado == LISTO){
 
 			esi_aux = esi_en_ejecucion;
 			finalizar_esi(esi_aux->pid);
