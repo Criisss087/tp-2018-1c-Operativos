@@ -27,10 +27,10 @@ int main(int argc, char **argv) {
 	stdin_no_bloqueante();
 
 	//Crea el socket servidor para recibir ESIs (ya bindeado y escuchando)
-	int serv_socket = iniciar_servidor(PORT_ESCUCHA);
+	int serv_socket = iniciar_servidor(config.puerto_escucha);
 
 	//Crea el socket cliente para conectarse al coordinador
-	int coord_socket = conectar_coordinador(IP_COORD, PORT_COORD);
+	int coord_socket = conectar_coordinador(config.ip_coordinador, config.puerto_coordinador);
 
 	while(TRUE){
 		//Inicializa los file descriptor
@@ -439,7 +439,7 @@ int recibir_mensaje_esi(t_conexion_esi conexion_esi)
 			}
 
 		}
-		else if(confirmacion->resultado == LISTO){
+		else if(confirmacion->resultado == 3) { //LISTO){ TODO-> Correcion temporal para no reinstalar redis
 
 			esi_aux = esi_en_ejecucion;
 			finalizar_esi(esi_aux->pid);
