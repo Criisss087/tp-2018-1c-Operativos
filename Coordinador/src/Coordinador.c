@@ -14,7 +14,6 @@ rta_envio enviarSentenciaInstancia(t_sentencia * sentencia){
 	rta_envio rta;
 	rta.instancia = malloc(sizeof(t_instancia));
 	/*
-
 	switch(sentencia->keyword){
 	case SET:
 		//asignar instancia
@@ -236,7 +235,7 @@ void interpretarOperacionESI(t_content_header * hd, int socketCliente){
 		log_info(logger,"tam valor: %d", sentencia->tam_valor);
 
 		char * valor;
-		if (sentencia->keyword == SET){
+		if (sentencia->keyword == SET_){
 			//Recibo el valor - El esi me lo manda "pelado", directamente el string, ningún struct
 			valor = malloc(sentencia->tam_valor);
 			printf("TAMANIO VALOR %d", sentencia->tam_valor);
