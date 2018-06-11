@@ -13,6 +13,8 @@ rta_envio enviarSentenciaInstancia(t_sentencia * sentencia){
 
 	rta_envio rta;
 	rta.instancia = malloc(sizeof(t_instancia));
+
+	t_instancia * proxima;
 	/*
 	switch(sentencia->keyword){
 	case SET:
@@ -25,7 +27,27 @@ rta_envio enviarSentenciaInstancia(t_sentencia * sentencia){
 		break;
 	}*/
 
-	t_instancia * proxima = siguienteInstanciaSegunAlgoritmo();
+	//**
+	int tiene_clave(t_clave * clObj){
+					return (strcmp(sentencia->clave, clObj->clave)==0);
+				}
+
+		t_clave * instancias_con_clave = list_filter(lista_claves,(void*)tiene_clave);
+		if (list_size(instancias_con_clave)>1){log_error(logger,"Más de una instancia tiene asignada la clave %s",sentencia->clave);}
+		else{
+			if (list_size(instancias_con_clave )== 1){
+				//existe
+				t_clave * instanciaDuena = list_get(instancias_con_clave ,0);
+				proxima =  instanciaDuena->instancia;
+			}
+			else{
+				proxima = siguienteInstanciaSegunAlgoritmo();
+				t_clave * instanciaDuena = list_get(instancias_con_clave ,0);
+				instanciaDuena->instancia = proxima;
+
+			}
+		}
+	//**
 	log_info(logger,"Enviando a instancia: %s %s %s",proxima->nombre,sentencia->clave, sentencia->valor);
 
 //TODO Que siguienteInstanciaSegunAlgortimo devuelva null en vez de esto
@@ -111,14 +133,37 @@ void interpretarOperacionPlanificador(t_content_header * hd, int socketCliente){
 	}
 }
 
-t_instancia * guardarClaveInternamente(char clave[40]){
-	log_warning(logger,"TODO - guardarClaveInternamente");
-	//TODO
+t_clave * guardarClaveInternamente(char clave[40]){
+
+	int tiene_clave(t_clave * clObj){
+				return (strcmp(clave, clObj->clave)==0);
+			}
+
+	t_clave * instancias_con_clave = list_filter(lista_claves,(void*)tiene_clave);
+	if (list_size(instancias_con_clave )>1){log_error(logger,"Más de una instancia tiene asignada la clave %s",clave);}
+	else{
+		if (list_size(instancias_con_clave )== 1){
+			//existe
+			t_clave * instanciaDuena = list_get(instancias_con_clave ,0);
+			return instanciaDuena;
+		}
+		else{
+			//no existe
+			t_clave * claveObjeto = malloc(sizeof(t_clave));
+			//asigno la instancia la primera vez que envio a una
+			claveObjeto->instancia = NULL;
+			strncpy(claveObjeto,clave,40);
+
+			list_add(lista_claves,claveObjeto);
+
+			return claveObjeto;
+		}
+	}
+
 	//Chequear que no exista internamente
 	//Si existe, devolver la instancia que la tiene.
 	//Si no existe,
-	t_instancia * instancia_con_clave;
-	return instancia_con_clave;
+
 }
 
 int chequearConectividadProceso(t_instancia * instancia){
@@ -155,10 +200,17 @@ int puedoEjecutarSentencia(t_sentencia * sentencia){
 	log_info(logger,"Chequeando si puedo ejecutar la sentencia...");
 	if(	list_size(lista_instancias)==0){return ABORTAR;}
 
-	t_instancia * instancia_con_clave = guardarClaveInternamente(sentencia->clave);
+	t_clave * clave_obj = guardarClaveInternamente(sentencia->clave);
 
-	if (chequearConectividadProceso(instancia_con_clave)==0){
-		return ABORTAR;
+	if (sentencia->keyword == SET_){
+		log_info(logger,"aca no rompe");
+		if (clave_obj->instancia != NULL){
+			log_info(logger,"aca si");
+			if (chequearConectividadProceso(clave_obj->instancia)==0){
+				return ABORTAR;
+			}
+		}
+		else return ABORTAR;
 	}
 
 	return CORRECTO;//consultarPlanificador(sentencia);
