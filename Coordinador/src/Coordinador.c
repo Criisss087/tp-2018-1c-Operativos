@@ -138,7 +138,7 @@ t_clave * guardarClaveInternamente(char clave[40]){
 	int tiene_clave(t_clave * clObj){
 				return (strcmp(clave, clObj->clave)==0);
 			}
-
+	log_info(logger,"guardando clave - sin instancia");
 	t_clave * instancias_con_clave = list_filter(lista_claves,(void*)tiene_clave);
 	if (list_size(instancias_con_clave )>1){log_error(logger,"Más de una instancia tiene asignada la clave %s",clave);}
 	else{
@@ -151,7 +151,7 @@ t_clave * guardarClaveInternamente(char clave[40]){
 			//no existe
 			t_clave * claveObjeto = malloc(sizeof(t_clave));
 			//asigno la instancia la primera vez que envio a una
-			claveObjeto->instancia = NULL;
+			claveObjeto->instancia = siguienteInstanciaSegunAlgoritmo();
 			strncpy(claveObjeto,clave,40);
 
 			list_add(lista_claves,claveObjeto);
@@ -210,7 +210,12 @@ int puedoEjecutarSentencia(t_sentencia * sentencia){
 				return ABORTAR;
 			}
 		}
-		else return ABORTAR;
+		else {
+			log_info(logger,"abort");
+			//clave_obj->instancia = siguienteInstanciaSegunAlgoritmo();
+			//return CORRECTO;
+			return ABORTAR;
+		}
 	}
 
 	return CORRECTO;//consultarPlanificador(sentencia);
