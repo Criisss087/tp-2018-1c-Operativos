@@ -18,7 +18,10 @@
 #include <commons/collections/list.h> // Para manejo de strings
 #include <sys/mman.h> // Para el uso de mmap()
 #include <sys/stat.h>
+#include <sys/types.h>
 #include <errno.h>
+#include <fcntl.h>
+
 
 #include "CargarArchivoDeConfiguracion.c"
 

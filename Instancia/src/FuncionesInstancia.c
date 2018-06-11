@@ -118,6 +118,12 @@ int sumarElementosDeLista(t_list * tamanios) {
 	return total;
 }
 
+char * obtenerValorCompleto(char * puntero, int tamanio) {
+	char * valorCompleto = malloc(tamanio);
+	valorCompleto = memcpy(valorCompleto, puntero, tamanio);
+	return valorCompleto;
+}
+
 int obtenerTamanioTotalDeValorGuardado(t_list * listaDeIndices) {
 
 	int obtenerTamanioDeEntrada(t_indice_entrada * entrada) {

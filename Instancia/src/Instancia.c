@@ -301,11 +301,11 @@ void guardarClaveValor(t_sentencia * sentenciaRecibida) {
 			printf("Agregando unica entrada, es decir valor atomico\n");
 
 			if (numeroEntrada >= configTablaEntradas->cantTotalEntradas) {
-				printf("Es necesario aplicar algoritmo de reemplazo");
+				printf("Es necesario aplicar algoritmo de reemplazo...\n");
 				aplicarAlgoritmoDeReemplazo(sentenciaRecibida);
 			}
 
-			printf("No es necesario aplicar algoritmo de reemplazo");
+			printf("No es necesario aplicar algoritmo de reemplazo\n");
 
 			t_indice_entrada * indiceEntrada = guardarIndiceAtomicoEnTabla(
 					sentenciaRecibida);
@@ -360,29 +360,71 @@ size_t getFileSize(const char* filename) {
 	stat(filename, &st);
 	return st.st_size;
 }
-// crearArchivoParaClave debe devolver un puntero a memoria del archivo creado (mmap)
-char * crearArchivoParaClave(char clave[40]) {
+
+// &len
+void * append(int fd, char * valor, size_t nbytes, void *map, size_t len) {
+	int permisos = PROT_READ | PROT_WRITE;
+	ssize_t written = write(fd, valor, nbytes);
+	munmap(map, len);
+	len += written;
+	return mmap(NULL, len, permisos, MAP_SHARED, fd, 0);
+}
+
+void grabarArchivoPorPrimeraVez(int fd, char * valor, int tamanio) {
+	write(fd, valor, tamanio);
+}
+
+void guardarPunteroDeArchivoEnIndices(t_list * indices, char * punteroDeArchivo) {
+	void guardarPunteroDeArchivo(t_indice_entrada * entrada) {
+		strcpy(entrada->punteroArchivo, punteroDeArchivo);
+	}
+	list_iterate(indices, (void *) guardarPunteroDeArchivo);
+}
+
+void realizarStoreDeClave(char clave[40]) {
 	char * path = obtenerPathArchivo(clave);
 
 	make_directory(PUNTO_DE_MONTAJE);
 
-	int fileDescriptor = open(path, "w+");
-	if (fileDescriptor != -1) {
-		printf("File Descriptor: %d\n", fileDescriptor);
+	int permisos = 0664;
+	int flags = O_RDWR | O_CREAT | O_TRUNC;
 
-	} else {
+	int fileDescriptor;
+	if ((fileDescriptor = open(path, flags, permisos)) < 0) {
 		printf("No se pudo crear el archivo: %s\n", path);
+		printf("\tFile Descriptor: %d\n", fileDescriptor);
+	} else {
+		printf("File Descriptor: %d\n", fileDescriptor);
 	}
 
-	size_t tamanioArchivo = getFileSize(path);
-	printf("Tamanio de Archivo creado: %d\n", tamanioArchivo);
+	t_list * indices = obtenerIndicesDeClave(clave);
 
-	void * punteroDeArchivo = mmap(NULL, tamanioArchivo, PROT_READ, MAP_PRIVATE | MAP_POPULATE,
-			fileDescriptor, 0); // MAP_SHARED
+	t_indice_entrada * primerEntrada = list_get(indices, 0);
+
+	int tamanioValorCompleto = obtenerTamanioTotalDeValorGuardado(indices);
+	printf("Tamaño del valor guardado: %d\n", tamanioValorCompleto);
+
+	char * valorCompleto = obtenerValorCompleto(primerEntrada->puntero,
+			tamanioValorCompleto);
+	printf("El valor completo es: %s\n", valorCompleto);
+
+	if (primerEntrada->punteroArchivo == NULL) {
+		grabarArchivoPorPrimeraVez(fileDescriptor, valorCompleto, tamanioValorCompleto);
+	}
+
+	char * punteroDeArchivo;
+
+	//  ACA APLICAR EL APPEND PARA MANEJAR LA VARIACION DEL TAMAÑO DEL FD
+	if ((punteroDeArchivo = mmap(0, tamanioValorCompleto, permisos,
+	MAP_SHARED, fileDescriptor, 0)) == (caddr_t) -1) {
+		printf("mmap error for output\n");
+	}
+
+//	punteroDeArchivo = append(fileDescriptor, valor, tamanioDelValor, void *map, size_t len);
 
 	if ((int) punteroDeArchivo != MAP_FAILED) {
 		printf("El Mapeo se efectuo correctamente\n\n");
-		printf("Puntero de archivo: %p", punteroDeArchivo);
+		printf("Puntero de archivo: %p\n", punteroDeArchivo);
 	} else {
 		printf("Error en el Mapeo de archivo\n");
 		switch (errno) {
@@ -394,25 +436,22 @@ char * crearArchivoParaClave(char clave[40]) {
 			printf(
 					"\tfiledes was not open for the type of access specified in protect.\n");
 			break;
-
-			/*		- ENOMEM
-
-			 Either there is not enough memory for the operation, or the process is out of address space.
-
-
-			 - ENODEV
-
-			 This file is of a type that doesn't support mapping.
-
-
-			 - ENOEXEC
-
-			 The file is on a filesystem that doesn't support mapping.
-			 == */
+		case ENOMEM:
+			printf(
+					"\tEither there is not enough memory for the operation, or the process is out of address space.\n");
+			break;
+		case ENODEV:
+			printf("\tThis file is of a type that doesn't support mapping.\n");
+			break;
+		case ENOEXEC:
+			printf(
+					"\tThe file is on a filesystem that doesn't support mapping.\n");
+			break;
 		}
 	}
 
-	return punteroDeArchivo;
+	guardarPunteroDeArchivoEnIndices(indices, punteroDeArchivo);
+
 }
 
 void grabarArchivo(char clave[40]) {
@@ -468,15 +507,13 @@ void interpretarOperacionCoordinador(t_content_header * header,
 		case SET_:
 			// Imprimo tabla de entradas para verificar su estado
 
-			punteroArchivo = crearArchivoParaClave(sentenciaRecibida->clave);
 			guardarClaveValor(sentenciaRecibida);
 			imprimirTablaEntradas();
-			// grabarArchivo(sentenciaRecibida->clave); //TODO: La funcion grabarArchivo se debe llamar unicamente en STORE y en dump
 			enviarResultadoSentencia(socketCoordinador, SET_);
 			break;
 
 		case STORE_:
-			grabarArchivo(sentenciaRecibida->clave);
+			realizarStoreDeClave(sentenciaRecibida->clave);
 			// Liberar el indice y la entrada
 			enviarResultadoSentencia(socketCoordinador, STORE_);
 			break;
