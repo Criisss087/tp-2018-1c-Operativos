@@ -15,7 +15,8 @@
 #include <string.h>
 #include <arpa/inet.h>
 #include <sys/socket.h>
-#include <commons/collections/list.h> // Para manejo de strings
+#include <commons/collections/list.h> // Para manejo de listas
+#include <commons/string.h> // Para manejo de strings
 #include <sys/mman.h> // Para el uso de mmap()
 #include <sys/stat.h>
 #include <sys/types.h>

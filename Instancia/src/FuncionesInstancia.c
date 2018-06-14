@@ -63,12 +63,15 @@ char * recibirValor(int socket, int tamanioValor) {
 		return valorRecibido;
 }
 
-t_sentencia * construirSentenciaConValor(t_sentencia * sentenciaPreliminar, char * valor) {
+t_sentencia * construirSentenciaConValor(t_esi_operacion_sin_puntero * sentenciaPreliminar, char * valor) {
 		t_sentencia * sentenciaRecibida = malloc(sizeof(t_sentencia));
 
 		strcpy(sentenciaRecibida->clave, sentenciaPreliminar->clave);
 		sentenciaRecibida->keyword = sentenciaPreliminar->keyword;
-		sentenciaRecibida->valor = strdup(valor);
+		if(valor!=NULL){
+			sentenciaRecibida->valor = strdup(valor);
+		}
+
 
 		printf(
 				"Se asigna la sentencia correctamente... Lista para ser procesada...\n");
@@ -151,7 +154,7 @@ char* obtenerClaveExistenteEnEntrada(int nroEntrada) {
 	_Bool entradaOcupada(t_indice_entrada * entrada) {
 				return (entrada->numeroEntrada == nroEntrada);
 			}
-	t_indice_entrada * entrada = list_find(l_indice_entradas, entradaOcupada);
+	t_indice_entrada * entrada = list_find(l_indice_entradas, (void*)entradaOcupada);
 	return entrada->clave;
 }
 
@@ -160,6 +163,6 @@ void eliminarEntradasAsociadasAClave(char * clave) {
 	_Bool contieneClave(t_indice_entrada * entrada) {
 				return (strcmp(entrada-> clave, clave));
 			}
-	list_remove_by_condition(l_indice_entradas, contieneClave);
+	list_remove_by_condition(l_indice_entradas, (void*)contieneClave);
 }
 

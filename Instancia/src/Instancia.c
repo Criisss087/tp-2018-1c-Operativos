@@ -110,6 +110,9 @@ void crearTablaEntradas(t_configTablaEntradas * config) {
 }
 
 t_sentencia * recibirSentencia(int socketCoordinador) {
+
+	t_sentencia * sentenciaRecibida;
+
 	t_esi_operacion_sin_puntero * sentenciaPreliminarRecibida = malloc(
 			sizeof(t_esi_operacion_sin_puntero));
 
@@ -128,15 +131,19 @@ t_sentencia * recibirSentencia(int socketCoordinador) {
 		// Se obtiene el valor y se forma la sentencia completa
 		char * valorRecibido = recibirValor(socketCoordinador,
 				sentenciaPreliminarRecibida->tam_valor);
-		t_sentencia * sentenciaRecibida = construirSentenciaConValor(
+		sentenciaRecibida = construirSentenciaConValor(
 				sentenciaPreliminarRecibida, valorRecibido);
 
-		return sentenciaRecibida;
+		//return sentenciaRecibida;
 	}
 
 	else {
-		return sentenciaPreliminarRecibida;
+
+		sentenciaRecibida = construirSentenciaConValor(sentenciaPreliminarRecibida, NULL);
+		//return sentenciaRecibida;
 	}
+
+	return sentenciaRecibida;
 }
 
 t_list * obtenerIndicesDeClave(char clave[40]) {
@@ -193,7 +200,7 @@ void guardarValorEnEntrada(char * valor, char* puntero) {
 	printf("Guardando valor: %s en puntero: %p...\n", valor, puntero);
 	memcpy(puntero, valor, strlen(valor));
 
-	printf("Valor guardado: %s\n", *puntero);
+	printf("Valor guardado: %s\n", puntero);
 }
 
 void aplicarAlgoritmoDeReemplazo(t_sentencia * sentenciaRecibida) {
@@ -327,14 +334,15 @@ void guardarClaveValor(t_sentencia * sentenciaRecibida) {
 }
 
 void make_directory(const char* name) {
-	char * check;
+	//char * check;
+	int check;
 	check = mkdir(name, 0777);
 
 	if (!check)
-		printf("Directorio creado: %s\n", name);
+		printf("Directorio creado: %s\t check = %d\n", name,check);
 
 	else {
-		printf("No se puede crear el directorio... o ya existe...\n");
+		printf("No se puede crear el directorio... o ya existe...\t check = %d\n",check);
 	}
 }
 
@@ -342,7 +350,8 @@ char * obtenerPathArchivo(char clave[40]) {
 	char * puntoDeMontaje = strdup(PUNTO_DE_MONTAJE);
 	printf("Directorio donde se guardara el archivo: %s\n", puntoDeMontaje);
 
-	char * archivo = string_new();
+	char * archivo;
+	archivo = string_new();
 	string_append(&archivo, clave);
 	string_append(&archivo, ".txt");
 	printf("Nombre del archivo que se creara: %s\n", archivo);
@@ -422,7 +431,7 @@ void realizarStoreDeClave(char clave[40]) {
 
 //	punteroDeArchivo = append(fileDescriptor, valor, tamanioDelValor, void *map, size_t len);
 
-	if ((int) punteroDeArchivo != MAP_FAILED) {
+	if ( punteroDeArchivo != MAP_FAILED) {
 		printf("El Mapeo se efectuo correctamente\n\n");
 		printf("Puntero de archivo: %p\n", punteroDeArchivo);
 	} else {
