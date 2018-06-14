@@ -385,7 +385,15 @@ void grabarArchivoPorPrimeraVez(int fd, char * valor, int tamanio) {
 
 void guardarPunteroDeArchivoEnIndices(t_list * indices, char * punteroDeArchivo) {
 	void guardarPunteroDeArchivo(t_indice_entrada * entrada) {
-		strcpy(entrada->punteroArchivo, punteroDeArchivo);
+		printf("%s\n",punteroDeArchivo);
+		//printf("%s\n",entrada->punteroArchivo);
+		printf("%d\n",strlen(punteroDeArchivo));
+		printf("%d\n",sizeof(punteroDeArchivo));
+		printf("%d\n",sizeof(*punteroDeArchivo));
+
+		entrada->punteroArchivo = strdup(punteroDeArchivo);
+		//strcpy(entrada->punteroArchivo, punteroDeArchivo);
+		//memcpy(entrada->punteroArchivo, punteroDeArchivo, sizeof(*punteroDeArchivo));
 	}
 	list_iterate(indices, (void *) guardarPunteroDeArchivo);
 }
