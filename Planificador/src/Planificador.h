@@ -179,8 +179,9 @@ void terminar_planificador(void);
 void planificar(void);
 void obtener_proximo_ejecucion(void);
 void desalojar_ejecucion(void);
-
 void leer_configuracion_desde_archivo(char* path_archivo);
+void configurar_signals(void);
+void captura_sigpipe(int signo);
 
 //Utilidades para la consola
 int consola_derivar_comando(char * buffer);
@@ -238,5 +239,3 @@ void desbloquear_claves_bloqueadas_pid(int pid);
 void confirmar_bloqueo_por_set(void);
 void confirmar_desbloqueo_por_store(void);
 
-// TODO Eliminar esta función
-void crear_claves_bloqueadas_dummy();

@@ -10,6 +10,7 @@
 
 #include "Planificador.h"
 
+
 int main(int argc, char **argv) {
 
 	fd_set readset, writeset, exepset;
@@ -21,6 +22,7 @@ int main(int argc, char **argv) {
 	logger = log_create("Log_Planificador.txt", "Planificador", true,LOG_LEVEL_TRACE);
 	log_trace(logger,"Iniciando Planificador...");
 
+	configurar_signals();
 	crear_listas_planificador();
 	leer_configuracion_desde_archivo(argv[1]);
 	inicializar_conexiones_esi();
@@ -389,14 +391,29 @@ int recibir_mensaje_esi(t_conexion_esi conexion_esi)
 	log_trace(logger,"Llegó un nuevo mensaje desde el ESI %d!",conexion_esi.pid);
 
 	read_size = recv(conexion_esi.socket, content_header, sizeof(t_content_header), 0);
+	log_warning(logger,"resultado recv %d! errno %d",read_size,errno);
+	if(read_size < 0)
+	{
+		log_error(logger,"Hubo un error en recv con esi %d",conexion_esi.pid);
+		finalizar_esi(conexion_esi.pid);
+		return read_size;
+	}
 
-	log_info(logger,"Llego la operacion %d  se leerán %d bytes",content_header->operacion,content_header->cantidad_a_leer );
+
+	log_info(logger,"Llego la operacion %d  se leerán %d bytes",content_header->operacion,content_header->cantidad_a_leer);
 
 	if(content_header->operacion == OPERACION_RES_SENTENCIA)
 	{
 		confirmacion = malloc(sizeof(t_confirmacion_sentencia));
 
-		recv(conexion_esi.socket, confirmacion, content_header->cantidad_a_leer,(int) NULL);
+		read_size = recv(conexion_esi.socket, confirmacion, content_header->cantidad_a_leer,(int) NULL);
+		log_warning(logger,"resultado recv %d! errno %d",read_size,errno);
+		if(read_size < 0)
+		{
+			log_error(logger,"Hubo un error en recv con esi %d",conexion_esi.pid);
+			finalizar_esi(conexion_esi.pid);
+			return read_size;
+		}
 
 		log_info(logger,"Resultado de (%d) = %d",conexion_esi.pid,confirmacion->resultado);
 
@@ -1112,12 +1129,17 @@ int enviar_confirmacion_sentencia(t_pcb_esi * pcb_esi)
 	log_info(logger,"Aviso al ESI %d que es su turno",pcb_esi->pid);
 
 	int res_send = send(pcb_esi->conexion->socket, header, sizeof(t_content_header), 0);
+	log_warning(logger,"Resultado send %d errno = %d",res_send,errno);
+	log_error(logger,"Error: %s",strerror(errno));
 	if(res_send < 0)
 	{
 		log_error(logger,"Error send header al ESI %d",pcb_esi->pid);
 	}
 
 	res_send = send(pcb_esi->conexion->socket, conf, sizeof(t_confirmacion_sentencia), 0);
+	log_warning(logger,"Resultado send %d, errno = %d",res_send, errno);
+	log_error(logger,"Error: %s",strerror(errno));
+
 	if(res_send < 0)
 	{
 		log_error(logger,"Error send ejec al ESI %d",pcb_esi->pid);
@@ -1195,6 +1217,24 @@ void terminar_planificador(void)
 	{
 		free(config.algoritmo);
 		config.algoritmo = NULL;
+	}
+
+	if(config.ip_coordinador!=NULL)
+	{
+		free(config.ip_coordinador);
+		config.ip_coordinador = NULL;
+	}
+
+	if(config.puerto_coordinador!=NULL)
+	{
+		free(config.puerto_coordinador);
+		config.puerto_coordinador = NULL;
+	}
+
+	if(config.puerto_escucha!=NULL)
+	{
+		free(config.puerto_escucha);
+		config.puerto_escucha = NULL;
 	}
 
 	return;
@@ -1656,6 +1696,9 @@ void leer_configuracion_desde_archivo(char* path_archivo){
 		config.ip_coordinador = strdup(IP_COORD);
 	}
 
+	free(atributo);
+	atributo = NULL;
+
 	//PUERTO_COORDINADOR
 	atributo = strdup("PUERTO_COORDINADOR");
 	if(config_has_property(arch_config, atributo)){
@@ -1666,6 +1709,9 @@ void leer_configuracion_desde_archivo(char* path_archivo){
 		log_warning(logger,"ERROR. No se pudo recuperar el atributo %s, default: %s", atributo, PORT_COORD);
 		config.puerto_coordinador = strdup(PORT_COORD);
 	}
+
+	free(atributo);
+	atributo = NULL;
 
 	//PUERTO_ESCUCHA
 	atributo = strdup("PUERTO_ESCUCHA");
@@ -1678,6 +1724,9 @@ void leer_configuracion_desde_archivo(char* path_archivo){
 		config.puerto_escucha = strdup(PORT_ESCUCHA);
 	}
 
+	free(atributo);
+	atributo = NULL;
+
 	//ALGORITMO
 	atributo = strdup("ALGORITMO");
 	if(config_has_property(arch_config, atributo)){
@@ -1688,6 +1737,9 @@ void leer_configuracion_desde_archivo(char* path_archivo){
 		log_warning(logger,"ERROR. No se pudo recuperar el atributo %s, default: %s", atributo, ALGORITMO_PLAN_SJFSD);
 		config.algoritmo = strdup(ALGORITMO_PLAN_SJFSD);
 	}
+
+	free(atributo);
+	atributo = NULL;
 
 	//ALFA
 	atributo = strdup("ALFA");
@@ -1701,6 +1753,9 @@ void leer_configuracion_desde_archivo(char* path_archivo){
 		config.alfa = ALPHA;
 	}
 
+	free(atributo);
+	atributo = NULL;
+
 	//ESTIMACION_INICIAL
 	atributo = strdup("ESTIMACION_INICIAL");
 	if(config_has_property(arch_config, atributo)){
@@ -1711,6 +1766,9 @@ void leer_configuracion_desde_archivo(char* path_archivo){
 		log_warning(logger,"ERROR. No se pudo recuperar el atributo %s. Default: %d", atributo,ESTIMACION_INICIAL);
 		config.estimacion_inicial = ESTIMACION_INICIAL;
 	}
+
+	free(atributo);
+	atributo = NULL;
 
 	//CLAVES_BLOQUEADAS
 	atributo = strdup("CLAVES_BLOQUEADAS");
@@ -1734,3 +1792,37 @@ void leer_configuracion_desde_archivo(char* path_archivo){
 
 	return;
 }
+
+void configurar_signals(void)
+{
+	//TODO: verificar cuando esten los retardos funcionando y mover a un lugar indicado
+	struct sigaction signal_struct;
+	signal_struct.sa_handler = captura_sigpipe;
+	signal_struct.sa_flags   = 0;    /* no options being used */
+
+	sigemptyset( &signal_struct.sa_mask);
+	sigaddset  ( &signal_struct.sa_mask, SIGINT);
+    if (sigaction(SIGPIPE, &signal_struct, NULL) < 0)
+    {
+        fprintf(stderr, "sigaction error\n");
+        exit(1);
+    }
+
+}
+
+void captura_sigpipe(int signo)
+{
+    int i;
+
+    printf("Caught SIGPIPE.\n");
+    printf("    This signal handler will execute for 4 seconds\n");
+    printf("    See what happens if you press Ctrl-C (SIGINT) during\n");
+    printf("    this time...\n");
+
+    for (i = 4; i >= 0; i--)
+    {
+        printf("%d\n", i);
+        sleep(1);
+    }
+}
+
