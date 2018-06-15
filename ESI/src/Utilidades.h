@@ -18,6 +18,7 @@
 #include <unistd.h>
 #include <parsi/parser.h>
 #include <redis_lib.h>
+#include <commons/config.h>
 
 //Esto es para los dummys...
 #define PACKAGESIZE 1024
@@ -41,11 +42,24 @@ struct confirmacion_sentencia{
 };
 typedef struct confirmacion_sentencia t_confirmacion_sentencia;
 
+//Globales
+FILE * archivo_a_leer_por_el_ESI;
+int serverCoord;
+int serverPlanif;
+
+//Configuracion
+char * IP_COORDINADOR;
+char * PUERTO_COORDINADOR;
+char * IP_PLANIFICADOR;
+char * PUERTO_PLANIFICADOR;
+
 
 //Funciones
 struct addrinfo* crear_addrinfo(char *, char *);
 int conectar_coordinador(char *, char *);
 int conectar_planificador(char *, char *);
+void finalizar_esi(void);
+void mostrar_sentencia(t_esi_operacion_sin_puntero * sentencia, char*valor);
 
 #include "Funciones.c"
 #endif /* SRC_UTILIDADES_H_ */

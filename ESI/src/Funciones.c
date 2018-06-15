@@ -5,13 +5,7 @@
  *      Author: utnso
  */
 
-#include <commons/config.h>
-
-//Configuracion
-char * IP_COORDINADOR;
-char * PUERTO_COORDINADOR;
-char * IP_PLANIFICADOR;
-char * PUERTO_PLANIFICADOR;
+#include "Utilidades.h"
 
 //Nombres para el archivo de configuracion
 #define ARCH_CONFIG_PUERTO_COORD "PUERTO COORDINADOR"
@@ -25,6 +19,7 @@ t_esi_operacion_sin_puntero  *transformarSinPunteroYagregarpID(t_esi_operacion t
 	char clave[40];
 
 	t_esi_operacion_sin_puntero  *tsp = malloc(sizeof(t_esi_operacion_sin_puntero));
+	memset(tsp, 0, sizeof(t_esi_operacion_sin_puntero));
 	tsp->keyword = t.keyword;
 	tsp->pid = id;
 
@@ -54,6 +49,19 @@ t_esi_operacion_sin_puntero  *transformarSinPunteroYagregarpID(t_esi_operacion t
 
 	strncpy(tsp->clave, clavep, sizeof (clave) - 1);
 	tsp->clave[strlen(clavep)] = '\0';
+
+	if(clavep!=NULL)
+	{
+		free(clavep);
+		clavep = NULL;
+	}
+
+	if(valorp!=NULL)
+	{
+		free(valorp);
+		valorp = NULL;
+	}
+
 
 	return tsp;
 }

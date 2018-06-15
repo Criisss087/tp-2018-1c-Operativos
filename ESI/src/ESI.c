@@ -11,7 +11,7 @@
 
 int main(int argc, char **argv){
 
-	FILE * archivo_a_leer_por_el_ESI;
+
 	char * linea_a_parsear = NULL;
 	size_t direccion_de_la_linea_a_parsear = 0;
 	ssize_t read;
@@ -24,14 +24,16 @@ int main(int argc, char **argv){
 
 	//Me conecto al coordinador y al planificador
 	printf("Iniciando conexion a servidores... \n");
-	int serverCoord = conectar_coordinador(IP_COORDINADOR, PUERTO_COORDINADOR);
-	int serverPlanif = conectar_planificador(IP_PLANIFICADOR, PUERTO_PLANIFICADOR);
+	serverCoord = conectar_coordinador(IP_COORDINADOR, PUERTO_COORDINADOR);
+	serverPlanif = conectar_planificador(IP_PLANIFICADOR, PUERTO_PLANIFICADOR);
 	printf("\n");
 
 	archivo_a_leer_por_el_ESI = fopen(argv[2], "r");
 
 	if(archivo_a_leer_por_el_ESI == NULL){
 		printf("Error al intentar abrir el archivo a leer.\n");
+		close(serverCoord);
+		close(serverPlanif);
 		exit(EXIT_FAILURE);
 	}
 
@@ -75,7 +77,8 @@ int main(int argc, char **argv){
 			if(parsed.valido){
 
 				//Transformo el t_esi_operacion a un tipo que se pueda enviar correctamente
-				t_esi_operacion_sin_puntero  *parse_sin_punteros = malloc(sizeof(t_esi_operacion_sin_puntero));
+				//Ya se hace malloc dentro de la funcion, no hace falta hacerlo 2 veces, genera un memory leak
+				t_esi_operacion_sin_puntero  *parse_sin_punteros = NULL;// = malloc(sizeof(t_esi_operacion_sin_puntero));
 				parse_sin_punteros = transformarSinPunteroYagregarpID(parsed, confirmacion->pid);
 
 				printf("Enviando linea parseada al coordinador... \n");
@@ -88,6 +91,9 @@ int main(int argc, char **argv){
 					int envio_valor_clave = send(serverCoord, parsed.argumentos.SET.valor , strlen(parsed.argumentos.SET.valor),0);
 				}
 
+				mostrar_sentencia(parse_sin_punteros, parsed.argumentos.SET.valor);
+
+				free(parse_sin_punteros);
 				destruir_cabecera_mensaje(content_header);
 				printf("\n");
 
@@ -191,9 +197,8 @@ int main(int argc, char **argv){
 
 	free(confirmacion);
 
-	fclose(archivo_a_leer_por_el_ESI);
-	close(serverCoord);
-	close(serverPlanif);
+	finalizar_esi();
+
 	return 0;
 
 }
@@ -276,4 +281,73 @@ int conectar_planificador(char * ip, char * puerto){
 	printf("Conectado al servidor planificador: %d \n",resultado_conexion_planificador);
 
 	return serverPlanif;
+}
+
+void finalizar_esi(void)
+{
+
+	if(IP_COORDINADOR!=NULL)
+	{
+		free(IP_COORDINADOR);
+		IP_COORDINADOR = NULL;
+	}
+
+	if(PUERTO_COORDINADOR!=NULL)
+	{
+		free(PUERTO_COORDINADOR);
+		PUERTO_COORDINADOR = NULL;
+	}
+
+
+	if(IP_PLANIFICADOR!=NULL)
+	{
+		free(IP_PLANIFICADOR);
+		IP_PLANIFICADOR = NULL;
+	}
+
+
+	if(PUERTO_PLANIFICADOR!=NULL)
+	{
+		free(PUERTO_PLANIFICADOR);
+		PUERTO_PLANIFICADOR = NULL;
+	}
+
+	fclose(archivo_a_leer_por_el_ESI);
+	close(serverCoord);
+	close(serverPlanif);
+
+}
+
+void mostrar_sentencia(t_esi_operacion_sin_puntero * sentencia, char * valor)
+{
+	char * keyword = NULL;
+
+	switch(sentencia->keyword)
+	{
+		case GET:
+			keyword = strdup("GET");
+			break;
+		case SET:
+			keyword = strdup("SET");
+			break;
+		case STORE:
+			keyword = strdup("STORE");
+			break;
+		default:break;
+
+	}
+
+	if(sentencia->keyword == SET)
+	{
+		printf("EJECUTAR: %s %s %s\n",keyword, sentencia->clave,valor);
+	}
+	else
+	{
+		printf("EJECUTAR: %s %s\n",keyword, sentencia->clave);
+	}
+
+	free(keyword);
+	keyword = NULL;
+
+
 }
