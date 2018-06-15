@@ -154,6 +154,7 @@ int bloqueo_en_ejecucion = 0;		// Bloquear al ESI en ejecucion
 int desalojo_en_ejecucion = 0;		// Desalojar al ESI en ejecucion por SJF-CD
 int bloqueo_por_set = 0;			// Bloquear clave por resultado positivo de SET
 int desbloqueo_por_store = 0;		// Desbloquear clave por resultado positivo de STORE
+int kill_en_ejecucion = 0;			// Matar al ESI en ejecucion
 
 struct config config;
 
@@ -221,6 +222,7 @@ int estimar_esi(t_pcb_esi * esi);
 int confirmar_bloqueo_ejecucion(void);
 int confirmar_desalojo_ejecucion(void);
 int confirmar_pausa_por_consola(void);
+int confirmar_kill_ejecucion(void);
 int finalizar_esi(int pid_esi);
 
 //Manejo de Coordinador

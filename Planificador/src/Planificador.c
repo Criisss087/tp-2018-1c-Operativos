@@ -448,6 +448,10 @@ int recibir_mensaje_esi(t_conexion_esi conexion_esi)
 				confirmar_pausa_por_consola();
 			}
 
+			if(kill_en_ejecucion){
+				confirmar_kill_ejecucion();
+			}
+
 			// Ordenar ejecutar siguiente sentencia del ESI
 			if(esi_en_ejecucion!=NULL)
 			{
@@ -892,11 +896,34 @@ void consola_matar_proceso(char* id)
 	 *
 	 */
 
+	int pid;
+	t_pcb_esi * esi_aux = NULL;
+
 	if(id == NULL){
 		log_warning(logger,"CONSOLA> Parametros incorrectos (kill <id>)");
 	}
 	else{
 		log_info(logger,"CONSOLA> COMANDO: kill ID: %s",id);
+
+		pid = atoi(id);
+
+		if(esi_en_ejecucion != NULL  && esi_en_ejecucion->pid == pid)
+		{
+			/* Si el esi esta en ejecucion, esperar a que termine la instrucción*/
+			log_info(logger,"Esperando a que termine de ejecutar la sentencia\n");
+			kill_en_ejecucion++;
+			return;
+		}
+
+		if (!finalizar_esi(pid))
+		{
+			log_info(logger,"ESI de ID %d Finalizado",pid);
+		}
+		else
+		{
+			log_info(logger,"No existe el ESI de ID %d en READY, BLOQUEADOS, ni en EJECUCION",pid);
+		}
+
 	}
 
 	return;
@@ -1130,7 +1157,6 @@ int enviar_confirmacion_sentencia(t_pcb_esi * pcb_esi)
 
 	int res_send = send(pcb_esi->conexion->socket, header, sizeof(t_content_header), 0);
 	log_warning(logger,"Resultado send %d errno = %d",res_send,errno);
-	log_error(logger,"Error: %s",strerror(errno));
 	if(res_send < 0)
 	{
 		log_error(logger,"Error send header al ESI %d",pcb_esi->pid);
@@ -1138,8 +1164,6 @@ int enviar_confirmacion_sentencia(t_pcb_esi * pcb_esi)
 
 	res_send = send(pcb_esi->conexion->socket, conf, sizeof(t_confirmacion_sentencia), 0);
 	log_warning(logger,"Resultado send %d, errno = %d",res_send, errno);
-	log_error(logger,"Error: %s",strerror(errno));
-
 	if(res_send < 0)
 	{
 		log_error(logger,"Error send ejec al ESI %d",pcb_esi->pid);
@@ -1670,6 +1694,13 @@ int confirmar_pausa_por_consola(){
 	return 0;
 }
 
+int confirmar_kill_ejecucion(void){
+	//TODO: Verificar si hay que avisar al esi a que finalice
+	finalizar_esi(esi_en_ejecucion->pid);
+
+	return 0;
+}
+
 void leer_configuracion_desde_archivo(char* path_archivo){
 
 	arch_config = config_create(path_archivo);
@@ -1795,13 +1826,12 @@ void leer_configuracion_desde_archivo(char* path_archivo){
 
 void configurar_signals(void)
 {
-	//TODO: verificar cuando esten los retardos funcionando y mover a un lugar indicado
 	struct sigaction signal_struct;
 	signal_struct.sa_handler = captura_sigpipe;
 	signal_struct.sa_flags   = 0;    /* no options being used */
 
-	sigemptyset( &signal_struct.sa_mask);
-	sigaddset  ( &signal_struct.sa_mask, SIGINT);
+	sigemptyset(&signal_struct.sa_mask);
+	sigaddset(&signal_struct.sa_mask, SIGINT);
     if (sigaction(SIGPIPE, &signal_struct, NULL) < 0)
     {
         fprintf(stderr, "sigaction error\n");
