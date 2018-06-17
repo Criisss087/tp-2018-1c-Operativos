@@ -282,7 +282,7 @@ void interpretarOperacionESI(t_content_header * hd, int socketCliente){
 	usleep(RETARDO*1000);
 	switch(hd->operacion){
 	case ESI_COORDINADOR_SENTENCIA:
-		;
+	{
 		//Recibo de ESI sentencia parseada
 		log_info(logger,"esi sentencia recibo");
 		t_esi_operacion_sin_puntero * sentencia = malloc(sizeof(t_esi_operacion_sin_puntero));
@@ -291,18 +291,29 @@ void interpretarOperacionESI(t_content_header * hd, int socketCliente){
 		log_info(logger,"KEYWORD: %d", sentencia->keyword);
 		log_info(logger,"tam valor: %d", sentencia->tam_valor);
 
-		char * valor;
+		char * buffer = malloc(sentencia->tam_valor);
+		char valRec[sentencia->tam_valor];
 		if (sentencia->keyword == SET_){
 			//Recibo el valor - El esi me lo manda "pelado", directamente el string, ningún struct
-			valor = malloc(sentencia->tam_valor);
+			memset(buffer,0,sentencia->tam_valor);
 			printf("TAMANIO VALOR %d", sentencia->tam_valor);
-			int valor_status = recv(socketCliente, valor, sentencia->tam_valor,NULL);
-			//valor[strlen(valor)-1] = '\0';
-			log_info(logger,"esi valor recibido: %s", valor);
-		}else valor = "";
+			int valor_status = recv(socketCliente, buffer, sentencia->tam_valor,NULL);
+			buffer[sentencia->tam_valor] = '\0';
+
+			//set char array
+			strncpy(valRec,buffer,sentencia->tam_valor);
+			valRec[sentencia->tam_valor] = '\0';
+
+			//set char p
+			buffer = strdup(valRec);
+			buffer[sentencia->tam_valor] = '\0';
+
+			log_info(logger,"esi valor recibido: %s", buffer);
+		}else {free(buffer);buffer = strdup("");}
 
 		//Armo una variable interna para manejar la sentencia
-		t_sentencia * sentencia_con_punteros = armar_sentencia(sentencia, valor);
+		t_sentencia * sentencia_con_punteros = armar_sentencia(sentencia, buffer);
+		free(buffer);
 		log_operacion_esi(sentencia_con_punteros, logger_operaciones);
 
 		int puedoEnviar = puedoEjecutarSentencia(sentencia_con_punteros);
@@ -330,6 +341,7 @@ void interpretarOperacionESI(t_content_header * hd, int socketCliente){
 		}
 		free(sentencia);
 		break;
+	}
 	default:
 		//TODO no se reconoció el tipo operación
 		break;

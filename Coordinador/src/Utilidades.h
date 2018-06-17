@@ -24,9 +24,9 @@
 #include <commons/config.h>
 #include <semaphore.h>
 
-#define IP "127.0.0.1"
+#define IP "0.0.0.0"
 
-#define BACKLOG 10			// Define cuantas conexiones vamos a mantener pendientes al mismo tiempo
+#define BACKLOG 50			// Define cuantas conexiones vamos a mantener pendientes al mismo tiempo
 
 //***Cod ops
 #define ESI_COORDINADOR_SENTENCIA 1

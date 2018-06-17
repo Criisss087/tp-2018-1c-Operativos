@@ -93,7 +93,7 @@ struct addrinfo* crear_addrinfo(){
 	memset(&hints, 0, sizeof(hints));
 	hints.ai_family = AF_UNSPEC;		// No importa si uso IPv4 o IPv6
 	hints.ai_socktype = SOCK_STREAM;	// Indica que usaremos el protocolo TCP
-	getaddrinfo("0.0.0.0", PUERTO, &hints, &serverInfo);
+	getaddrinfo(IP, PUERTO, &hints, &serverInfo);
 	return serverInfo;
 }
 
