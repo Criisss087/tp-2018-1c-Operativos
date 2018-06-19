@@ -272,7 +272,7 @@ int recibir_mensaje_coordinador(int coord_socket)
 	int read_size;
 	int resultado_consulta;
 
-	t_claves_bloqueadas * clave_bloqueada;
+	t_claves_bloqueadas * clave_bloqueada=NULL;
 
 	//Recepcion de mensaje comun de texto, con la cabecera (para no bloquear) Borrar mas adelante
 	t_content_header *content_header = malloc(sizeof(t_content_header));
@@ -308,18 +308,25 @@ int recibir_mensaje_coordinador(int coord_socket)
 			exit(EXIT_FAILURE);
 		}
 
-		log_info(logger,"Recibí la consulta PID: %d Sentencia: %d",consulta_bloqueo->pid,consulta_bloqueo->sentencia);
+		log_error(logger,"Recibí la consulta PID: %d Sentencia: %d",consulta_bloqueo->pid,consulta_bloqueo->sentencia);
 
 		switch(consulta_bloqueo->sentencia)
 		{
 			case GET:
 
+				clave_bloqueada = NULL;
+				clave_bloqueada = buscar_clave_bloqueada(consulta_bloqueo->clave);
 				//Si la clave sesta bloqueada, el esi pasa a bloqueado
-				if(buscar_clave_bloqueada(consulta_bloqueo->clave)){
+				if(clave_bloqueada){
 					resultado_consulta = CLAVE_BLOQUEADA;
 				}
 				else{
 					resultado_consulta = CORRECTO;
+					bloqueo_por_get++;
+					clave_a_bloquear_por_get = malloc(sizeof(t_consulta_bloqueo));
+					strcpy(clave_a_bloquear_por_get->clave,consulta_bloqueo->clave);
+					clave_a_bloquear_por_get->pid = consulta_bloqueo->pid;
+					clave_a_bloquear_por_get->sentencia = consulta_bloqueo->sentencia;
 				}
 
 				break;
@@ -334,8 +341,6 @@ int recibir_mensaje_coordinador(int coord_socket)
 					if(clave_bloqueada->pid == consulta_bloqueo->pid)
 					{
 						resultado_consulta = CORRECTO;
-						bloqueo_por_set++;
-						clave_a_bloquear_por_set = consulta_bloqueo;
 					}
 					else
 						resultado_consulta = ABORTAR;
@@ -434,9 +439,9 @@ int recibir_mensaje_esi(t_conexion_esi conexion_esi)
 				confirmar_desalojo_ejecucion();
 			}
 
-			if(bloqueo_por_set)
+			if(bloqueo_por_get)
 			{
-				confirmar_bloqueo_por_set();
+				confirmar_bloqueo_por_get();
 			}
 
 			if(desbloqueo_por_store)
@@ -1665,10 +1670,14 @@ void desbloquear_claves_bloqueadas_pid(int pid)
 	return;
 }
 
-void confirmar_bloqueo_por_set(void)
+void confirmar_bloqueo_por_get(void)
 {
-	bloquear_clave(clave_a_bloquear_por_set->clave, clave_a_bloquear_por_set->pid);
-	bloqueo_por_set = 0;
+	log_error(logger,"Confirmo bloqueo PID: %d clave: %s",clave_a_bloquear_por_get->pid,clave_a_bloquear_por_get->clave);
+	bloquear_clave(clave_a_bloquear_por_get->clave, clave_a_bloquear_por_get->pid);
+	bloqueo_por_get = 0;
+	//free(clave_a_bloquear_por_get->clave);
+	//clave_a_bloquear_por_get->clave = NULL;
+	free(clave_a_bloquear_por_get);
 	return;
 }
 

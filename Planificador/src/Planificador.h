@@ -143,7 +143,7 @@ t_list * esi_terminados;
 t_list * claves_bloqueadas;
 t_pcb_esi * esi_en_ejecucion = NULL;
 t_pcb_esi * esi_por_desalojar = NULL;
-t_consulta_bloqueo * clave_a_bloquear_por_set = NULL;
+t_consulta_bloqueo * clave_a_bloquear_por_get = NULL;
 t_consulta_bloqueo * clave_a_desbloquear_por_store = NULL;
 
 int esi_seq_pid = 0;
@@ -152,7 +152,7 @@ int estado_pausa_por_consola = no_pausado; // Pausa la ejecución de ESI y desal
 // Globales para capturar eventos al recibir el resultado de la sentencia del ESI
 int bloqueo_en_ejecucion = 0;		// Bloquear al ESI en ejecucion
 int desalojo_en_ejecucion = 0;		// Desalojar al ESI en ejecucion por SJF-CD
-int bloqueo_por_set = 0;			// Bloquear clave por resultado positivo de SET
+int bloqueo_por_get = 0;			// Bloquear clave por resultado positivo de GET
 int desbloqueo_por_store = 0;		// Desbloquear clave por resultado positivo de STORE
 int kill_en_ejecucion = 0;			// Matar al ESI en ejecucion
 
@@ -238,6 +238,6 @@ int destruir_clave_bloqueada(t_claves_bloqueadas * clave_bloqueada);
 t_claves_bloqueadas * buscar_clave_bloqueada(char* clave); //, int pid);
 
 void desbloquear_claves_bloqueadas_pid(int pid);
-void confirmar_bloqueo_por_set(void);
+void confirmar_bloqueo_por_get(void);
 void confirmar_desbloqueo_por_store(void);
 
