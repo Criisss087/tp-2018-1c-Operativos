@@ -144,11 +144,13 @@ t_clave * guardarClaveInternamente(char clave[40]){
 	else{
 		if (list_size(instancias_con_clave )== 1){
 			//existe
+			log_warning(logger,"existía la clavee");
 			t_clave * instanciaDuena = list_get(instancias_con_clave ,0);
 			return instanciaDuena;
 		}
 		else{
 			//no existe
+			log_warning(logger,"no existía la clave");
 			t_clave * claveObjeto = malloc(sizeof(t_clave));
 			//asigno la instancia la primera vez que envio a una
 			claveObjeto->instancia = siguienteInstanciaSegunAlgoritmo();
@@ -169,6 +171,16 @@ t_clave * guardarClaveInternamente(char clave[40]){
 int chequearConectividadProceso(t_instancia * instancia){
 	//TODO
 	return 1;
+}
+
+void loopPlanificadorConsulta(){
+	while(1){
+		log_warning(logger,"loopPlanificadorCOnsulta");
+		pthread_mutex_lock(&consulta_planificador);
+		log_warning(logger,"entro en mutex");
+		rdo_consulta_planificador = consultarPlanificador(sentencia_global);
+		pthread_mutex_unlock(&consulta_planificador_terminar);
+	}
 }
 
 int consultarPlanificador(t_sentencia * sentencia){
@@ -218,7 +230,21 @@ int puedoEjecutarSentencia(t_sentencia * sentencia){
 		}
 	}
 
-	return CORRECTO;//consultarPlanificador(sentencia);
+	pthread_mutex_lock(&lock_sentencia_global);
+	sentencia_global = sentencia;
+	log_warning(logger,"unlock cons planif");
+	pthread_mutex_unlock(&consulta_planificador);
+
+	log_warning(logger,"lock cons planif term");
+	pthread_mutex_lock(&consulta_planificador_terminar);
+
+	//log_warning(logger,"lock cons planif");
+	//pthread_mutex_lock(&consulta_planificador);
+	pthread_mutex_unlock(&lock_sentencia_global);
+
+	log_info(logger,"consulta planificador: %d", rdo_consulta_planificador);
+	//return CORRECTO;//consultarPlanificador(sentencia);
+	return rdo_consulta_planificador;
 }
 
 devolverResultadoAESI(int socketEsi, rta_envio rta, int idEsi){
@@ -363,6 +389,7 @@ void interpretarHeader(t_content_header * hd, int socketCliente){
 	case planificador:
 		//if (leer_planificador_request){
 			interpretarOperacionPlanificador(hd,socketCliente);
+			loopPlanificadorConsulta();
 		//}
 		break;
 	default:
@@ -394,7 +421,7 @@ void *escucharMensajesEntrantes(int socketCliente){
     		interpretarHeader(header, socketCliente);
     	};
     	//Si es instancia, solamente le mando la configuracion y cierro el hilo.
-    	if (header->proceso_origen == instancia || header->proceso_origen == planificador){
+    	if (header->proceso_origen == instancia /*|| header->proceso_origen == planificador*/){
     		status_header =-1;
     		log_warning(logger,	"Cerrando hilo para proceso no ESI");
     	}
@@ -412,8 +439,12 @@ int main(int argc, char **argv){
 
 	seteosIniciales(argv[1]);
 
-	pthread_mutex_init(&mutexInstancias, NULL);
-	sem_init(&semInstancias, 0, 1);
+	pthread_mutex_init(&consulta_planificador, NULL);
+	pthread_mutex_init(&lock_sentencia_global, NULL);
+	pthread_mutex_lock(&consulta_planificador);
+	pthread_mutex_init(&consulta_planificador_terminar,NULL);
+	//pthread_mutex_init(&mutexInstancias, NULL);
+	//sem_init(&semInstancias, 0, 1);
 	//pthread_mutex_init(&bloqueo_de_Instancias, NULL);
 //	pthread_mutex_lock(&bloqueo_de_Instancias);
 //	pthread_mutex_unlock(&bloqueo_de_Instancias;
