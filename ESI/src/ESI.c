@@ -45,6 +45,7 @@ int main(int argc, char **argv){
 
 		t_content_header *content_header = malloc(sizeof(t_content_header));
 		int read_size = recv(serverPlanif, content_header, sizeof(t_content_header), (int)NULL);
+		mostrar_header(content_header);
 
 		t_confirmacion_sentencia *confirmacion = malloc(sizeof(t_confirmacion_sentencia));
 		read_size = recv(serverPlanif, confirmacion, sizeof(t_confirmacion_sentencia), 0);
@@ -85,6 +86,7 @@ int main(int argc, char **argv){
 				content_header = crear_cabecera_mensaje(esi, coordinador, ENVIAR_SENTENCIA_COORD, sizeof(t_esi_operacion_sin_puntero));
 				int resultado = send(serverCoord, content_header, sizeof(t_content_header), 0);
 				resultado = send(serverCoord, parse_sin_punteros, sizeof(t_esi_operacion_sin_puntero),0);
+				mostrar_header(content_header);
 
 				if(parse_sin_punteros->keyword == SET){
 					printf("Enviando valor de la clave necesaria para el coordinador, la cual es:  %s\n", parsed.argumentos.SET.valor);
@@ -101,6 +103,7 @@ int main(int argc, char **argv){
 				printf("Recibiendo respuesta del coordinador...\n");
 				content_header = malloc(sizeof(t_content_header));
 				recv(serverCoord, content_header, sizeof(t_content_header),0);
+				mostrar_header(content_header);
 
 				respuesta_coordinador *respuesta_coordinador = malloc (sizeof(respuesta_coordinador));
 				recv(serverCoord, respuesta_coordinador, sizeof(respuesta_coordinador),0);
@@ -113,6 +116,7 @@ int main(int argc, char **argv){
 					//Aviso al planificador que recibi orden de abortar
 					content_header = crear_cabecera_mensaje(esi, planificador, ENVIAR_RESULTADO_PLANIF, sizeof(t_content_header));
 					int enviar_aviso_abortar = send(serverPlanif, content_header, sizeof(t_content_header),0);
+					mostrar_header(content_header);
 					confirmacion->resultado = ABORTAR;
 					enviar_aviso_abortar = send(serverPlanif, confirmacion, sizeof(t_confirmacion_sentencia),0);
 
@@ -149,6 +153,7 @@ int main(int argc, char **argv){
 				//Envio al planificador lo que me mando el coordinador
 				printf("Enviando al planificador la respuesta del coordinador...\n");
 				content_header = crear_cabecera_mensaje(esi, planificador, ENVIAR_RESULTADO_PLANIF, sizeof(t_content_header));
+				mostrar_header(content_header);
 				int enviar_rdo_planif = send(serverPlanif, content_header, sizeof(t_content_header),0);
 				enviar_rdo_planif = send(serverPlanif, confirmacion, sizeof(t_confirmacion_sentencia),0);
 
@@ -176,6 +181,7 @@ int main(int argc, char **argv){
 	printf("Esperando orden del planificador para finalizar...\n");
 	t_content_header* content_header = malloc(sizeof(t_content_header));
 	int read_size = recv(serverPlanif, content_header, sizeof(t_content_header), (int)NULL);
+	mostrar_header(content_header);
 
 	t_confirmacion_sentencia * confirmacion = malloc(sizeof(t_confirmacion_sentencia));
 	read_size = recv(serverPlanif, confirmacion, sizeof(t_confirmacion_sentencia), 0);
@@ -185,6 +191,7 @@ int main(int argc, char **argv){
 		free(content_header);
 
 		content_header = crear_cabecera_mensaje(esi, planificador, ENVIAR_RESULTADO_PLANIF , sizeof(t_confirmacion_sentencia));
+		mostrar_header(content_header);
 
 		//Le aviso al planificador que termine de leer el archivo
 		int finalice_lectura = send(serverPlanif, content_header, sizeof(t_content_header),0);
@@ -205,7 +212,7 @@ int main(int argc, char **argv){
 
 
 /*
- * Funciones para comunicarse con el coordinador y el planificador
+ * Funciones
  */
 
 
@@ -315,6 +322,18 @@ void finalizar_esi(void)
 	fclose(archivo_a_leer_por_el_ESI);
 	close(serverCoord);
 	close(serverPlanif);
+
+}
+
+void mostrar_header(t_content_header * header){
+	printf("El contenido del header es -> ");
+
+	if(header->proceso_origen == 1 || header->proceso_origen == 2 || header->proceso_origen == 3 || header->proceso_origen == 4){
+		printf("Origen: %d, Receptor: %d, Operación: %d, Cantidad: %d \n",header->proceso_origen,header->proceso_receptor,header->operacion,header->cantidad_a_leer);
+	}else{
+		printf("Recibi cualquier cosa, cierro por error desde el proceso origen\n");
+		finalizar_esi();
+	}
 
 }
 

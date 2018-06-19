@@ -60,6 +60,7 @@ int conectar_coordinador(char *, char *);
 int conectar_planificador(char *, char *);
 void finalizar_esi(void);
 void mostrar_sentencia(t_esi_operacion_sin_puntero * sentencia, char*valor);
+void mostrar_header(t_content_header * content_header);
 
 #include "Funciones.c"
 #endif /* SRC_UTILIDADES_H_ */
