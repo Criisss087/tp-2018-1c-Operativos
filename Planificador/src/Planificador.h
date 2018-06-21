@@ -51,12 +51,16 @@
 #define ALGORITMO_PLAN_SJFSD "SJF-SD"
 #define ALGORITMO_PLAN_HRRN "HRRN"
 
+//Resultados de sentencia ESI
 #define RESULTADO_ESI_OK_SIG 0
 #define RESULTADO_ESI_BLOQUEADA 1
 #define RESULTADO_ESI_ABORTADO 2
 #define RESULTADO_ESI_OK_FINAL 3
+//Operaciones ESI
 #define OPERACION_CONF_SENTENCIA 1
 #define OPERACION_RES_SENTENCIA 2
+#define OPERACION_CONF_KILL 3
+//Operaciones Coordinador
 #define OPERACION_HANDSHAKE_COORD 1
 #define OPERACION_CONSULTA_CLAVE_COORD 2
 #define OPERACION_RES_CLAVE_COORD 3
@@ -223,6 +227,7 @@ int confirmar_bloqueo_ejecucion(void);
 int confirmar_desalojo_ejecucion(void);
 int confirmar_pausa_por_consola(void);
 int confirmar_kill_ejecucion(void);
+void enviar_confirmacion_kill(int pid);
 int finalizar_esi(int pid_esi);
 
 //Manejo de Coordinador
