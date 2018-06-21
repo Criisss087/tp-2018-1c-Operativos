@@ -247,19 +247,20 @@ int puedoEjecutarSentencia(t_sentencia * sentencia){
 	return rdo_consulta_planificador;
 }
 
-devolverResultadoAESI(int socketEsi, rta_envio rta, int idEsi){
-	devolverCodigoResultadoAESI(socketEsi, rta.cod, idEsi);
+devolverResultadoAESI(int socketEsi, rta_envio rta, int idEsi, int proceso){
+	devolverCodigoResultadoAESI(socketEsi, rta.cod, idEsi,proceso);
 }
 
-void devolverCodigoResultadoAESI(int socketCliente, int cod, int idEsi){
+void devolverCodigoResultadoAESI(int socketCliente, int cod, int idEsi, int proceso){
 
 	t_content_header * cabecera_rdo = crear_cabecera_mensaje(coordinador,esi, RESULTADO_EJECUCION_SENTENCIA,sizeof(t_content_header));
 	int status_hd_error = send(socketCliente,cabecera_rdo,sizeof(t_content_header),NULL);
 
 	respuesta_coordinador * cod_error = malloc(sizeof(respuesta_coordinador));
-	if (cod ==ERROR_I){	cod_error->resultado_del_parseado = ABORTAR;}
-	if (cod ==EXITO_I || cod == CORRECTO){	cod_error->resultado_del_parseado = CORRECTO;}
-	if (cod == ABORTAR){	cod_error->resultado_del_parseado = ABORTAR;}
+	if (cod ==ERROR_I && cod == instancia){	cod_error->resultado_del_parseado = ABORTAR;}
+	if (cod ==CLAVE_BLOQUEADA && cod == esi){	cod_error->resultado_del_parseado = CLAVE_BLOQUEADA;}
+	if (cod ==EXITO_I && cod == instancia || cod == CORRECTO && cod == esi){	cod_error->resultado_del_parseado = CORRECTO;}
+	if (cod == ABORTAR && cod == esi){	cod_error->resultado_del_parseado = ABORTAR;}
 
 	log_info(logger, "Devolviendo rdo '%d' a ESI '%d'..", cod_error->resultado_del_parseado, idEsi );
 	//log_info(logger, "El codigo es CORRECTO? %d", CORRECTO == cod_error->resultado_del_parseado);
@@ -278,7 +279,7 @@ void proseguirOperacionNormal(int socketCliente, t_sentencia * sentencia_con_pun
 	switch(sentencia_con_punteros->keyword){
 	case GET_:
 		//guardarClaveInternamente(sentencia_con_punteros->clave); ya guardé cuando chequeé si podia ejecutar
-		devolverCodigoResultadoAESI(socketCliente, CORRECTO, sentencia_con_punteros->pid );
+		devolverCodigoResultadoAESI(socketCliente, CORRECTO, sentencia_con_punteros->pid , esi);
 		//Ya pregunté anteriormente al planificador, y ya la bloqueó
 		break;
 	default:
@@ -297,7 +298,7 @@ void proseguirOperacionNormal(int socketCliente, t_sentencia * sentencia_con_pun
 		log_info(logger,"Obtenido resultado");
 		//TODO Que enviarSentenciaInstancia 
 		//TODO Verificar si después de las 3 veces sigue devolviendo COMPACTAR. Si es asi ver que hacer. Abortar esi y mostrar log_error por consola?
-		devolverResultadoAESI(socketCliente, rdo_ejecucion_instancia, sentencia_con_punteros->pid);
+		devolverResultadoAESI(socketCliente, rdo_ejecucion_instancia, sentencia_con_punteros->pid,instancia);
 		break;
 	}
 }
@@ -351,13 +352,13 @@ void interpretarOperacionESI(t_content_header * hd, int socketCliente){
 				break;
 			case CLAVE_BLOQUEADA:
 				//log_info(logger,"Devolviendo error al ESI%d", sentencia->pid);
-				devolverCodigoResultadoAESI(socketCliente, CLAVE_BLOQUEADA, sentencia_con_punteros->pid);
+				devolverCodigoResultadoAESI(socketCliente, CLAVE_BLOQUEADA, sentencia_con_punteros->pid,esi);
 				log_info(logger,"Devuelto CLAVE_BLOQUEADA");
 				log_error_operacion_esi(sentencia_con_punteros, puedoEnviar);
 				break;
 			case ABORTAR:
 				//log_info(logger,"Devolviendo error al ESI %d", sentencia->pid);
-				devolverCodigoResultadoAESI(socketCliente, ABORTAR, sentencia_con_punteros->pid);
+				devolverCodigoResultadoAESI(socketCliente, ABORTAR, sentencia_con_punteros->pid,esi);
 				log_warning(logger,"Devuelto ABORTAR al ESI %d", sentencia->pid);
 				log_error_operacion_esi(sentencia_con_punteros, puedoEnviar);
 				//log_info(logger,"Fin abortar");
