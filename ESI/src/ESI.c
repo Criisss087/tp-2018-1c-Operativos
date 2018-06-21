@@ -50,9 +50,29 @@ int main(int argc, char **argv){
 		t_confirmacion_sentencia *confirmacion = malloc(sizeof(t_confirmacion_sentencia));
 		read_size = recv(serverPlanif, confirmacion, sizeof(t_confirmacion_sentencia), 0);
 
-		if(content_header->operacion == RECIBIR_ORDEN_EJECUCION){
-			printf("Orden recibida, comienzo el parseo. \n");
+//		if(content_header->operacion == RECIBIR_ORDEN_EJECUCION){
+//			printf("Orden recibida, comienzo el parseo. \n");
+//		}
+
+		switch(content_header->operacion){
+			case RECIBIR_ORDEN_EJECUCION:
+				printf("Orden recibida, comienzo el parseo. \n");
+				break;
+			case RECIBIR_KILL_PLANIF:
+				printf("Me mataron desde el planificador!. \n");
+				finalizar_esi();
+				free(confirmacion);
+				free(content_header);
+				if(linea_a_parsear){
+					free(linea_a_parsear);
+				}
+				exit(EXIT_FAILURE);
+				break;
+			default:
+				break;
 		}
+
+
 		printf("\n");
 
 		free(content_header);
@@ -318,6 +338,7 @@ void finalizar_esi(void)
 		free(PUERTO_PLANIFICADOR);
 		PUERTO_PLANIFICADOR = NULL;
 	}
+
 
 	fclose(archivo_a_leer_por_el_ESI);
 	close(serverCoord);
