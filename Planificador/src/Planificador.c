@@ -249,7 +249,6 @@ int atender_nuevo_esi(int serv_socket)
 
 	        return 0;
 	    }
-
 	 }
 
 	 // log_info(logger,"Demasiadas conexiones. Cerrando nueva conexion %s:%d.\n", client_ipv4_str, client_addr.sin_port);
@@ -374,7 +373,6 @@ int recibir_mensaje_coordinador(int coord_socket)
 					resultado_consulta = ABORTAR;
 
 				break;
-
 		}
 
 		enviar_resultado_consulta(coord_socket, resultado_consulta);
@@ -818,8 +816,9 @@ void consola_bloquear_clave(char* clave , char* id){
 		log_info(logger,"CONSOLA> COMANDO: Bloquear clave: %s id: %d",clave, pid);
 
 		//Si al intentar bloquear la clave falla, bloqueo el esi
-		if(bloquear_clave(clave, pid))
+		if(bloquear_clave(clave, pid)){
 			bloquear_esi_pid(clave,pid);
+		}
 	}
 
 	return;
@@ -845,44 +844,20 @@ void consola_desbloquear_clave(char* clave){
 	return;
 }
 
-void consola_listar_recurso(char* recurso)
+void consola_listar_recurso(char* clave)
 {
-	/* listar recurso: Lista los procesos encolados esperando al recurso.
-	 *
-	 * 	Entiendo que un recurso es una clave, osea que deberiamos tener un control en alguna
-	 * 	lista, cuando un esi intenta acceder a una clave bloqueada, ponerlo en esa lista
-	 * 	para mostrarlos con este comando. O sino, agregar en el pcb, si tiene status blocked
-	 * 	agregar un campo clave_block con la clave que lo llevó a estar bloqueado
-	 *
-	 */
-
-	if(recurso == NULL){
+	if(clave == NULL){
 		log_warning(logger,"CONSOLA> Parametros incorrectos (listar <recurso>)");
 	}
 	else{
-		t_list* lista_recursos;
+		log_info(logger, "CONSOLA> COMANDO: Listar recurso encolados: %s",clave);
 
-		log_info(logger, "CONSOLA> COMANDO: Listar recurso encolados: %s",recurso);
+		t_list* lista_esis_bloqueados;
 
-		bool esta_bloqueado_por_clave(t_pcb_esi* esi){
-			return !strcmp(recurso, esi->clave_bloqueo);
-		}
+		lista_esis_bloqueados = esis_bloqueados_por_clave(clave);
+		mostrar_esis_consola(lista_esis_bloqueados);
 
-		lista_recursos = list_filter(esi_bloqueados,(void*)esta_bloqueado_por_clave);
-
-		void mostrar_esi_consola(t_pcb_esi* esi){
-			log_info(logger, "Proceso ESI bloqueado: %i", esi->pid);
-			return;
-		}
-
-		if(list_size(lista_recursos)>0){
-			list_iterate(lista_recursos, (void*)mostrar_esi_consola);
-		}
-		else{
-			log_info(logger, "NO se encontraron procesos ESI bloqueados por el recurso %s.", recurso);
-		}
-
-		list_destroy(lista_recursos);
+		list_destroy(lista_esis_bloqueados);
 	}
 
 	return;
@@ -929,30 +904,54 @@ void consola_matar_proceso(char* id)
 	return;
 }
 
-void consola_consultar_status_clave(char* clave)
+void consola_consultar_status_clave(char* nombre_clave)
 {
+	if(nombre_clave == NULL){
+		log_warning(logger,"CONSOLA> Parametros incorrectos (status <clave>)");
+		return;
+	}
 
-	/* status clave: Con el objetivo de conocer el estado de una clave y de probar la
-	 * correcta distribución de las mismas se deberan obtener los siguientes valores:
-	 * (Este comando se utilizara para probar el sistema)
 
-    -Valor, en caso de no poseer valor un mensaje que lo indique.
-    -Instancia actual en la cual se encuentra la clave. (En caso de que la clave no exista,
-    	la Instancia actual debería )
-    -Instancia en la cual se guardaría actualmente la clave (Calcular este valor mediante
-    	el algoritmo de distribución(^4), pero sin afectar la distribución actual de las claves).
-    -ESIs bloqueados a la espera de dicha clave.
-
-	 *
-	 * ^4: Estos algoritmos se detallarán más adelante.
+	/*
+	 status	clave: Con el objetivo de conoce el estado de una clave y de probar la correcta distribución de las mismas se deberan obtener los siguiente valores: (Este comando se utilizara para probar el sistema)
+	-Valor, en caso de no poseer valor un mensaje quec lo indique.
+	-Instancia actual en la cual se encuentra la clave. (En	caso de	que	la clave no	se encuentre en una instancia, no se debe mostrar este valor)
+	-Instancia en la cual se guardaría actualmente la clave (Calcular este valor mediante el algoritmo de distribución(^4), pero sin afectar la distribución actual de las claves).
+	-ESIs bloqueados a la espera de dicha clave.
 	 */
 
-	if(clave == NULL){
-		log_warning(logger,"CONSOLA> Parametros incorrectos (status <clave>)");
+	log_info(logger,"CONSOLA> COMANDO Status para clave: %s.", nombre_clave);
+
+	// TODO Obtener status del Coordinador.
+	// 1. Send al Coordinador pasándole la petición y la clave.
+	// 2. Recv de la estructura de consulta de status de clave.
+	t_status_clave clave_st;
+
+	//VALOR
+	if(clave_st.valor != NULL){
+		log_info(logger,"-Valor de la clave %s: %s.", nombre_clave, clave_st.valor);
 	}
 	else{
-		log_info(logger,"CONSOLA> COMANDO: status clave: %s ",clave);
+		log_info(logger,"-La clave %s NO tiene VALOR.", nombre_clave);
 	}
+
+	//INSTANCIA ACTUAL
+	if(clave_st.instancia_actual != NULL){
+		log_info(logger,"-Instancia actual de la clave %s: %s.", nombre_clave, clave_st.instancia_actual);
+	}
+
+	//INSTANCIA EN QUE SE GUARDARÍA LA CLAVE
+	// TODO Revisar
+	if(clave_st.instancia_guardado_distr != NULL){
+		log_info(logger,"-Instancia en que se guardaría la clave %s: %s.", nombre_clave, clave_st.instancia_guardado_distr);
+	}
+
+	//ESIs bloqueados por la clave
+	t_list* lista_esis_bloq_por_clave;
+	lista_esis_bloq_por_clave = esis_bloqueados_por_clave(nombre_clave);
+
+	log_info(logger,"-Listado de ESIs bloqueados por clave %s: ", nombre_clave);
+	mostrar_esis_consola(lista_esis_bloq_por_clave);
 
 	return;
 }
@@ -1894,3 +1893,27 @@ void captura_sigpipe(int signo)
     }
 }
 
+t_list* esis_bloqueados_por_clave(char* recurso){
+
+	bool is_esi_bloqueado_por_clave(t_pcb_esi* esi){
+		return !strcmp(recurso, esi->clave_bloqueo);
+	}
+
+	return list_filter(esi_bloqueados, (void*) is_esi_bloqueado_por_clave);
+}
+
+void mostrar_esis_consola(t_list* lista_esi){
+
+	void escribir_esi_bloqueado(t_pcb_esi* esi) {
+		log_info(logger, "ESI bloqueado: %i", esi->pid);
+		return;
+	}
+
+	if (list_size(lista_esi) > 0){
+		list_iterate(lista_esi, (void*) escribir_esi_bloqueado);
+	} else {
+		log_info(logger, "NO se encontraron ESI bloqueados por la clave.");
+	}
+
+	return;
+}

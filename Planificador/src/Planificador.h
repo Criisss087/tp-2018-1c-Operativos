@@ -135,6 +135,14 @@ struct consulta_bloqueo{
 };
 typedef struct consulta_bloqueo t_consulta_bloqueo;
 
+//Estructura para consultar con el Coordinador el status de una clave
+struct status_clave{
+	char* valor;
+	char* instancia_actual;
+	char* instancia_guardado_distr;
+};
+typedef struct status_clave t_status_clave;
+
 /**********************************************/
 /* DATOS GLOBALES							  */
 /**********************************************/
@@ -207,6 +215,9 @@ void mostrar_lista(char* lista);
 void mostrar_esi_en_ejecucion(void);
 void mostrar_bloqueos(void);
 
+t_list* esis_bloqueados_por_clave(char* recurso);
+void mostrar_esis_consola(t_list* lista_esi);
+
 //Manejo de ESI
 void inicializar_conexiones_esi(void);
 int atender_nuevo_esi(int serv_socket);
@@ -245,4 +256,3 @@ t_claves_bloqueadas * buscar_clave_bloqueada(char* clave); //, int pid);
 void desbloquear_claves_bloqueadas_pid(int pid);
 void confirmar_bloqueo_por_get(void);
 void confirmar_desbloqueo_por_store(void);
-
