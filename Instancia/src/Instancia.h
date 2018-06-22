@@ -59,11 +59,13 @@ typedef struct{
 	char clave[40];
 	int tamanioValor;
 	bool esAtomica;
+	int nroDeOperacion;
 	char* puntero;
 	char* punteroArchivo;
 } __attribute__((packed)) t_indice_entrada;
 
 int numeroEntrada = 0;
+int contadorOperacion = 0;
 
 char * tablaEntradas;
 

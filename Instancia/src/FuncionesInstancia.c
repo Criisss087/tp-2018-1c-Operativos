@@ -166,3 +166,9 @@ void eliminarEntradasAsociadasAClave(char * clave) {
 	list_remove_by_condition(l_indice_entradas, (void*)contieneClave);
 }
 
+void actualizarNroDeOperacion(t_list * indices) {
+	void actualizarOperacion(t_indice_entrada * entrada) {
+		entrada->nroDeOperacion = contadorOperacion;
+	}
+	list_iterate(indices, (void*) actualizarOperacion);
+}

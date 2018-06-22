@@ -120,6 +120,8 @@ t_sentencia * recibirSentencia(int socketCoordinador) {
 			sentenciaPreliminarRecibida, sizeof(t_esi_operacion_sin_puntero),
 			(int) NULL);
 
+	++contadorOperacion;
+
 	printf("Status Sentencia Preliminar: %d \n", statusSentenciaPreliminar);
 	printf("Sentencia preliminar recibida: \n");
 	printf("\tKeyword: %d - Clave: %s - Tamanio del Valor: %d\n",
@@ -133,14 +135,10 @@ t_sentencia * recibirSentencia(int socketCoordinador) {
 				sentenciaPreliminarRecibida->tam_valor);
 		sentenciaRecibida = construirSentenciaConValor(
 				sentenciaPreliminarRecibida, valorRecibido);
-
-		//return sentenciaRecibida;
 	}
 
 	else {
-
 		sentenciaRecibida = construirSentenciaConValor(sentenciaPreliminarRecibida, NULL);
-		//return sentenciaRecibida;
 	}
 
 	return sentenciaRecibida;
@@ -183,6 +181,7 @@ t_indice_entrada * guardarIndiceAtomicoEnTabla(t_sentencia * sentenciaRecibida) 
 	numeroEntrada++;
 
 	indiceEntrada->esAtomica = true;
+	indiceEntrada->nroDeOperacion = contadorOperacion;
 	indiceEntrada->tamanioValor = strlen(sentenciaRecibida->valor);
 
 	indiceEntrada->puntero = tablaEntradas
@@ -229,6 +228,7 @@ void guardarClaveValor(t_sentencia * sentenciaRecibida) {
 	if (cantidadDeIndices > 0) {
 		printf("La clave '%s' ya existe...\n", sentenciaRecibida->clave);
 		// TODO: Reemplazar valor (ver logica)
+		actualizarNroDeOperacion(indicesQueContienenClave);
 	} else {
 		printf("La clave no existe... guardar...\n");
 
@@ -266,6 +266,7 @@ void guardarClaveValor(t_sentencia * sentenciaRecibida) {
 				numeroEntrada++;
 
 				indiceEntrada->esAtomica = false;
+				indiceEntrada->nroDeOperacion = contadorOperacion;
 
 				if (tamanioTotalValor > configTablaEntradas->tamanioEntradas) {
 					indiceEntrada->tamanioValor =
@@ -310,9 +311,9 @@ void guardarClaveValor(t_sentencia * sentenciaRecibida) {
 			if (numeroEntrada >= configTablaEntradas->cantTotalEntradas) {
 				printf("Es necesario aplicar algoritmo de reemplazo...\n");
 				aplicarAlgoritmoDeReemplazo(sentenciaRecibida);
+			} else {
+				printf("No es necesario aplicar algoritmo de reemplazo\n");
 			}
-
-			printf("No es necesario aplicar algoritmo de reemplazo\n");
 
 			t_indice_entrada * indiceEntrada = guardarIndiceAtomicoEnTabla(
 					sentenciaRecibida);
@@ -415,6 +416,8 @@ void realizarStoreDeClave(char clave[40]) {
 	}
 
 	t_list * indices = obtenerIndicesDeClave(clave);
+
+	actualizarNroDeOperacion(indices);
 
 	t_indice_entrada * primerEntrada = list_get(indices, 0);
 
