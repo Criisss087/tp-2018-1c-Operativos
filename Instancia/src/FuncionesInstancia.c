@@ -172,3 +172,14 @@ void actualizarNroDeOperacion(t_list * indices) {
 	}
 	list_iterate(indices, (void*) actualizarOperacion);
 }
+
+
+int obtenerEntradasDisponibles() {
+
+	int entradasOcupadas = list_size(l_indice_entradas);
+
+	int entradasDisponibles = configTablaEntradas->cantTotalEntradas - entradasOcupadas;
+
+	printf("Cantidad de entradas disponibles: %d\n", entradasDisponibles);
+	return entradasDisponibles;
+}

@@ -29,6 +29,31 @@ int conexionConCoordinador() {
 	return socketCoordinador;
 }
 
+t_respuesta_instancia * armarRespuestaParaCoordinador(int resultadoEjecucion) {
+		int entradasDisponibles = obtenerEntradasDisponibles();
+
+		t_respuesta_instancia * resultadoAEnviar = malloc(sizeof(t_respuesta_instancia));
+
+		resultadoAEnviar->entradas_libres = entradasDisponibles;
+		resultadoAEnviar->rdo_operacion = resultadoEjecucion;
+
+
+		printf("Resultado a enviar:\n");
+		printf("\tEntradas disponibles: %d\n", resultadoAEnviar->entradas_libres);
+		printf("\tResultado de operacion: %d\n", resultadoAEnviar->rdo_operacion);
+
+		//// A partir de aca se usa siempre y cuando el COORD aun no reciba bien la respuesta//////////////
+
+		// r = &resultadoEjecucion;
+
+		//resultado = send(socketCoordinador, r, sizeof(int), 0);
+
+		// printf("\tResultado de ejecucion enviado: %d\n", *r);
+
+		return resultadoAEnviar;
+
+}
+
 void enviarResultadoSentencia(int socketCoordinador, int keyword) {
 	printf("Envio de header para respuesta de sentencia...\n");
 
@@ -45,12 +70,12 @@ void enviarResultadoSentencia(int socketCoordinador, int keyword) {
 
 		resultadoEjecucion = EXITO_I;
 
-		r = &resultadoEjecucion;
+		t_respuesta_instancia * resultadoAEnviar = armarRespuestaParaCoordinador(resultadoEjecucion);
 
-		resultado = send(socketCoordinador, r, sizeof(int), 0);
+		resultado = send(socketCoordinador, resultadoAEnviar, sizeof(t_respuesta_instancia), 0);
 
 		printf("\tResultado: %d\n", resultado);
-		printf("\tResultado de ejecucion enviado: %d\n", *r);
+
 		break;
 
 	case STORE_:
@@ -61,12 +86,11 @@ void enviarResultadoSentencia(int socketCoordinador, int keyword) {
 
 		resultadoEjecucion = ERROR_I;
 
-		r = &resultadoEjecucion;
+		t_respuesta_instancia * resultadoAEnviar = armarRespuestaParaCoordinador(resultadoEjecucion);
 
-		resultado = send(socketCoordinador, r, sizeof(int), 0);
+		resultado = send(socketCoordinador, resultadoAEnviar, sizeof(t_respuesta_instancia), 0);
 
 		printf("\tResultado: %d\n", resultado);
-		printf("\tResultado de ejecucion enviado: %d\n", resultadoEjecucion);
 		break;
 
 	default:
