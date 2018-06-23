@@ -49,6 +49,11 @@ void enviarResultadoSentencia(int socketCoordinador, int keyword) {
 
 		resultado = send(socketCoordinador, r, sizeof(int), 0);
 
+		if (resultado == -1) {
+				printf("Error en el send");
+				// TODO: Implementar exit para abortar ejecucion
+			}
+
 		printf("\tResultado: %d\n", resultado);
 		printf("\tResultado de ejecucion enviado: %d\n", *r);
 		break;
@@ -64,6 +69,11 @@ void enviarResultadoSentencia(int socketCoordinador, int keyword) {
 		r = &resultadoEjecucion;
 
 		resultado = send(socketCoordinador, r, sizeof(int), 0);
+
+		if (resultado == -1) {
+				printf("Error en el send");
+				// TODO: Implementar exit para abortar ejecucion
+			}
 
 		printf("\tResultado: %d\n", resultado);
 		printf("\tResultado de ejecucion enviado: %d\n", resultadoEjecucion);
@@ -81,6 +91,11 @@ t_configTablaEntradas * obtenerConfigTablaEntradas(int socketCoordinador) {
 
 	int statusHeader = recv(socketCoordinador, configRecibida,
 			sizeof(t_configTablaEntradas), (int) NULL);
+
+	if (statusHeader == -1) {
+			printf("Error en el recv");
+			// TODO: Implementar exit para abortar ejecucion
+		}
 
 	printf(
 			"################################################################\n");
@@ -101,6 +116,9 @@ void crearTablaEntradas(t_configTablaEntradas * config) {
 
 	tablaEntradas = malloc(tamanioTotal);
 
+	// Esta linea es para limpiar la memoria que se esta reservando
+	memset(tablaEntradas, 0, tamanioTotal);
+
 	if (tablaEntradas != NULL) {
 		printf("\tAlocado memoria para guardada de Valores\n");
 
@@ -119,6 +137,11 @@ t_sentencia * recibirSentencia(int socketCoordinador) {
 	int statusSentenciaPreliminar = recv(socketCoordinador,
 			sentenciaPreliminarRecibida, sizeof(t_esi_operacion_sin_puntero),
 			(int) NULL);
+
+	if (statusSentenciaPreliminar == -1) {
+		printf("Error en el recv");
+		// TODO: Implementar exit para abortar ejecucion
+	}
 
 	++contadorOperacion;
 
@@ -203,15 +226,16 @@ void guardarValorEnEntrada(char * valor, char* puntero) {
 }
 
 void aplicarAlgoritmoDeReemplazo(t_sentencia * sentenciaRecibida) {
-	int algoritmo = circ;
-	printf("Aplicando algoritmo de reemplazo: %d", algoritmo);
-	switch (algoritmo) {
-	case circ:
+	printf("Aplicando algoritmo de reemplazo: %s", ALGORITMO_DE_REEMPLAZO);
+
+	if(strcmp(ALGORITMO_DE_REEMPLAZO, "CIRC")) {
 		numeroEntrada = 0;
 		printf("El puntero fue posicionado en la entrada: %d", numeroEntrada);
-		break;
-	default:
-		break;
+	} else if(strcmp(ALGORITMO_DE_REEMPLAZO,"LRU")) {
+		// TODO: Buscar entrada con menor nro de operacion y reemplazarla
+		printf("Algoritmo LRU aun no desarrollado");
+	} else if(strcmp(ALGORITMO_DE_REEMPLAZO,"BSU")) {
+		printf("Algoritmo BSU aun no desarrollado");
 	}
 }
 
@@ -384,21 +408,6 @@ void grabarArchivoPorPrimeraVez(int fd, char * valor, int tamanio) {
 	write(fd, valor, tamanio);
 }
 
-void guardarPunteroDeArchivoEnIndices(t_list * indices, char * punteroDeArchivo) {
-	void guardarPunteroDeArchivo(t_indice_entrada * entrada) {
-		printf("%s\n",punteroDeArchivo);
-		//printf("%s\n",entrada->punteroArchivo);
-		printf("%d\n",strlen(punteroDeArchivo));
-		printf("%d\n",sizeof(punteroDeArchivo));
-		printf("%d\n",sizeof(*punteroDeArchivo));
-
-		entrada->punteroArchivo = strdup(punteroDeArchivo);
-		//strcpy(entrada->punteroArchivo, punteroDeArchivo);
-		//memcpy(entrada->punteroArchivo, punteroDeArchivo, sizeof(*punteroDeArchivo));
-	}
-	list_iterate(indices, (void *) guardarPunteroDeArchivo);
-}
-
 void realizarStoreDeClave(char clave[40]) {
 	char * path = obtenerPathArchivo(clave);
 
@@ -428,9 +437,8 @@ void realizarStoreDeClave(char clave[40]) {
 			tamanioValorCompleto);
 	printf("El valor completo es: %s\n", valorCompleto);
 
-	if (primerEntrada->punteroArchivo == NULL) {
-		grabarArchivoPorPrimeraVez(fileDescriptor, valorCompleto, tamanioValorCompleto);
-	}
+	// TODO: Arreglar el guardado de mas de un valor en el mismo fd
+	grabarArchivoPorPrimeraVez(fileDescriptor, valorCompleto, tamanioValorCompleto);
 
 	char * punteroDeArchivo;
 
@@ -469,9 +477,6 @@ void realizarStoreDeClave(char clave[40]) {
 			break;
 		}
 	}
-
-	guardarPunteroDeArchivoEnIndices(indices, punteroDeArchivo);
-
 }
 
 void grabarArchivo(char clave[40]) {

@@ -81,15 +81,15 @@ t_sentencia * construirSentenciaConValor(t_esi_operacion_sin_puntero * sentencia
 
 void imprimirEntrada(t_indice_entrada * entrada) {
 	printf(
-			"\t| %d        | %s    |   %d    |   %d      |   %p   |     %p    |\n",
+			"\t| %d        | %s    |   %d    |   %d      |   %d       |      %p   |\n",
 			entrada->numeroEntrada, entrada->clave, entrada->tamanioValor,
-			entrada->esAtomica, entrada->puntero, entrada->punteroArchivo);
+			entrada->esAtomica, entrada->nroDeOperacion, entrada->puntero);
 }
 
 void imprimirTablaEntradas() {
 	printf("Imprimiendo tabla administrativa:\n");
 	printf(
-			"\t| N° entrada |     Clave     | Tamanio | Valor Atomico | PunteroValor | PunteroArchivo |\n");
+			"\t| N° entrada |     Clave     | Tamanio | Valor Atomico | Nro. Operacion | PunteroValor |\n");
 	list_iterate(l_indice_entradas, (void*) imprimirEntrada);
 }
 
