@@ -1,4 +1,4 @@
 algoritmo=EL
 cantidad_entradas=20
 tamanio_entradas=100
-retardo=100
+retardo=5000

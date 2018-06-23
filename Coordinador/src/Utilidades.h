@@ -24,9 +24,9 @@
 #include <commons/config.h>
 #include <semaphore.h>
 
-#define IP "127.0.0.1"
+#define IP "0.0.0.0"
 
-#define BACKLOG 10			// Define cuantas conexiones vamos a mantener pendientes al mismo tiempo
+#define BACKLOG 50			// Define cuantas conexiones vamos a mantener pendientes al mismo tiempo
 
 //***Cod ops
 #define ESI_COORDINADOR_SENTENCIA 1
@@ -97,6 +97,11 @@ typedef struct {
 pthread_mutex_t mutexInstancias;
 sem_t semInstancias;
 pthread_mutex_t bloqueo_de_Instancias;
+pthread_mutex_t consulta_planificador;
+pthread_mutex_t consulta_planificador_terminar;
+pthread_mutex_t lock_sentencia_global;
+int rdo_consulta_planificador;
+t_sentencia * sentencia_global;
 
 //Algoritmos
 #define LEAST_SPACE_USED 0
@@ -117,7 +122,7 @@ t_list * lista_instancias;
 t_list * lista_claves;
 int id_counter = 0;
 
-signed int indice_actual_lista; //que item de la lista fue el ultimo al que se asigno trabajo
+int indice_actual_lista; //que item de la lista fue el ultimo al que se asigno trabajo
 t_instancia PROCESO_PLANIFICADOR;
 int total_hilos = 0; //borrable
 int hay_instancias = 0; //No se porque si uso lista.element_count tira segmentation fault. que mierda pasa la concha de la lora.
