@@ -97,10 +97,12 @@ typedef struct {
 pthread_mutex_t mutexInstancias;
 sem_t semInstancias;
 pthread_mutex_t bloqueo_de_Instancias;
+
 pthread_mutex_t consulta_planificador;
 pthread_mutex_t consulta_planificador_terminar;
 pthread_mutex_t lock_sentencia_global;
-int rdo_consulta_planificador;
+//Inicializo la variable para encontrar el error con los semaforos
+int rdo_consulta_planificador = -1;
 t_sentencia * sentencia_global;
 
 //Algoritmos

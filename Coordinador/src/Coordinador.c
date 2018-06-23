@@ -179,6 +179,7 @@ void loopPlanificadorConsulta(){
 		pthread_mutex_lock(&consulta_planificador);
 		log_warning(logger,"entro en mutex");
 		rdo_consulta_planificador = consultarPlanificador(sentencia_global);
+		log_error(logger,"Resultado del planificador en loop %d",rdo_consulta_planificador );
 		pthread_mutex_unlock(&consulta_planificador_terminar);
 	}
 }
@@ -201,7 +202,7 @@ log_info(logger,"Le mandé: clave %s - pid %d - key %d", consulta_a_planif->clav
 	int status_recv = recv(PROCESO_PLANIFICADOR.socket, header, sizeof(t_content_header),NULL);
 	int * rta = malloc(sizeof(int));
 	status_recv = recv(PROCESO_PLANIFICADOR.socket,rta, sizeof(int),NULL);
-	log_info(logger,"Respuesta de Planificador: %d", *rta);
+	log_error(logger,"Respuesta de Planificador en consultar: %d", *rta);
 	return *rta;
 }
 
@@ -232,17 +233,19 @@ int puedoEjecutarSentencia(t_sentencia * sentencia){
 
 	pthread_mutex_lock(&lock_sentencia_global);
 	sentencia_global = sentencia;
-	//log_warning(logger,"unlock cons planif");
-	pthread_mutex_unlock(&consulta_planificador);
-
-	//log_warning(logger,"lock cons planif term");
-	pthread_mutex_lock(&consulta_planificador_terminar);
-
-	//log_warning(logger,"lock cons planif");
-	//pthread_mutex_lock(&consulta_planificador);
 	pthread_mutex_unlock(&lock_sentencia_global);
 
-	//log_info(logger,"consulta planificador: %d", rdo_consulta_planificador);
+	log_warning(logger,"unlock cons planif");
+	pthread_mutex_unlock(&consulta_planificador);
+
+	log_warning(logger,"lock cons planif term");
+	pthread_mutex_lock(&consulta_planificador_terminar);
+
+	log_warning(logger,"lock cons planif");
+	//pthread_mutex_lock(&consulta_planificador);
+
+
+	log_info(logger,"consulta planificador: %d", rdo_consulta_planificador);
 	//return CORRECTO;//consultarPlanificador(sentencia);
 	return rdo_consulta_planificador;
 }
@@ -344,7 +347,7 @@ void interpretarOperacionESI(t_content_header * hd, int socketCliente){
 		log_operacion_esi(sentencia_con_punteros, logger_operaciones);
 
 		int puedoEnviar = puedoEjecutarSentencia(sentencia_con_punteros);
-		log_info(logger, "Puedo ejecutar? %d", CORRECTO==puedoEnviar);
+		log_info(logger, "PuedoEnviar %d", puedoEnviar);
 		switch(puedoEnviar){
 			case CORRECTO:
 				;
@@ -442,8 +445,10 @@ int main(int argc, char **argv){
 
 	pthread_mutex_init(&consulta_planificador, NULL);
 	pthread_mutex_init(&lock_sentencia_global, NULL);
-	pthread_mutex_lock(&consulta_planificador);
 	pthread_mutex_init(&consulta_planificador_terminar,NULL);
+
+	pthread_mutex_lock(&consulta_planificador);
+	pthread_mutex_lock(&consulta_planificador_terminar);
 	//pthread_mutex_init(&mutexInstancias, NULL);
 	//sem_init(&semInstancias, 0, 1);
 	//pthread_mutex_init(&bloqueo_de_Instancias, NULL);
