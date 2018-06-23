@@ -13,6 +13,8 @@ rta_envio enviarSentenciaInstancia(t_sentencia * sentencia){
 
 	rta_envio rta;
 	rta.instancia = malloc(sizeof(t_instancia));
+
+	t_instancia * proxima;
 	/*
 	switch(sentencia->keyword){
 	case SET:
@@ -25,7 +27,27 @@ rta_envio enviarSentenciaInstancia(t_sentencia * sentencia){
 		break;
 	}*/
 
-	t_instancia * proxima = siguienteInstanciaSegunAlgoritmo();
+	//**
+	int tiene_clave(t_clave * clObj){
+					return (strcmp(sentencia->clave, clObj->clave)==0);
+				}
+
+		t_clave * instancias_con_clave = list_filter(lista_claves,(void*)tiene_clave);
+		if (list_size(instancias_con_clave)>1){log_error(logger,"Más de una instancia tiene asignada la clave %s",sentencia->clave);}
+		else{
+			if (list_size(instancias_con_clave )== 1){
+				//existe
+				t_clave * instanciaDuena = list_get(instancias_con_clave ,0);
+				proxima =  instanciaDuena->instancia;
+			}
+			else{
+				proxima = siguienteInstanciaSegunAlgoritmo();
+				t_clave * instanciaDuena = list_get(instancias_con_clave ,0);
+				instanciaDuena->instancia = proxima;
+
+			}
+		}
+	//**
 	log_info(logger,"Enviando a instancia: %s %s %s",proxima->nombre,sentencia->clave, sentencia->valor);
 
 //TODO Que siguienteInstanciaSegunAlgortimo devuelva null en vez de esto
@@ -84,13 +106,13 @@ rta_envio enviarSentenciaInstancia(t_sentencia * sentencia){
 }
 
 void interpretarOperacionInstancia(t_content_header * hd, int socketInstancia){
-	log_warning(logger,"aca - %d",hd->operacion);
+	//log_warning(logger,"aca - %d",hd->operacion);
 	switch(hd->operacion){
 		case INSTANCIA_COORDINADOR_CONEXION:
 			;
 			char * nombre = malloc(hd->cantidad_a_leer);
 			int status_recv = recv(socketInstancia, nombre, hd->cantidad_a_leer, NULL);
-			log_info(logger,"Tamaño nombre: %d - Nombre: %s",strlen(nombre),nombre);
+			//log_info(logger,"Tamaño nombre: %d - Nombre: %s",strlen(nombre),nombre);
 			enviarConfiguracionInicial(socketInstancia);
 			guardarEnListaDeInstancias(socketInstancia, nombre);
 
@@ -103,7 +125,7 @@ void interpretarOperacionInstancia(t_content_header * hd, int socketInstancia){
 }
 
 void interpretarOperacionPlanificador(t_content_header * hd, int socketCliente){
-	log_info(logger,"Interpetando operación planificador");
+	//log_info(logger,"Interpetando operación planificador");
 	switch(hd->operacion){
 	case PLANIFICADOR_COORDINADOR_HEADER_IDENTIFICACION:
 		PROCESO_PLANIFICADOR.id = nuevoIDInstancia();
@@ -111,19 +133,54 @@ void interpretarOperacionPlanificador(t_content_header * hd, int socketCliente){
 	}
 }
 
-t_instancia * guardarClaveInternamente(char clave[40]){
-	log_warning(logger,"TODO - guardarClaveInternamente");
-	//TODO
+t_clave * guardarClaveInternamente(char clave[40]){
+
+	int tiene_clave(t_clave * clObj){
+				return (strcmp(clave, clObj->clave)==0);
+			}
+	//log_info(logger,"guardando clave - sin instancia");
+	t_clave * instancias_con_clave = list_filter(lista_claves,(void*)tiene_clave);
+	if (list_size(instancias_con_clave )>1){log_error(logger,"Más de una instancia tiene asignada la clave %s",clave);}
+	else{
+		if (list_size(instancias_con_clave )== 1){
+			//existe
+			//log_warning(logger,"existía la clavee");
+			t_clave * instanciaDuena = list_get(instancias_con_clave ,0);
+			return instanciaDuena;
+		}
+		else{
+			//no existe
+			//log_warning(logger,"no existía la clave");
+			t_clave * claveObjeto = malloc(sizeof(t_clave));
+			//asigno la instancia la primera vez que envio a una
+			claveObjeto->instancia = siguienteInstanciaSegunAlgoritmo();
+			strncpy(claveObjeto,clave,40);
+
+			list_add(lista_claves,claveObjeto);
+
+			return claveObjeto;
+		}
+	}
+
 	//Chequear que no exista internamente
 	//Si existe, devolver la instancia que la tiene.
 	//Si no existe,
-	t_instancia * instancia_con_clave;
-	return instancia_con_clave;
+
 }
 
 int chequearConectividadProceso(t_instancia * instancia){
 	//TODO
 	return 1;
+}
+
+void loopPlanificadorConsulta(){
+	while(1){
+		log_warning(logger,"loopPlanificadorCOnsulta");
+		pthread_mutex_lock(&consulta_planificador);
+		log_warning(logger,"entro en mutex");
+		rdo_consulta_planificador = consultarPlanificador(sentencia_global);
+		pthread_mutex_unlock(&consulta_planificador_terminar);
+	}
 }
 
 int consultarPlanificador(t_sentencia * sentencia){
@@ -155,31 +212,58 @@ int puedoEjecutarSentencia(t_sentencia * sentencia){
 	log_info(logger,"Chequeando si puedo ejecutar la sentencia...");
 	if(	list_size(lista_instancias)==0){return ABORTAR;}
 
-	t_instancia * instancia_con_clave = guardarClaveInternamente(sentencia->clave);
+	t_clave * clave_obj = guardarClaveInternamente(sentencia->clave);
 
-	if (chequearConectividadProceso(instancia_con_clave)==0){
-		return ABORTAR;
+	if (sentencia->keyword == SET_){
+		log_info(logger,"aca no rompe");
+		if (clave_obj->instancia != NULL){
+			log_info(logger,"aca si");
+			if (chequearConectividadProceso(clave_obj->instancia)==0){
+				return ABORTAR;
+			}
+		}
+		else {
+			log_info(logger,"abort");
+			//clave_obj->instancia = siguienteInstanciaSegunAlgoritmo();
+			//return CORRECTO;
+			return ABORTAR;
+		}
 	}
 
-	return CORRECTO;//consultarPlanificador(sentencia);
+	pthread_mutex_lock(&lock_sentencia_global);
+	sentencia_global = sentencia;
+	//log_warning(logger,"unlock cons planif");
+	pthread_mutex_unlock(&consulta_planificador);
+
+	//log_warning(logger,"lock cons planif term");
+	pthread_mutex_lock(&consulta_planificador_terminar);
+
+	//log_warning(logger,"lock cons planif");
+	//pthread_mutex_lock(&consulta_planificador);
+	pthread_mutex_unlock(&lock_sentencia_global);
+
+	//log_info(logger,"consulta planificador: %d", rdo_consulta_planificador);
+	//return CORRECTO;//consultarPlanificador(sentencia);
+	return rdo_consulta_planificador;
 }
 
-devolverResultadoAESI(int socketEsi, rta_envio rta, int idEsi){
-	devolverCodigoResultadoAESI(socketEsi, rta.cod, idEsi);
+devolverResultadoAESI(int socketEsi, rta_envio rta, int idEsi, int proceso){
+	devolverCodigoResultadoAESI(socketEsi, rta.cod, idEsi,proceso);
 }
 
-void devolverCodigoResultadoAESI(int socketCliente, int cod, int idEsi){
+void devolverCodigoResultadoAESI(int socketCliente, int cod, int idEsi, int proceso){
 
 	t_content_header * cabecera_rdo = crear_cabecera_mensaje(coordinador,esi, RESULTADO_EJECUCION_SENTENCIA,sizeof(t_content_header));
 	int status_hd_error = send(socketCliente,cabecera_rdo,sizeof(t_content_header),NULL);
 
 	respuesta_coordinador * cod_error = malloc(sizeof(respuesta_coordinador));
-	if (cod ==ERROR_I){	cod_error->resultado_del_parseado = ABORTAR;}
-	if (cod ==EXITO_I || cod == CORRECTO){	cod_error->resultado_del_parseado = CORRECTO;}
-	if (cod == ABORTAR){	cod_error->resultado_del_parseado = ABORTAR;}
+	if (cod ==ERROR_I && cod == instancia){	cod_error->resultado_del_parseado = ABORTAR;}
+	if (cod ==CLAVE_BLOQUEADA && cod == esi){	cod_error->resultado_del_parseado = CLAVE_BLOQUEADA;}
+	if (cod ==EXITO_I && cod == instancia || cod == CORRECTO && cod == esi){	cod_error->resultado_del_parseado = CORRECTO;}
+	if (cod == ABORTAR && cod == esi){	cod_error->resultado_del_parseado = ABORTAR;}
 
 	log_info(logger, "Devolviendo rdo '%d' a ESI '%d'..", cod_error->resultado_del_parseado, idEsi );
-	log_info(logger, "El codigo es CORRECTO? %d", CORRECTO == cod_error->resultado_del_parseado);
+	//log_info(logger, "El codigo es CORRECTO? %d", CORRECTO == cod_error->resultado_del_parseado);
 	int status_hd_mensaje_error = send(socketCliente, cod_error, sizeof(respuesta_coordinador), NULL);
 
 	log_info(logger, "Rdo devuelto a %d",idEsi);
@@ -191,11 +275,11 @@ void indicarCompactacionATodasLasInstancias(){
 }
 
 void proseguirOperacionNormal(int socketCliente, t_sentencia * sentencia_con_punteros){
-	printf("adsf");
+	//printf("adsf");
 	switch(sentencia_con_punteros->keyword){
 	case GET_:
 		//guardarClaveInternamente(sentencia_con_punteros->clave); ya guardé cuando chequeé si podia ejecutar
-		devolverCodigoResultadoAESI(socketCliente, CORRECTO, sentencia_con_punteros->pid );
+		devolverCodigoResultadoAESI(socketCliente, CORRECTO, sentencia_con_punteros->pid , esi);
 		//Ya pregunté anteriormente al planificador, y ya la bloqueó
 		break;
 	default:
@@ -214,7 +298,7 @@ void proseguirOperacionNormal(int socketCliente, t_sentencia * sentencia_con_pun
 		log_info(logger,"Obtenido resultado");
 		//TODO Que enviarSentenciaInstancia 
 		//TODO Verificar si después de las 3 veces sigue devolviendo COMPACTAR. Si es asi ver que hacer. Abortar esi y mostrar log_error por consola?
-		devolverResultadoAESI(socketCliente, rdo_ejecucion_instancia, sentencia_con_punteros->pid);
+		devolverResultadoAESI(socketCliente, rdo_ejecucion_instancia, sentencia_con_punteros->pid,instancia);
 		break;
 	}
 }
@@ -225,27 +309,38 @@ void interpretarOperacionESI(t_content_header * hd, int socketCliente){
 	usleep(RETARDO*1000);
 	switch(hd->operacion){
 	case ESI_COORDINADOR_SENTENCIA:
-		;
+	{
 		//Recibo de ESI sentencia parseada
-		log_info(logger,"esi sentencia recibo");
+		//log_info(logger,"esi sentencia recibo");
 		t_esi_operacion_sin_puntero * sentencia = malloc(sizeof(t_esi_operacion_sin_puntero));
 		int cantleida = recv( socketCliente, sentencia, hd->cantidad_a_leer, NULL);
 		log_info(logger,"esi sentencia recibida");
 		log_info(logger,"KEYWORD: %d", sentencia->keyword);
 		log_info(logger,"tam valor: %d", sentencia->tam_valor);
 
-		char * valor;
+		char * buffer = malloc(sentencia->tam_valor);
+		char valRec[sentencia->tam_valor];
 		if (sentencia->keyword == SET_){
 			//Recibo el valor - El esi me lo manda "pelado", directamente el string, ningún struct
-			valor = malloc(sentencia->tam_valor);
+			memset(buffer,0,sentencia->tam_valor);
 			printf("TAMANIO VALOR %d", sentencia->tam_valor);
-			int valor_status = recv(socketCliente, valor, sentencia->tam_valor,NULL);
-			//valor[strlen(valor)-1] = '\0';
-			log_info(logger,"esi valor recibido: %s", valor);
-		}else valor = "";
+			int valor_status = recv(socketCliente, buffer, sentencia->tam_valor,NULL);
+			buffer[sentencia->tam_valor] = '\0';
+
+			//set char array
+			strncpy(valRec,buffer,sentencia->tam_valor);
+			valRec[sentencia->tam_valor] = '\0';
+
+			//set char p
+			buffer = strdup(valRec);
+			buffer[sentencia->tam_valor] = '\0';
+
+			log_info(logger,"esi valor recibido: %s", buffer);
+		}else {free(buffer);buffer = strdup("");}
 
 		//Armo una variable interna para manejar la sentencia
-		t_sentencia * sentencia_con_punteros = armar_sentencia(sentencia, valor);
+		t_sentencia * sentencia_con_punteros = armar_sentencia(sentencia, buffer);
+		free(buffer);
 		log_operacion_esi(sentencia_con_punteros, logger_operaciones);
 
 		int puedoEnviar = puedoEjecutarSentencia(sentencia_con_punteros);
@@ -256,28 +351,29 @@ void interpretarOperacionESI(t_content_header * hd, int socketCliente){
 				proseguirOperacionNormal(socketCliente,sentencia_con_punteros);
 				break;
 			case CLAVE_BLOQUEADA:
-				log_info(logger,"Devolviendo error al ESI%d", sentencia->pid);
-				devolverCodigoResultadoAESI(socketCliente, CLAVE_BLOQUEADA, sentencia_con_punteros->pid);
+				//log_info(logger,"Devolviendo error al ESI%d", sentencia->pid);
+				devolverCodigoResultadoAESI(socketCliente, CLAVE_BLOQUEADA, sentencia_con_punteros->pid,esi);
 				log_info(logger,"Devuelto CLAVE_BLOQUEADA");
 				log_error_operacion_esi(sentencia_con_punteros, puedoEnviar);
 				break;
 			case ABORTAR:
-				log_info(logger,"Devolviendo error al ESI %d", sentencia->pid);
-				devolverCodigoResultadoAESI(socketCliente, ABORTAR, sentencia_con_punteros->pid);
+				//log_info(logger,"Devolviendo error al ESI %d", sentencia->pid);
+				devolverCodigoResultadoAESI(socketCliente, ABORTAR, sentencia_con_punteros->pid,esi);
 				log_warning(logger,"Devuelto ABORTAR al ESI %d", sentencia->pid);
 				log_error_operacion_esi(sentencia_con_punteros, puedoEnviar);
-				log_info(logger,"Fin abortar");
+				//log_info(logger,"Fin abortar");
 				break;
 			default:
 				break;
 		}
 		free(sentencia);
 		break;
+	}
 	default:
 		//TODO no se reconoció el tipo operación
 		break;
 	}
-	log_info(logger,"Fin interpretación");
+	//log_info(logger,"Fin interpretación");
 }
 
 void interpretarHeader(t_content_header * hd, int socketCliente){
@@ -294,6 +390,7 @@ void interpretarHeader(t_content_header * hd, int socketCliente){
 	case planificador:
 		//if (leer_planificador_request){
 			interpretarOperacionPlanificador(hd,socketCliente);
+			loopPlanificadorConsulta();
 		//}
 		break;
 	default:
@@ -325,7 +422,7 @@ void *escucharMensajesEntrantes(int socketCliente){
     		interpretarHeader(header, socketCliente);
     	};
     	//Si es instancia, solamente le mando la configuracion y cierro el hilo.
-    	if (header->proceso_origen == instancia || header->proceso_origen == planificador){
+    	if (header->proceso_origen == instancia /*|| header->proceso_origen == planificador*/){
     		status_header =-1;
     		log_warning(logger,	"Cerrando hilo para proceso no ESI");
     	}
@@ -343,8 +440,12 @@ int main(int argc, char **argv){
 
 	seteosIniciales(argv[1]);
 
-	pthread_mutex_init(&mutexInstancias, NULL);
-	sem_init(&semInstancias, 0, 1);
+	pthread_mutex_init(&consulta_planificador, NULL);
+	pthread_mutex_init(&lock_sentencia_global, NULL);
+	pthread_mutex_lock(&consulta_planificador);
+	pthread_mutex_init(&consulta_planificador_terminar,NULL);
+	//pthread_mutex_init(&mutexInstancias, NULL);
+	//sem_init(&semInstancias, 0, 1);
 	//pthread_mutex_init(&bloqueo_de_Instancias, NULL);
 //	pthread_mutex_lock(&bloqueo_de_Instancias);
 //	pthread_mutex_unlock(&bloqueo_de_Instancias;

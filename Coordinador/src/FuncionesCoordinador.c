@@ -82,6 +82,7 @@ void seteosIniciales(char *path){
 		log_warning(logger,"Configuraciones cargadas por defecto");
 	}
 	lista_instancias = list_create();
+	lista_claves = list_create();
 	indice_actual_lista = -1; //TODO usar la funcion list_size para ver si mostrar o no el error
 }
 
