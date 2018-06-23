@@ -321,11 +321,12 @@ int recibir_mensaje_coordinador(int coord_socket)
 				else{
 					resultado_consulta = CORRECTO;
 					bloqueo_por_get++;
-					clave_a_bloquear_por_get = malloc(sizeof(t_consulta_bloqueo));
-					strcpy(clave_a_bloquear_por_get->clave,consulta_bloqueo->clave);
-					clave_a_bloquear_por_get->pid = consulta_bloqueo->pid;
-					clave_a_bloquear_por_get->sentencia = consulta_bloqueo->sentencia;
 				}
+
+
+				clave_a_bloquear_por_get = malloc(sizeof(t_consulta_bloqueo));
+				strcpy(clave_a_bloquear_por_get->clave,consulta_bloqueo->clave);
+				clave_a_bloquear_por_get->pid = consulta_bloqueo->pid;
 
 				break;
 
@@ -474,14 +475,22 @@ int recibir_mensaje_esi(t_conexion_esi conexion_esi)
 		}
 		else if(confirmacion->resultado == CLAVE_BLOQUEADA){
 
-			esi_en_ejecucion->estado = bloqueado;
-			esi_en_ejecucion->ejec_anterior = 1;
+			if(confirmacion->pid == clave_a_bloquear_por_get->pid)
+			{
+				log_warning(logger,"Bloquea el esi por aca");
 
-			esi_aux = esi_en_ejecucion;
+				esi_en_ejecucion->estado = bloqueado;
+				esi_en_ejecucion->ejec_anterior = 1;
+				esi_en_ejecucion->clave_bloqueo = strdup(clave_a_bloquear_por_get->clave);
+				esi_aux = esi_en_ejecucion;
 
-			list_add(esi_bloqueados, esi_aux);
+				list_add(esi_bloqueados, esi_aux);
 
-			esi_en_ejecucion = NULL;
+				free(clave_a_bloquear_por_get);
+				esi_en_ejecucion = NULL;
+
+
+			}
 
 		}
 		else if(confirmacion->resultado == ABORTAR){
