@@ -911,7 +911,6 @@ void consola_consultar_status_clave(char* nombre_clave)
 		return;
 	}
 
-
 	/*
 	 status	clave: Con el objetivo de conoce el estado de una clave y de probar la correcta distribución de las mismas se deberan obtener los siguiente valores: (Este comando se utilizara para probar el sistema)
 	-Valor, en caso de no poseer valor un mensaje quec lo indique.
@@ -925,29 +924,47 @@ void consola_consultar_status_clave(char* nombre_clave)
 	// TODO Obtener status del Coordinador.
 	// 1. Send al Coordinador pasándole la petición y la clave.
 	// 2. Recv de la estructura de consulta de status de clave.
-	t_status_clave clave_st;
+	t_status_clave* clave_st = NULL;
+
+	clave_st = malloc(sizeof(t_status_clave));
+
+	//TODO Inicializado dummy - ELIMINAR
+	clave_st->valor = strdup("TraemeLaCopa");
+	clave_st->instancia_actual = strdup("InstanciaDummy");
+	clave_st->instancia_guardado_distr = NULL;
 
 	//VALOR
-	if(clave_st.valor != NULL){
-		log_info(logger,"-Valor de la clave %s: %s.", nombre_clave, clave_st.valor);
+	if(clave_st->valor != NULL){
+		log_info(logger,"-Valor de la clave %s: %s.", nombre_clave, clave_st->valor);
 	}
 	else{
 		log_info(logger,"-La clave %s NO tiene VALOR.", nombre_clave);
 	}
 
 	//INSTANCIA ACTUAL
-	if(clave_st.instancia_actual != NULL){
-		log_info(logger,"-Instancia actual de la clave %s: %s.", nombre_clave, clave_st.instancia_actual);
+	log_info(logger, "PRE Instancia Actual.");
+	if(clave_st->instancia_actual != NULL){
+		log_info(logger,"-Instancia actual de la clave %s: %s.", nombre_clave, clave_st->instancia_actual);
+	}
+	//TODO Eliminar el ELSE
+	else{
+		log_info(logger,"instancia_actual ES NULL");
 	}
 
 	//INSTANCIA EN QUE SE GUARDARÍA LA CLAVE
 	// TODO Revisar
-	if(clave_st.instancia_guardado_distr != NULL){
-		log_info(logger,"-Instancia en que se guardaría la clave %s: %s.", nombre_clave, clave_st.instancia_guardado_distr);
+	if(clave_st->instancia_guardado_distr != NULL){
+		log_info(logger,"-Instancia en que se guardaría la clave %s: %s.", nombre_clave, clave_st->instancia_guardado_distr);
+	}
+	//TODO Eliminar el ELSE
+	else{
+		log_info(logger,"instancia_guardado_distr ES NULL");
 	}
 
 	//ESIs bloqueados por la clave
 	t_list* lista_esis_bloq_por_clave;
+
+	log_info(logger,"PRE calcular lista de ESIs bloqueados por clave.");
 	lista_esis_bloq_por_clave = esis_bloqueados_por_clave(nombre_clave);
 
 	log_info(logger,"-Listado de ESIs bloqueados por clave %s: ", nombre_clave);
@@ -1874,7 +1891,6 @@ void configurar_signals(void)
         fprintf(stderr, "sigaction error\n");
         exit(1);
     }
-
 }
 
 void captura_sigpipe(int signo)
