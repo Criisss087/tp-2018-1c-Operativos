@@ -32,14 +32,44 @@ void enviarConfiguracionInicial(int socketInstancia){
 
 }
 
+int existe(char *nombre){
+	int mismoNombre(t_instancia * instancia){return string_equals_ignore_case(instancia->nombre, nombre);}
+	return list_any_satisfy(lista_instancias, *mismoNombre);
+}
+
+t_list * getClavesAsignadas(char *nombre){
+	int asignada(t_clave * clave){
+		return string_equals_ignore_case(clave->instancia->nombre,nombre);
+	}
+	return list_filter(lista_claves,*asignada);
+}
+
 void guardarEnListaDeInstancias(int socketInstancia, char *nombre){
-	hay_instancias++;
-	t_instancia * nueva = malloc(sizeof(t_instancia));
-	nueva->id= nuevoIDInstancia();
-	nueva->socket = socketInstancia;
-	nueva->nombre = strdup(nombre);
-	list_add(lista_instancias, nueva);
-	log_info(logger,"Guardada Instancia: %s", nombre);
+	if (existe(nombre)){
+		log_info(logger,"existia instancia");
+		//Enviar lista de claves asignadas a la instancia
+		t_list * claves_asignadas =  getClavesAsignadas(nombre);
+		t_content_header * header = crear_cabecera_mensaje(coordinador,instancia,COORDINADOR_INSTANCIA_CLAVES, list_size(claves_asignadas));
+		//char array_claves[list_size(claves_asignadas)][40] = calloc(list_size(claves_asignadas),40);
+		char array_claves[list_size(claves_asignadas)][40];
+		//for (int i=0;list_size(claves_asignadas)>i; i++){array_claves[i] = NULL;}
+		int contador = 0;
+		void addToArray(t_clave * clave){
+			strncpy(array_claves[contador],clave->clave,40);
+		}
+		list_iterate(claves_asignadas, *addToArray);
+		int status_claves = send(socketInstancia, array_claves,40*list_size(claves_asignadas),NULL);
+		free(claves_asignadas);
+	}else{
+		//Agregar instancia en lista de instancias
+		hay_instancias++;
+		t_instancia * nueva = malloc(sizeof(t_instancia));
+		nueva->id= nuevoIDInstancia();
+		nueva->socket = socketInstancia;
+		nueva->nombre = strdup(nombre);
+		list_add(lista_instancias, nueva);
+		log_info(logger,"Guardada Instancia: %s", nombre);
+	}
 
 }
 

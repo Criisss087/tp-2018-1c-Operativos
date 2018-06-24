@@ -233,7 +233,6 @@ int puedoEjecutarSentencia(t_sentencia * sentencia){
 
 	pthread_mutex_lock(&lock_sentencia_global);
 	sentencia_global = sentencia;
-	pthread_mutex_unlock(&lock_sentencia_global);
 
 	log_warning(logger,"unlock cons planif");
 	pthread_mutex_unlock(&consulta_planificador);
@@ -243,7 +242,7 @@ int puedoEjecutarSentencia(t_sentencia * sentencia){
 
 	log_warning(logger,"lock cons planif");
 	//pthread_mutex_lock(&consulta_planificador);
-
+	pthread_mutex_unlock(&lock_sentencia_global);
 
 	log_info(logger,"consulta planificador: %d", rdo_consulta_planificador);
 	//return CORRECTO;//consultarPlanificador(sentencia);
@@ -336,9 +335,9 @@ void interpretarOperacionESI(t_content_header * hd, int socketCliente){
 		log_info(logger,"KEYWORD: %d", sentencia->keyword);
 		log_info(logger,"tam valor: %d", sentencia->tam_valor);
 
+		buffer = calloc(sentencia->tam_valor,sizeof(char));
 		if (sentencia->keyword == SET_){
 
-			buffer = calloc(sentencia->tam_valor,sizeof(char));
 			char valRec[sentencia->tam_valor];
 
 			//Recibo el valor - El esi me lo manda "pelado", directamente el string, ningún struct
