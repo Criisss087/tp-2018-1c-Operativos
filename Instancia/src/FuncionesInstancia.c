@@ -6,7 +6,6 @@
  */
 
 #include "Instancia.h"
-// #include "CargarArchivoDeConfiguracion.c"
 
 void enviarHeader(int socketCoordinador, int procesoOrigen, int procesoReceptor,
 		int operacion, int cantidadALeer) {
@@ -52,31 +51,31 @@ void enviarNombreInstanciaACoordinador(int socketCoordinador) {
 }
 
 char * recibirValor(int socket, int tamanioValor) {
-		char * valorRecibido = malloc(tamanioValor);
-		int statusValorSentencia = recv(socket, valorRecibido,
-				tamanioValor, (int) NULL);
+	char * valorRecibido = malloc(tamanioValor);
+	int statusValorSentencia = recv(socket, valorRecibido, tamanioValor,
+			(int) NULL);
 
-		printf("status header: %d \n", statusValorSentencia);
-		printf("Valor de Sentencia recibido: \n");
-		printf("\tValor: %s\n", valorRecibido);
+	printf("status header: %d \n", statusValorSentencia);
+	printf("Valor de Sentencia recibido: \n");
+	printf("\tValor: %s\n", valorRecibido);
 
-		return valorRecibido;
+	return valorRecibido;
 }
 
-t_sentencia * construirSentenciaConValor(t_esi_operacion_sin_puntero * sentenciaPreliminar, char * valor) {
-		t_sentencia * sentenciaRecibida = malloc(sizeof(t_sentencia));
+t_sentencia * construirSentenciaConValor(
+		t_esi_operacion_sin_puntero * sentenciaPreliminar, char * valor) {
+	t_sentencia * sentenciaRecibida = malloc(sizeof(t_sentencia));
 
-		strcpy(sentenciaRecibida->clave, sentenciaPreliminar->clave);
-		sentenciaRecibida->keyword = sentenciaPreliminar->keyword;
-		if(valor!=NULL){
-			sentenciaRecibida->valor = strdup(valor);
-		}
+	strcpy(sentenciaRecibida->clave, sentenciaPreliminar->clave);
+	sentenciaRecibida->keyword = sentenciaPreliminar->keyword;
+	if (valor != NULL) {
+		sentenciaRecibida->valor = strdup(valor);
+	}
 
+	printf(
+			"Se asigna la sentencia correctamente... Lista para ser procesada...\n");
 
-		printf(
-				"Se asigna la sentencia correctamente... Lista para ser procesada...\n");
-
-		return sentenciaRecibida;
+	return sentenciaRecibida;
 }
 
 void imprimirEntrada(t_indice_entrada * entrada) {
@@ -144,26 +143,44 @@ int obtenerTamanioTotalDeValorGuardado(t_list * listaDeIndices) {
 
 _Bool entradaExistenteEnIndice(int nroEntrada) {
 	_Bool entradaOcupada(t_indice_entrada * entrada) {
-			return (entrada->numeroEntrada == nroEntrada);
-		}
+		return (entrada->numeroEntrada == nroEntrada);
+	}
 	return (list_any_satisfy(l_indice_entradas, (void *) entradaOcupada));
 }
 
 // TODO en lugar de puntero a char debe ser un char[40]
 char* obtenerClaveExistenteEnEntrada(int nroEntrada) {
 	_Bool entradaOcupada(t_indice_entrada * entrada) {
-				return (entrada->numeroEntrada == nroEntrada);
-			}
-	t_indice_entrada * entrada = list_find(l_indice_entradas, (void*)entradaOcupada);
+		return (entrada->numeroEntrada == nroEntrada);
+	}
+	t_indice_entrada * entrada = list_find(l_indice_entradas,
+			(void*) entradaOcupada);
 	return entrada->clave;
+}
+
+t_list * obtenerIndicesDeClave(char clave[40]) {
+	printf("Obteniendo indices que contienen la clave: %s\n", clave);
+	_Bool existeClave(t_indice_entrada * entrada) {
+		return (strcmp(entrada->clave, clave) == 0);
+	}
+
+	return (list_filter(l_indice_entradas, (void*) existeClave));
 }
 
 // TODO en lugar de puntero a char debe ser un char[40]
 void eliminarEntradasAsociadasAClave(char * clave) {
-	_Bool contieneClave(t_indice_entrada * entrada) {
-				return (strcmp(entrada-> clave, clave));
-			}
-	list_remove_by_condition(l_indice_entradas, (void*)contieneClave);
+
+	t_list * indicesQueContienenClave = obtenerIndicesDeClave(clave);
+	int cantidadDeIndices = list_size(indicesQueContienenClave);
+
+	for (int i = 0; i < cantidadDeIndices; i++) {
+		_Bool contieneClave(t_indice_entrada * entrada) {
+			return (strcmp(entrada->clave, clave) == 0);
+		}
+		list_remove_by_condition(l_indice_entradas, (void*) contieneClave);
+	}
+
+	printf("Se eliminaron %d entradas\n", cantidadDeIndices);
 }
 
 void actualizarNroDeOperacion(t_list * indices) {
@@ -172,3 +189,33 @@ void actualizarNroDeOperacion(t_list * indices) {
 	}
 	list_iterate(indices, (void*) actualizarOperacion);
 }
+
+int obtenerEntradasDisponibles() {
+
+	int entradasOcupadas = list_size(l_indice_entradas);
+
+	int entradasDisponibles = configTablaEntradas->cantTotalEntradas
+			- entradasOcupadas;
+
+	printf("Cantidad de entradas disponibles: %d\n", entradasDisponibles);
+	return entradasDisponibles;
+}
+
+int buscarIndiceDeEntradaDisponible() {
+	int i;
+	int cantEntradasQueCumplen = 1;
+	for (i = 0;
+			cantEntradasQueCumplen != 0
+					&& i < configTablaEntradas->cantTotalEntradas; i++) {
+
+		_Bool existeEntrada(t_indice_entrada * entrada) {
+			return (entrada->numeroEntrada == i);
+		}
+
+		cantEntradasQueCumplen = list_count_satisfying(l_indice_entradas,
+				(void*) existeEntrada);
+	}
+
+	return i;
+}
+
