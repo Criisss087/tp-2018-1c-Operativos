@@ -34,8 +34,6 @@
 #define COORDINADOR_INSTANCIA_SENTENCIA 3
 #define INSTANCIA_COORDINADOR_RESPUESTA_SENTENCIA 4
 
-enum algoritmos { circ, lru, bsu };
-
 // struct para el envio de nombre de Instancia al Coordinador
 typedef struct{
 	char nombreInstancia[40];
@@ -59,11 +57,12 @@ typedef struct{
 	char clave[40];
 	int tamanioValor;
 	bool esAtomica;
+	int nroDeOperacion;
 	char* puntero;
-	char* punteroArchivo;
 } __attribute__((packed)) t_indice_entrada;
 
 int numeroEntrada = 0;
+int contadorOperacion = 0;
 
 char * tablaEntradas;
 
