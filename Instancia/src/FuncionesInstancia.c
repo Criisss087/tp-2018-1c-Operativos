@@ -93,7 +93,7 @@ void imprimirTablaEntradas() {
 }
 
 int interpretarHeader(int socketCoordinador, t_content_header * header) {
-	printf("Esperando mensajes:\n");
+	printf("Esperando mensajes...\n");
 	header->proceso_origen = 0;
 
 	// header = malloc(sizeof(t_content_header));
@@ -149,11 +149,11 @@ _Bool entradaExistenteEnIndice(int nroEntrada) {
 }
 
 // TODO en lugar de puntero a char debe ser un char[40]
-char* obtenerClaveExistenteEnEntrada(int nroEntrada) {
+char* obtenerClaveExistenteEnEntrada(int nroEntrada, t_list * lista) {
 	_Bool entradaOcupada(t_indice_entrada * entrada) {
 		return (entrada->numeroEntrada == nroEntrada);
 	}
-	t_indice_entrada * entrada = list_find(l_indice_entradas,
+	t_indice_entrada * entrada = list_find(lista,
 			(void*) entradaOcupada);
 	return entrada->clave;
 }

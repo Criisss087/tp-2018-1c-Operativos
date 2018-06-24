@@ -56,6 +56,7 @@ void enviarResultadoSentencia(int socketCoordinador, int keyword) {
 
 		printf("\tResultado: %d\n", resultado);
 		printf("\tResultado de ejecucion enviado: %d\n", *r);
+		printf("--------------------------------------------------------\n");
 		break;
 
 	case STORE_:
@@ -77,6 +78,7 @@ void enviarResultadoSentencia(int socketCoordinador, int keyword) {
 
 		printf("\tResultado: %d\n", resultado);
 		printf("\tResultado de ejecucion enviado: %d\n", resultadoEjecucion);
+		printf("--------------------------------------------------------\n");
 		break;
 
 	default:
@@ -189,7 +191,8 @@ t_indice_entrada * guardarIndiceAtomicoEnTabla(t_sentencia * sentenciaRecibida,
 	printf("Verificando si el indice ya contiene una entrada...\n");
 	if (entradaExistenteEnIndice(nroEntrada)) {
 		// TODO en lugar de puntero a char debe ser un char[40]
-		char * clave = obtenerClaveExistenteEnEntrada(nroEntrada);
+		char * clave = obtenerClaveExistenteEnEntrada(nroEntrada,
+				l_indice_entradas);
 		printf("Eliminando todas las entradas asociadas a la clave: %s...\n",
 				clave);
 		eliminarEntradasAsociadasAClave(clave);
@@ -231,22 +234,53 @@ void guardarValorEnEntrada(char * valor, char* puntero) {
 	printf("Valor guardado: %s\n", puntero);
 }
 
+void ordenarAscPorCodDeOperacion(t_list * lista) {
+	// El comparador devuelve si el primer parametro debe aparecer antes que el segundo en la lista
+	_Bool menorCodigoDeOperacion(t_indice_entrada * entrada1,
+			t_indice_entrada * entrada2) {
+		return (entrada1->nroDeOperacion <= entrada2->nroDeOperacion);
+	}
+
+	printf("Ordenando lista por Numero de Operacion (ascendentemente)...\n");
+	list_sort(lista, (void*) menorCodigoDeOperacion);
+
+	return;
+}
+
 t_indice_entrada * aplicarAlgoritmoDeReemplazo(t_sentencia * sentenciaRecibida) {
 	printf("Aplicando algoritmo de reemplazo: %s\n", ALGORITMO_DE_REEMPLAZO);
 
 	t_indice_entrada * indiceEntrada;
 
 	if (strcmp(ALGORITMO_DE_REEMPLAZO, "CIRC") == 0) {
-		printf("Aplicando algoritmo Circular...\n");
 		numeroEntrada = 0;
 		printf("El puntero fue posicionado en la entrada: %d\n", numeroEntrada);
 		indiceEntrada = guardarIndiceAtomicoEnTabla(sentenciaRecibida,
 				numeroEntrada);
 
 	} else if (strcmp(ALGORITMO_DE_REEMPLAZO, "LRU") == 0) {
-		printf("Aplicando agloritmo Last Recently Used\n");
 		// TODO: Buscar entrada con menor nro de operacion y reemplazarla
-		printf("Algoritmo LRU aun no desarrollado\n");
+
+		t_list * listaAux = list_duplicate(l_indice_entradas);
+
+		ordenarAscPorCodDeOperacion(listaAux);
+
+		t_indice_entrada * entradaMenosUsada = list_get(listaAux, 0);
+
+		// TODO en lugar de puntero a char debe ser un char[40]
+		char * clave = obtenerClaveExistenteEnEntrada(
+				entradaMenosUsada->numeroEntrada, listaAux);
+
+		printf("Clave a ser reemplazada: %s\n", clave);
+
+		list_destroy(listaAux);
+
+		t_list * indicesQueContienenClave = obtenerIndicesDeClave(clave);
+
+		t_indice_entrada * entradaBase = list_get(indicesQueContienenClave, 0);
+
+		indiceEntrada = guardarIndiceAtomicoEnTabla(sentenciaRecibida,
+				entradaBase->numeroEntrada);
 
 	} else if (strcmp(ALGORITMO_DE_REEMPLAZO, "BSU") == 0) {
 		printf("Algoritmo BSU aun no desarrollado\n");
@@ -458,6 +492,8 @@ void realizarStoreDeClave(char clave[40]) {
 	t_list * indices = obtenerIndicesDeClave(clave);
 
 	actualizarNroDeOperacion(indices);
+
+	imprimirTablaEntradas();
 
 	t_indice_entrada * primerEntrada = list_get(indices, 0);
 
