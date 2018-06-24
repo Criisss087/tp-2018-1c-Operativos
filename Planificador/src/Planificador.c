@@ -500,6 +500,10 @@ int recibir_mensaje_esi(t_conexion_esi conexion_esi)
 		}
 
 		free(confirmacion);
+
+		//Cada vez que se ejecuta una sentencia, debo aumentar el tiempo de espera de todos los esi READY
+		aumentar_tiempo_espera_ready();
+
 	}
 
 	destruir_cabecera_mensaje(content_header);
@@ -1031,6 +1035,7 @@ void mostrar_esi_en_ejecucion(void)
 		log_info(logger,"Estado: %d: ",esi_en_ejecucion->estado);
 		log_info(logger,"Estimacion real: %f",esi_en_ejecucion->estimacion_real);
 		log_info(logger,"Estimacion actual: %f",esi_en_ejecucion->estimacion_actual);
+		log_info(logger,"Response Ratio: %f",esi_en_ejecucion->response_ratio);
 		printf("\n");
 	}
 	else
@@ -1101,19 +1106,22 @@ void obtener_proximo_ejecucion(void)
 	 */
 
 	lista_aux = list_duplicate(esi_listos);
+	log_info(logger,"Planificando por %s...",config.algoritmo);
 
 	if( (!strcmp(config.algoritmo, "SJF-SD")) || (!strcmp(config.algoritmo, "SJF-CD")))
 	{
-		log_info(logger,"Planificando por %s...",config.algoritmo);
 		ordenar_lista_estimacion(lista_aux);
 	}
 
-	/* TODO HRRN: Similar al anterior, pero ordenar por ratio
-	 * Revisar como es ese ordenamiento
+	/* HRRN: Similar al anterior, pero ordenar por ratio
+	 * Primero hay que calcularlo sobre todos los elementos de la lista ready
+	 * Obtener el de response ratio mas alto
 	 */
 	else if(!strcmp(config.algoritmo, "HRRN") )
 	{
-
+		log_info(logger,"Calculando RR para toda la lista ready...");
+		list_iterate(lista_aux,(void*)calcular_response_ratio);
+		ordenar_lista_response_ratio(lista_aux);
 	}
 
 	/* FIFO: Directamente saca el primer elemento de la lista y lo pone en ejecucion
@@ -1327,6 +1335,7 @@ t_pcb_esi * crear_esi(t_conexion_esi * conexion)
 	esi->estimacion_actual = ESTIMACION_INICIAL;
 	esi->estimacion_anterior = ESTIMACION_INICIAL;
 	esi->instruccion_actual = 0;
+	esi->tiempo_espera = 0;
 	esi->ejec_anterior = 0;
 	esi->clave_bloqueo = NULL;
 	esi_seq_pid++;
@@ -1342,9 +1351,13 @@ void mostrar_esi(t_pcb_esi * esi)
 	printf("Estimacion faltante: %f\n", esi->estimacion_actual);
 	printf("Estimacion Real: %f\n", esi->estimacion_real);
 	printf("Estimacion anterior: %f\n", esi->estimacion_anterior);
+	printf("Response Ratio: %f\n", esi->response_ratio);
 
 	if(esi->clave_bloqueo!=NULL)
 		printf("Clave que lo bloqueó: %s\n", esi->clave_bloqueo);
+
+	if(esi->estado == listo)
+		printf("Tiempo de espera en ready: %d\n",esi->tiempo_espera);
 
 	printf("\n");
 
@@ -1442,6 +1455,17 @@ t_pcb_esi * sacar_esi_bloqueado_por_clave(char* clave)
 	return(list_remove_by_condition(esi_bloqueados,(void*)is_esi_bloqueado));
 }
 
+void aumentar_tiempo_espera_ready(void){
+
+	void aumentar_tiempo_espera_esi(t_pcb_esi * esi)
+	{
+		esi->tiempo_espera++;
+	}
+
+	list_iterate(esi_listos,(void*)aumentar_tiempo_espera_esi);
+
+}
+
 void ordenar_lista_estimacion(t_list * lista)
 {
 	bool is_estimacion_menor(t_pcb_esi * esi1, t_pcb_esi * esi2)
@@ -1459,6 +1483,17 @@ void ordenar_lista_estimacion(t_list * lista)
 	return;
 }
 
+void ordenar_lista_response_ratio(t_list* lista)
+{
+	bool is_response_ratio_mayor(t_pcb_esi * esi1, t_pcb_esi * esi2)
+	{
+		return ( (esi1->response_ratio > esi2->response_ratio ) || (esi1->response_ratio == esi2->response_ratio) );
+	}
+
+	list_sort(lista,(void*)is_response_ratio_mayor);
+	return;
+}
+
 int estimar_esi(t_pcb_esi * esi){
 
 	config.alfa = ALPHA;
@@ -1471,6 +1506,16 @@ int estimar_esi(t_pcb_esi * esi){
 	esi->instruccion_actual = 0;
 
 	return 0;
+}
+
+void calcular_response_ratio(t_pcb_esi* esi)
+{
+	if(esi->estimacion_real != 0)
+	{
+		esi->response_ratio = (esi->tiempo_espera + esi->estimacion_real) / esi->estimacion_real;
+		esi->tiempo_espera = 0;
+	}
+
 }
 
 int confirmar_bloqueo_ejecucion(void)
@@ -1494,6 +1539,8 @@ int confirmar_desalojo_ejecucion(void)
 	if(esi_por_desalojar!=NULL)
 	{
 		esi_en_ejecucion->estado = listo;
+		esi_en_ejecucion->tiempo_espera = 0;
+
 		esi_por_desalojar->estado = en_ejecucion;
 
 		list_add(esi_listos, esi_en_ejecucion);
@@ -1638,6 +1685,7 @@ int desbloquear_clave(char* clave)
 		free(esi_a_desbloquear->clave_bloqueo);
 		esi_a_desbloquear->clave_bloqueo = NULL;
 		esi_a_desbloquear->estado = listo;
+		esi_a_desbloquear->tiempo_espera = 0;
 		estimar_esi(esi_a_desbloquear);
 
 		//Lo agrego a Ready
@@ -1731,6 +1779,7 @@ int confirmar_pausa_por_consola(){
 	log_info(logger,"Sentencia pausada.");
 
 	esi_en_ejecucion->estado = listo;
+	esi_en_ejecucion->tiempo_espera = 0;
 
 	list_add(esi_listos, esi_en_ejecucion);
 	esi_en_ejecucion = NULL;
@@ -1741,7 +1790,7 @@ int confirmar_pausa_por_consola(){
 }
 
 int confirmar_kill_ejecucion(void){
-	//TODO: Verificar si hay que avisar al esi a que finalice
+
 	enviar_confirmacion_kill(esi_en_ejecucion->pid);
 	finalizar_esi(esi_en_ejecucion->pid);
 
