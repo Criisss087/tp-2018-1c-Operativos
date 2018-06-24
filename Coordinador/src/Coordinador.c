@@ -64,10 +64,10 @@ rta_envio enviarSentenciaInstancia(t_sentencia * sentencia){
 	rta.instancia->socket = proxima->socket;
 	t_content_header * header = crear_cabecera_mensaje(coordinador,instancia,COORDINADOR_INSTANCIA_SENTENCIA, sizeof(t_content_header));
 	t_esi_operacion_sin_puntero * s_sin_p = armar_esi_operacion_sin_puntero(sentencia);
-	int header_envio = send(proxima->socket,header,sizeof(t_content_header),NULL);
-	int sentencia_envio = send(proxima->socket, s_sin_p, sizeof(t_esi_operacion_sin_puntero),NULL);
+	int header_envio = send(proxima->socket,header,sizeof(t_content_header),0);
+	int sentencia_envio = send(proxima->socket, s_sin_p, sizeof(t_esi_operacion_sin_puntero),0);
 	if (sentencia->keyword == SET_){
-		int valor_envio = send(proxima->socket,sentencia->valor,strlen(sentencia->valor),NULL);
+		int valor_envio = send(proxima->socket,sentencia->valor,strlen(sentencia->valor),0);
 	}
 
 	log_info(logger,"Enviada sentencia a instancia");
@@ -75,14 +75,14 @@ rta_envio enviarSentenciaInstancia(t_sentencia * sentencia){
 //Espero rta de Instancia
 
 //	sem_wait(&semInstancias);
-	int header_rta_instancia = recv(proxima->socket,header,sizeof(t_content_header), NULL);
+	int header_rta_instancia = recv(proxima->socket,header,sizeof(t_content_header), 0);
 //	sem_post(&semInstancias);
 
 	log_info(logger, "Rta Instancia Header: - Origen: %d, Receptor: %d, Operación: %d, Cantidad: %d",header->proceso_origen,header->proceso_receptor,header->operacion,header->cantidad_a_leer);
 
 	int * cod_rta = malloc(sizeof(int));
 //	sem_wait(&semInstancias);
-	header_rta_instancia = recv(proxima->socket,cod_rta,sizeof(int), NULL);
+	header_rta_instancia = recv(proxima->socket,cod_rta,sizeof(int), 0);
 	//sem_post(&semInstancias);
 	rta.cod= *cod_rta;
 	log_info(logger, "Rta Instancia %srespuesta: - %d ",proxima->nombre,rta.cod);
@@ -90,7 +90,7 @@ rta_envio enviarSentenciaInstancia(t_sentencia * sentencia){
 	//GET - Sé que no tiene que ir a la instancia. Voy a usar este código cuando necesite sabes el valor de la clave
 	if (sentencia->keyword == GET_){
 		char * valor = malloc(header->cantidad_a_leer);
-		header_rta_instancia = recv(proxima->socket,valor,header->cantidad_a_leer, NULL);
+		header_rta_instancia = recv(proxima->socket,valor,header->cantidad_a_leer, 0);
 		rta.valor = strdup(valor);
 	}
 
@@ -111,7 +111,7 @@ void interpretarOperacionInstancia(t_content_header * hd, int socketInstancia){
 		case INSTANCIA_COORDINADOR_CONEXION:
 			;
 			char * nombre = malloc(hd->cantidad_a_leer);
-			int status_recv = recv(socketInstancia, nombre, hd->cantidad_a_leer, NULL);
+			int status_recv = recv(socketInstancia, nombre, hd->cantidad_a_leer, 0);
 			//log_info(logger,"Tamaño nombre: %d - Nombre: %s",strlen(nombre),nombre);
 			enviarConfiguracionInicial(socketInstancia);
 			guardarEnListaDeInstancias(socketInstancia, nombre);
@@ -195,13 +195,13 @@ int consultarPlanificador(t_sentencia * sentencia){
 	consulta_a_planif->sentencia = sentencia->keyword;
 log_info(logger,"Le mandé: clave %s - pid %d - key %d", consulta_a_planif->clave, consulta_a_planif->pid, consulta_a_planif->sentencia);
 	t_content_header * header = crear_cabecera_mensaje(coordinador, planificador, COORD_PLANIFICADOR_OPERACION_CONSULTA_CLAVE_COORD,0);
-	int status_head = send(PROCESO_PLANIFICADOR.socket, header, sizeof(t_content_header), NULL);
+	int status_head = send(PROCESO_PLANIFICADOR.socket, header, sizeof(t_content_header), 0);
 
-	int status_pack = send(PROCESO_PLANIFICADOR.socket, consulta_a_planif, sizeof(t_consulta_bloqueo), NULL);
+	int status_pack = send(PROCESO_PLANIFICADOR.socket, consulta_a_planif, sizeof(t_consulta_bloqueo), 0);
 	//recibo rta
-	int status_recv = recv(PROCESO_PLANIFICADOR.socket, header, sizeof(t_content_header),NULL);
+	int status_recv = recv(PROCESO_PLANIFICADOR.socket, header, sizeof(t_content_header),0);
 	int * rta = malloc(sizeof(int));
-	status_recv = recv(PROCESO_PLANIFICADOR.socket,rta, sizeof(int),NULL);
+	status_recv = recv(PROCESO_PLANIFICADOR.socket,rta, sizeof(int),0);
 	log_error(logger,"Respuesta de Planificador en consultar: %d", *rta);
 	return *rta;
 }
@@ -257,17 +257,30 @@ devolverResultadoAESI(int socketEsi, rta_envio rta, int idEsi, int proceso){
 void devolverCodigoResultadoAESI(int socketCliente, int cod, int idEsi, int proceso){
 
 	t_content_header * cabecera_rdo = crear_cabecera_mensaje(coordinador,esi, RESULTADO_EJECUCION_SENTENCIA,sizeof(t_content_header));
-	int status_hd_error = send(socketCliente,cabecera_rdo,sizeof(t_content_header),NULL);
+	int status_hd_error = send(socketCliente,cabecera_rdo,sizeof(t_content_header),0);
+
+	log_info(logger, "Rdo que llega a la funcion'%d'", cod);
 
 	respuesta_coordinador * cod_error = malloc(sizeof(respuesta_coordinador));
-	if (cod ==ERROR_I && cod == instancia){	cod_error->resultado_del_parseado = ABORTAR;}
-	if (cod ==CLAVE_BLOQUEADA && cod == esi){	cod_error->resultado_del_parseado = CLAVE_BLOQUEADA;}
-	if (cod ==EXITO_I && cod == instancia || cod == CORRECTO && cod == esi){	cod_error->resultado_del_parseado = CORRECTO;}
-	if (cod == ABORTAR && cod == esi){	cod_error->resultado_del_parseado = ABORTAR;}
+	if (cod ==ERROR_I && proceso == instancia){
+		cod_error->resultado_del_parseado = ABORTAR;
+	}
+
+	if (cod ==CLAVE_BLOQUEADA && proceso == esi){
+		cod_error->resultado_del_parseado = CLAVE_BLOQUEADA;
+	}
+
+	if (((cod == EXITO_I) && (proceso == instancia)) || ((cod == CORRECTO) && (proceso == esi))){
+		cod_error->resultado_del_parseado = CORRECTO;
+	}
+
+	if (cod == ABORTAR && proceso == esi){
+		cod_error->resultado_del_parseado = ABORTAR;
+	}
 
 	log_info(logger, "Devolviendo rdo '%d' a ESI '%d'..", cod_error->resultado_del_parseado, idEsi );
 	//log_info(logger, "El codigo es CORRECTO? %d", CORRECTO == cod_error->resultado_del_parseado);
-	int status_hd_mensaje_error = send(socketCliente, cod_error, sizeof(respuesta_coordinador), NULL);
+	int status_hd_mensaje_error = send(socketCliente, cod_error, sizeof(respuesta_coordinador), 0);
 
 	log_info(logger, "Rdo devuelto a %d",idEsi);
 }
@@ -307,6 +320,8 @@ void proseguirOperacionNormal(int socketCliente, t_sentencia * sentencia_con_pun
 }
 
 void interpretarOperacionESI(t_content_header * hd, int socketCliente){
+	char * buffer = NULL;
+
 	log_info(logger, "Interpretando operación ESI - Origen: %d, Receptor: %d, Operación: %d, Cantidad: %d",hd->proceso_origen,hd->proceso_receptor,hd->operacion,hd->cantidad_a_leer);
 //Retardo:
 	usleep(RETARDO*1000);
@@ -316,41 +331,52 @@ void interpretarOperacionESI(t_content_header * hd, int socketCliente){
 		//Recibo de ESI sentencia parseada
 		//log_info(logger,"esi sentencia recibo");
 		t_esi_operacion_sin_puntero * sentencia = malloc(sizeof(t_esi_operacion_sin_puntero));
-		int cantleida = recv( socketCliente, sentencia, hd->cantidad_a_leer, NULL);
+		int cantleida = recv( socketCliente, sentencia, hd->cantidad_a_leer, 0);
 		log_info(logger,"esi sentencia recibida");
 		log_info(logger,"KEYWORD: %d", sentencia->keyword);
 		log_info(logger,"tam valor: %d", sentencia->tam_valor);
 
-		char * buffer = malloc(sentencia->tam_valor);
-		char valRec[sentencia->tam_valor];
 		if (sentencia->keyword == SET_){
+
+			buffer = calloc(sentencia->tam_valor,sizeof(char));
+			char valRec[sentencia->tam_valor];
+
 			//Recibo el valor - El esi me lo manda "pelado", directamente el string, ningún struct
-			memset(buffer,0,sentencia->tam_valor);
-			printf("TAMANIO VALOR %d", sentencia->tam_valor);
-			int valor_status = recv(socketCliente, buffer, sentencia->tam_valor,NULL);
-			buffer[sentencia->tam_valor] = '\0';
+			//memset(buffer,0,sentencia->tam_valor);
+			printf("TAMANIO VALOR %d\n", sentencia->tam_valor);
+			int valor_status = recv(socketCliente, buffer, sentencia->tam_valor,0);
+			//buffer[sentencia->tam_valor] = '\0';
 
 			//set char array
 			strncpy(valRec,buffer,sentencia->tam_valor);
 			valRec[sentencia->tam_valor] = '\0';
 
 			//set char p
+			free(buffer);
 			buffer = strdup(valRec);
-			buffer[sentencia->tam_valor] = '\0';
 
-			log_info(logger,"esi valor recibido: %s", buffer);
-		}else {free(buffer);buffer = strdup("");}
+			printf("buffer: %s\n",buffer);
+			printf("valrec: %s\n",valRec);
 
+			//buffer[sentencia->tam_valor] = '\0';
+			//log_info(logger,"esi valor recibido: %s", buffer);
+		}
+		else
+		{
+			free(buffer);
+			buffer = strdup("");
+		}
 		//Armo una variable interna para manejar la sentencia
 		t_sentencia * sentencia_con_punteros = armar_sentencia(sentencia, buffer);
 		free(buffer);
 		log_operacion_esi(sentencia_con_punteros, logger_operaciones);
 
+
 		int puedoEnviar = puedoEjecutarSentencia(sentencia_con_punteros);
 		log_info(logger, "PuedoEnviar %d", puedoEnviar);
 		switch(puedoEnviar){
 			case CORRECTO:
-				;
+
 				proseguirOperacionNormal(socketCliente,sentencia_con_punteros);
 				break;
 			case CLAVE_BLOQUEADA:
@@ -415,7 +441,7 @@ void *escucharMensajesEntrantes(int socketCliente){
 
     while (status_header > 0){
 
-    	status_header = recv(socketCliente, header, sizeof(t_content_header), NULL);
+    	status_header = recv(socketCliente, header, sizeof(t_content_header), 0);
     	log_info(logger, "Recv - Status Header: %d", status_header);
     	if (status_header == 0) {
     		log_info(logger, "Desconectado"); total_hilos--;

@@ -22,8 +22,8 @@ void enviarConfiguracionInicial(int socketInstancia){
 
 	t_content_header * header = crear_cabecera_mensaje(coordinador,instancia,COORDINADOR_INSTANCIA_CONFIG_INICIAL,sizeof(t_configTablaEntradas));
 
-	int sent_header = send(socketInstancia, header, sizeof(t_content_header),NULL);
-	int sent = send(socketInstancia, config, sizeof(t_configTablaEntradas),NULL);
+	int sent_header = send(socketInstancia, header, sizeof(t_content_header),0);
+	int sent = send(socketInstancia, config, sizeof(t_configTablaEntradas),0);
 
 	log_info(logger,"Enviada configuración inicial a Instancia - send: %d",sent);
 
