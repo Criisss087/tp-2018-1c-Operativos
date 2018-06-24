@@ -65,7 +65,7 @@ void enviarResultadoSentencia(int socketCoordinador, int keyword) {
 
 		printf("Enviando Respuesta de sentencia STORE...\n");
 
-		resultadoEjecucion = ERROR_I;
+		resultadoEjecucion = EXITO_I;
 
 		r = &resultadoEjecucion;
 
