@@ -29,14 +29,31 @@ int conexionConCoordinador() {
 	return socketCoordinador;
 }
 
+t_respuesta_instancia * armarRespuestaParaCoordinador(int resultadoEjecucion) {
+		int entradasDisponibles = obtenerEntradasDisponibles();
+
+		t_respuesta_instancia * resultadoAEnviar = malloc(sizeof(t_respuesta_instancia));
+
+		resultadoAEnviar->entradas_libres = entradasDisponibles;
+		resultadoAEnviar->rdo_operacion = resultadoEjecucion;
+
+
+		printf("Resultado a enviar:\n");
+		printf("\tEntradas disponibles: %d\n", resultadoAEnviar->entradas_libres);
+		printf("\tResultado de operacion: %d\n", resultadoAEnviar->rdo_operacion);
+
+		return resultadoAEnviar;
+
+}
+
 void enviarResultadoSentencia(int socketCoordinador, int keyword) {
 	printf("Envio de header para respuesta de sentencia...\n");
 
 	int resultado;
 	int resultadoEjecucion;
-	int * r;
 
 	switch (keyword) {
+	t_respuesta_instancia * resultadoAEnviar;
 	case SET_:
 		enviarHeader(socketCoordinador, instancia, coordinador,
 		INSTANCIA_COORDINADOR_RESPUESTA_SENTENCIA, sizeof(int));
@@ -45,9 +62,9 @@ void enviarResultadoSentencia(int socketCoordinador, int keyword) {
 
 		resultadoEjecucion = EXITO_I;
 
-		r = &resultadoEjecucion;
+		resultadoAEnviar = armarRespuestaParaCoordinador(resultadoEjecucion);
 
-		resultado = send(socketCoordinador, r, sizeof(int), 0);
+		resultado = send(socketCoordinador, resultadoAEnviar, sizeof(t_respuesta_instancia), 0);
 
 		if (resultado == -1) {
 			printf("Error en el send");
@@ -55,7 +72,7 @@ void enviarResultadoSentencia(int socketCoordinador, int keyword) {
 		}
 
 		printf("\tResultado: %d\n", resultado);
-		printf("\tResultado de ejecucion enviado: %d\n", *r);
+		printf("\tResultado de ejecucion enviado: %d\n", resultadoEjecucion);
 		printf("--------------------------------------------------------\n");
 		break;
 
@@ -67,9 +84,9 @@ void enviarResultadoSentencia(int socketCoordinador, int keyword) {
 
 		resultadoEjecucion = EXITO_I;
 
-		r = &resultadoEjecucion;
+		resultadoAEnviar = armarRespuestaParaCoordinador(resultadoEjecucion);
 
-		resultado = send(socketCoordinador, r, sizeof(int), 0);
+		resultado = send(socketCoordinador, resultadoAEnviar, sizeof(t_respuesta_instancia), 0);
 
 		if (resultado == -1) {
 			printf("Error en el send");
