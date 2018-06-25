@@ -30,19 +30,19 @@ int conexionConCoordinador() {
 }
 
 t_respuesta_instancia * armarRespuestaParaCoordinador(int resultadoEjecucion) {
-		int entradasDisponibles = obtenerEntradasDisponibles();
+	int entradasDisponibles = obtenerEntradasDisponibles();
 
-		t_respuesta_instancia * resultadoAEnviar = malloc(sizeof(t_respuesta_instancia));
+	t_respuesta_instancia * resultadoAEnviar = malloc(
+			sizeof(t_respuesta_instancia));
 
-		resultadoAEnviar->entradas_libres = entradasDisponibles;
-		resultadoAEnviar->rdo_operacion = resultadoEjecucion;
+	resultadoAEnviar->entradas_libres = entradasDisponibles;
+	resultadoAEnviar->rdo_operacion = resultadoEjecucion;
 
+	printf("Resultado a enviar:\n");
+	printf("\tEntradas disponibles: %d\n", resultadoAEnviar->entradas_libres);
+	printf("\tResultado de operacion: %d\n", resultadoAEnviar->rdo_operacion);
 
-		printf("Resultado a enviar:\n");
-		printf("\tEntradas disponibles: %d\n", resultadoAEnviar->entradas_libres);
-		printf("\tResultado de operacion: %d\n", resultadoAEnviar->rdo_operacion);
-
-		return resultadoAEnviar;
+	return resultadoAEnviar;
 
 }
 
@@ -54,52 +54,54 @@ void enviarResultadoSentencia(int socketCoordinador, int keyword) {
 
 	switch (keyword) {
 	t_respuesta_instancia * resultadoAEnviar;
-	case SET_:
-		enviarHeader(socketCoordinador, instancia, coordinador,
-		INSTANCIA_COORDINADOR_RESPUESTA_SENTENCIA, sizeof(int));
+case SET_:
+	enviarHeader(socketCoordinador, instancia, coordinador,
+	INSTANCIA_COORDINADOR_RESPUESTA_SENTENCIA, sizeof(int));
 
-		printf("Enviando Respuesta de sentencia SET...\n");
+	printf("Enviando Respuesta de sentencia SET...\n");
 
-		resultadoEjecucion = EXITO_I;
+	resultadoEjecucion = EXITO_I;
 
-		resultadoAEnviar = armarRespuestaParaCoordinador(resultadoEjecucion);
+	resultadoAEnviar = armarRespuestaParaCoordinador(resultadoEjecucion);
 
-		resultado = send(socketCoordinador, resultadoAEnviar, sizeof(t_respuesta_instancia), 0);
+	resultado = send(socketCoordinador, resultadoAEnviar,
+			sizeof(t_respuesta_instancia), 0);
 
-		if (resultado == -1) {
-			printf("Error en el send");
-			// TODO: Implementar exit para abortar ejecucion
-		}
+	if (resultado == -1) {
+		printf("Error en el send");
+		// TODO: Implementar exit para abortar ejecucion
+	}
 
-		printf("\tResultado: %d\n", resultado);
-		printf("\tResultado de ejecucion enviado: %d\n", resultadoEjecucion);
-		printf("--------------------------------------------------------\n");
-		break;
+	printf("\tResultado: %d\n", resultado);
+	printf("\tResultado de ejecucion enviado: %d\n", resultadoEjecucion);
+	printf("--------------------------------------------------------\n");
+	break;
 
-	case STORE_:
-		enviarHeader(socketCoordinador, instancia, coordinador,
-		INSTANCIA_COORDINADOR_RESPUESTA_SENTENCIA, sizeof(int));
+case STORE_:
+	enviarHeader(socketCoordinador, instancia, coordinador,
+	INSTANCIA_COORDINADOR_RESPUESTA_SENTENCIA, sizeof(int));
 
-		printf("Enviando Respuesta de sentencia STORE...\n");
+	printf("Enviando Respuesta de sentencia STORE...\n");
 
-		resultadoEjecucion = EXITO_I;
+	resultadoEjecucion = EXITO_I;
 
-		resultadoAEnviar = armarRespuestaParaCoordinador(resultadoEjecucion);
+	resultadoAEnviar = armarRespuestaParaCoordinador(resultadoEjecucion);
 
-		resultado = send(socketCoordinador, resultadoAEnviar, sizeof(t_respuesta_instancia), 0);
+	resultado = send(socketCoordinador, resultadoAEnviar,
+			sizeof(t_respuesta_instancia), 0);
 
-		if (resultado == -1) {
-			printf("Error en el send");
-			// TODO: Implementar exit para abortar ejecucion
-		}
+	if (resultado == -1) {
+		printf("Error en el send");
+		// TODO: Implementar exit para abortar ejecucion
+	}
 
-		printf("\tResultado: %d\n", resultado);
-		printf("\tResultado de ejecucion enviado: %d\n", resultadoEjecucion);
-		printf("--------------------------------------------------------\n");
-		break;
+	printf("\tResultado: %d\n", resultado);
+	printf("\tResultado de ejecucion enviado: %d\n", resultadoEjecucion);
+	printf("--------------------------------------------------------\n");
+	break;
 
-	default:
-		break;
+default:
+	break;
 	}
 }
 
@@ -125,6 +127,30 @@ t_configTablaEntradas * obtenerConfigTablaEntradas(int socketCoordinador) {
 			"################################################################\n");
 
 	return configRecibida;
+}
+
+void obtenerClavesARecuperar(int socketCoordinador, char ** clavesARecuperar,
+		int cantClaves, int tamanioClave) { //claves[5][40]
+
+	// TODO: Se debe hacer un malloc() en este caso?
+
+	// char clavesARecuperar[cantClaves][40]; // = malloc(cantClaves * 40);
+
+	int status = recv(socketCoordinador, clavesARecuperar,
+			cantClaves * tamanioClave, (int) NULL);
+
+	if (status == -1) {
+		printf("Error en el recv");
+		// TODO: Implementar exit para abortar ejecucion
+	}
+
+	printf("Claves recibidas (a recuperar):\n");
+
+	for (int i = 0; i < cantClaves; i++) {
+		printf("\tClave[%d]: %s\n", i, clavesARecuperar[i]);
+	}
+
+	// return clavesARecuperar;
 }
 
 void crearTablaEntradas(t_configTablaEntradas * config) {
@@ -490,6 +516,31 @@ void grabarArchivoPorPrimeraVez(int fd, char * valor, int tamanio) {
 	write(fd, valor, tamanio);
 }
 
+void recuperarClaves(char clave[40]) {
+	printf("Clave a recuperar: %s\n", clave);
+
+	char * path = obtenerPathArchivo(clave);
+
+	// TODO: Modularizar el open del fd
+
+	int permisos = 0664;
+	int flags = O_RDWR | O_CREAT | O_TRUNC ;
+
+	int fileDescriptor;
+	if ((fileDescriptor = open(path, flags, permisos)) < 0) {
+		printf("No se pudo crear el archivo: %s\n", path);
+		printf("\tFile Descriptor: %d\n", fileDescriptor);
+	} else {
+		printf("File Descriptor: %d\n", fileDescriptor);
+	}
+
+	char* valor;
+
+	int tamanioValor = read(fileDescriptor, valor, 1);
+	printf("Tamaño de valor: %d\n", tamanioValor);
+	printf("Valor: %s\n", valor);
+}
+
 void realizarStoreDeClave(char clave[40]) {
 	char * path = obtenerPathArchivo(clave);
 
@@ -598,6 +649,8 @@ void interpretarOperacionCoordinador(t_content_header * header,
 
 	char * punteroArchivo;
 
+	char ** clavesARecuperar;
+
 	switch (header->operacion) {
 
 	case COORDINADOR_INSTANCIA_CONFIG_INICIAL:
@@ -605,6 +658,18 @@ void interpretarOperacionCoordinador(t_content_header * header,
 		configTablaEntradas = obtenerConfigTablaEntradas(socketCoordinador);
 
 		crearTablaEntradas(configTablaEntradas);
+
+		break;
+
+	case COORDINADOR_INSTANCIA_RECUPERAR_CLAVES:
+
+		printf("Recibiendo claves a recuperar...\n");
+
+		// clavesARecuperar = obtenerClavesARecuperar(socketCoordinador, clavesARecuperar, header->cantidad_a_leer, 40);
+		obtenerClavesARecuperar(socketCoordinador, clavesARecuperar,
+				header->cantidad_a_leer, 40);
+
+		// recuperarClaves(clavesARecuperar);
 
 		break;
 
@@ -637,6 +702,13 @@ void interpretarOperacionCoordinador(t_content_header * header,
 		}
 
 		break;
+
+	case COORDINADOR_INSTANCIA_COMPROBAR_CONEXION:
+		printf("Confirmando a coordinador conexion activa de Instancia...\n");
+
+		enviarHeader(socketCoordinador, instancia, coordinador,
+				INSTANCIA_COORDINADOR_CONFIRMA_CONEXION_ACTIVA, 0);
+		break;
 	}
 }
 
@@ -659,6 +731,8 @@ int main(int argc, char **argv) {
 		case coordinador:
 
 			interpretarOperacionCoordinador(header, socketCoordinador);
+
+			recuperarClaves("basquet:manu");
 			break;
 
 		default:
