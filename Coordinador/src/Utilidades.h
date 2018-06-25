@@ -28,6 +28,8 @@
 
 #define BACKLOG 50			// Define cuantas conexiones vamos a mantener pendientes al mismo tiempo
 
+#define CANTIDAD_LETRAS 25
+
 //***Cod ops
 #define ESI_COORDINADOR_SENTENCIA 1
 #define COORDINADOR_ESI_RESULTADO_EJECUCION_SENTENCIA 2

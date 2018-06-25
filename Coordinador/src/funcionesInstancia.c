@@ -5,6 +5,89 @@
  *      Author: utnso
  */
 
+char * cual_es_el_string(int caracter){
+	switch(caracter){
+		case 97:
+			return "a";
+			break;
+		case 98:
+			return "b";
+			break;
+		case 99:
+			return "c";
+			break;
+		case 100:
+			return "d";
+			break;
+		case 101:
+			return "e";
+			break;
+		case 102:
+			return "f";
+			break;
+		case 103:
+			return "g";
+			break;
+		case 104:
+			return "h";
+			break;
+		case 105:
+			return "i";
+			break;
+		case 106:
+			return "j";
+			break;
+		case 107:
+			return "k";
+			break;
+		case 108:
+			return "l";
+			break;
+		case 109:
+			return "m";
+			break;
+		case 110:
+			return "n";
+			break;
+		case 111:
+			return "o";
+			break;
+		case 112:
+			return "p";
+			break;
+		case 113:
+			return "q";
+			break;
+		case 114:
+			return "r";
+			break;
+		case 115:
+			return "s";
+			break;
+		case 116:
+			return "t";
+			break;
+		case 117:
+			return "u";
+			break;
+		case 118:
+			return "v";
+			break;
+		case 119:
+			return "w";
+			break;
+		case 120:
+			return "x";
+			break;
+		case 121:
+			return "y";
+			break;
+		case 122:
+			return "z";
+			break;
+	}
+}
+
 
 int nuevoIDInstancia(){
 	id_counter++;
@@ -84,12 +167,47 @@ t_instancia * siguienteEqLoad(){
 	return list_get(lista_instancias, siguiente);
 }
 
-t_instancia * siguienteInstanciaSegunAlgoritmo(){
+
+t_instancia * siguienteKeyExplicit(t_sentencia * sentencia){
+
+	int cantidad_instancias = list_size(lista_instancias);
+	int caracter = 97; // a
+	char * palabra = strdup(sentencia->clave);
+	char * letra = cual_es_el_string(caracter);
+
+	if(cantidad_instancias!=0){
+
+		int rango_letras = CANTIDAD_LETRAS / cantidad_instancias;
+
+		if((CANTIDAD_LETRAS % cantidad_instancias) > 0){
+			rango_letras ++;
+		}
+
+		for(int j=0;j<cantidad_instancias;j++){
+
+			for(int i=0; i<=rango_letras; i++){
+
+				if(string_starts_with(palabra, letra)){
+					return list_get(lista_instancias, j);
+				}
+/*
+ * De agregarse nuevas instancias, las claves previamente almacenadas no se moverán de lugar;
+ * pero nuevas claves usarán el nuevo número de instancias para calcular la distribución.
+ */
+				caracter++;
+				letra = cual_es_el_string(caracter);
+			}
+		}
+	}
+}
+
+t_instancia * siguienteInstanciaSegunAlgoritmo(t_sentencia * sentencia){
+	//TODO usar la funcion list_size para ver si mostrar o no el error
 	if(	list_size(lista_instancias)==0){
-		log_error(logger,"No hay Instancias conectadas");
-		t_instancia * instancia_error = malloc(sizeof(t_instancia));
-		strncpy(instancia_error->nombre,"ERROR",5);
-		return instancia_error;
+			log_error(logger,"No hay Instancias conectadas");
+			t_instancia * instancia_error = malloc(sizeof(t_instancia));
+			strncpy(instancia_error->nombre,"ERROR",5);
+			return instancia_error;
 	}
 
 	switch(ALGORITMO_DISTRIBUCION){
@@ -100,7 +218,7 @@ t_instancia * siguienteInstanciaSegunAlgoritmo(){
 			//TODO
 			break;
 		case KEY_EXPLICIT:
-			//TODO
+			return siguienteKeyExplicit(sentencia);
 			break;
 		default:
 			return siguienteEqLoad();
