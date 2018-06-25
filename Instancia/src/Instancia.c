@@ -62,6 +62,7 @@ void enviarResultadoSentencia(int socketCoordinador, int keyword) {
 	int * r;
 
 	switch (keyword) {
+	t_respuesta_instancia * resultadoAEnviar;
 	case SET_:
 		enviarHeader(socketCoordinador, instancia, coordinador,
 		INSTANCIA_COORDINADOR_RESPUESTA_SENTENCIA, sizeof(int));
@@ -70,7 +71,7 @@ void enviarResultadoSentencia(int socketCoordinador, int keyword) {
 
 		resultadoEjecucion = EXITO_I;
 
-		t_respuesta_instancia * resultadoAEnviar = armarRespuestaParaCoordinador(resultadoEjecucion);
+		resultadoAEnviar = armarRespuestaParaCoordinador(resultadoEjecucion);
 
 		resultado = send(socketCoordinador, resultadoAEnviar, sizeof(t_respuesta_instancia), 0);
 
@@ -86,7 +87,7 @@ void enviarResultadoSentencia(int socketCoordinador, int keyword) {
 
 		resultadoEjecucion = ERROR_I;
 
-		t_respuesta_instancia * resultadoAEnviar = armarRespuestaParaCoordinador(resultadoEjecucion);
+		resultadoAEnviar = armarRespuestaParaCoordinador(resultadoEjecucion);
 
 		resultado = send(socketCoordinador, resultadoAEnviar, sizeof(t_respuesta_instancia), 0);
 
