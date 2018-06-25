@@ -85,12 +85,11 @@ t_instancia * siguienteEqLoad(){
 }
 
 t_instancia * siguienteInstanciaSegunAlgoritmo(){
-	//TODO usar la funcion list_size para ver si mostrar o no el error
 	if(	list_size(lista_instancias)==0){
-			log_error(logger,"No hay Instancias conectadas");
-			t_instancia * instancia_error = malloc(sizeof(t_instancia));
-			strncpy(instancia_error->nombre,"ERROR",5);
-			return instancia_error;
+		log_error(logger,"No hay Instancias conectadas");
+		t_instancia * instancia_error = malloc(sizeof(t_instancia));
+		strncpy(instancia_error->nombre,"ERROR",5);
+		return instancia_error;
 	}
 
 	switch(ALGORITMO_DISTRIBUCION){
@@ -106,4 +105,26 @@ t_instancia * siguienteInstanciaSegunAlgoritmo(){
 		default:
 			return siguienteEqLoad();
 		}
+}
+
+void loopInstancia(int socketInstancia, char * nombre){
+	//Para que quede el hilo esperando para compactar
+	//wait instancia semaforo
+	int status = 1;
+	while (status){
+		sem_wait(&semInstancias);
+		//enviar orden de compactación
+		t_content_header * header = crear_cabecera_mensaje(coordinador, instancia, COORDINADOR_INSTANCIA_COMPACTACION,0);
+		int status_head = send(socketInstancia,header,sizeof(t_content_header),0);
+
+		int header_rta_instancia = recv(socketInstancia,header,sizeof(t_content_header), 0);
+		t_respuesta_instancia * rta = malloc(sizeof(t_respuesta_instancia));
+		int status_rta_instancia = recv(socketInstancia, rta, sizeof(t_respuesta_instancia), 0);
+		if (status_head == -1 || header_rta_instancia == -1 || status_rta_instancia == -1){status = -1;}
+		else{log_info(logger, "instancia %s rdo compactacion: %d", nombre, rta->rdo_operacion);}
+
+		sem_post(&semInstanciasFin);
+		sem_wait(&semInstanciasTodasFin);
+		//signal instancia semaforo
+	}
 }

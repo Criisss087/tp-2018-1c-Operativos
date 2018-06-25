@@ -119,6 +119,7 @@ void interpretarOperacionInstancia(t_content_header * hd, int socketInstancia){
 			enviarConfiguracionInicial(socketInstancia);
 			guardarEnListaDeInstancias(socketInstancia, nombre);
 
+			loopInstancia(socketInstancia, nombre);
 			free(nombre);
 			break;
 
@@ -261,24 +262,33 @@ void devolverCodigoResultadoAESI(int socketCliente, int cod, int idEsi, int proc
 	t_content_header * cabecera_rdo = crear_cabecera_mensaje(coordinador,esi, RESULTADO_EJECUCION_SENTENCIA,sizeof(t_content_header));
 	int status_hd_error = send(socketCliente,cabecera_rdo,sizeof(t_content_header),0);
 
-	log_info(logger, "Rdo que llega a la funcion'%d'", cod);
+	char * pr;
+	char * pr_c;
+	if (proceso == instancia){pr = strdup("instancia");} else pr = strdup("esi");
+	log_info(logger, "Rdo que llega a la funcion'%d', proceso: %d", cod, proceso);
 
 	respuesta_coordinador * cod_error = malloc(sizeof(respuesta_coordinador));
 	if (cod ==ERROR_I && proceso == instancia){
 		cod_error->resultado_del_parseado = ABORTAR;
+		pr_c = strdup("abortar");
 	}
 
 	if (cod ==CLAVE_BLOQUEADA && proceso == esi){
 		cod_error->resultado_del_parseado = CLAVE_BLOQUEADA;
+		pr_c = strdup("clave bloqueada");
 	}
 
 	if (((cod == EXITO_I) && (proceso == instancia)) || ((cod == CORRECTO) && (proceso == esi))){
 		cod_error->resultado_del_parseado = CORRECTO;
+		pr_c = strdup("correcto");
 	}
 
 	if (cod == ABORTAR && proceso == esi){
 		cod_error->resultado_del_parseado = ABORTAR;
+		pr_c = strdup("abortar");
 	}
+
+	log_warning(logger, "proceso %s - cod %s", pr,pr_c);
 
 	log_info(logger, "Devolviendo rdo '%d' a ESI '%d'..", cod_error->resultado_del_parseado, idEsi );
 	//log_info(logger, "El codigo es CORRECTO? %d", CORRECTO == cod_error->resultado_del_parseado);
@@ -288,8 +298,18 @@ void devolverCodigoResultadoAESI(int socketCliente, int cod, int idEsi, int proc
 }
 
 void indicarCompactacionATodasLasInstancias(){
-	//TODO
-	log_warning(logger,"TODO: Indicar a las instancias que compacten");
+	//Uso varios para que un hilo instancia no entre dos veces y otro se quede sin compactar
+	log_warning(logger,"Indicando a las instancias que compacten");
+	for (int i = 0; list_size(lista_instancias) >i; i++){
+		sem_post(&semInstancias);
+	}
+	for (int i = 0; list_size(lista_instancias) >i; i++){
+		sem_wait(&semInstanciasFin);
+	}
+	for (int i = 0; list_size(lista_instancias) >i; i++){
+		sem_post(&semInstanciasTodasFin);
+	}
+
 }
 
 void proseguirOperacionNormal(int socketCliente, t_sentencia * sentencia_con_punteros){
@@ -478,7 +498,9 @@ int main(int argc, char **argv){
 	pthread_mutex_lock(&consulta_planificador);
 	pthread_mutex_lock(&consulta_planificador_terminar);
 	//pthread_mutex_init(&mutexInstancias, NULL);
-	//sem_init(&semInstancias, 0, 1);
+	sem_init(&semInstancias, 0, 0);
+	sem_init(&semInstanciasFin, 0, 0);
+	sem_init(&semInstanciasTodasFin	, 0, 0);
 	//pthread_mutex_init(&bloqueo_de_Instancias, NULL);
 //	pthread_mutex_lock(&bloqueo_de_Instancias);
 //	pthread_mutex_unlock(&bloqueo_de_Instancias;
