@@ -80,12 +80,15 @@ rta_envio enviarSentenciaInstancia(t_sentencia * sentencia){
 
 	log_info(logger, "Rta Instancia Header: - Origen: %d, Receptor: %d, Operación: %d, Cantidad: %d",header->proceso_origen,header->proceso_receptor,header->operacion,header->cantidad_a_leer);
 
-	int * cod_rta = malloc(sizeof(int));
+	//int * cod_rta = malloc(sizeof(int));
+	t_respuesta_instancia * rta_instancia = malloc(sizeof(t_respuesta_instancia));
+
 //	sem_wait(&semInstancias);
-	header_rta_instancia = recv(proxima->socket,cod_rta,sizeof(int), 0);
+	//header_rta_instancia = recv(proxima->socket,cod_rta,sizeof(int), 0);
+	header_rta_instancia = recv(proxima->socket,rta_instancia,sizeof(t_respuesta_instancia), 0);
 	//sem_post(&semInstancias);
-	rta.cod= *cod_rta;
-	log_info(logger, "Rta Instancia %srespuesta: - %d ",proxima->nombre,rta.cod);
+	rta.cod= rta_instancia->rdo_operacion;
+	log_info(logger, "Rta Instancia %srespuesta: - %d - %d",proxima->nombre,rta.cod,rta_instancia->rdo_operacion);
 	//Si estoy pidiendo el valor de la clave, recibo la clave:
 	//GET - Sé que no tiene que ir a la instancia. Voy a usar este código cuando necesite sabes el valor de la clave
 	if (sentencia->keyword == GET_){
