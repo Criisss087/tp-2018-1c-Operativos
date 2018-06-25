@@ -41,7 +41,7 @@ rta_envio enviarSentenciaInstancia(t_sentencia * sentencia){
 				proxima =  instanciaDuena->instancia;
 			}
 			else{
-				proxima = siguienteInstanciaSegunAlgoritmo();
+				proxima = siguienteInstanciaSegunAlgoritmo(sentencia->clave);
 				t_clave * instanciaDuena = list_get(instancias_con_clave ,0);
 				instanciaDuena->instancia = proxima;
 
@@ -157,7 +157,7 @@ t_clave * guardarClaveInternamente(char clave[40]){
 			//log_warning(logger,"no existía la clave");
 			t_clave * claveObjeto = malloc(sizeof(t_clave));
 			//asigno la instancia la primera vez que envio a una
-			claveObjeto->instancia = siguienteInstanciaSegunAlgoritmo();
+			claveObjeto->instancia = siguienteInstanciaSegunAlgoritmo(clave);
 			strncpy(claveObjeto,clave,40);
 
 			list_add(lista_claves,claveObjeto);
@@ -472,16 +472,17 @@ void *escucharMensajesEntrantes(int socketCliente){
     		log_info(logger, "Interpretando header...");
     		interpretarHeader(header, socketCliente);
     	};
-    	//Si es instancia, solamente le mando la configuracion y cierro el hilo.
-    	if (header->proceso_origen == instancia /*|| header->proceso_origen == planificador*/){
-    		status_header =-1;
-    		log_warning(logger,	"Cerrando hilo para proceso no ESI");
-    	}
+
+    	//if (header->proceso_origen == instancia /*|| header->proceso_origen == planificador*/){
+    		//status_header =-1;
+    		//log_warning(logger,	"Cerrando hilo para proceso no ESI");
+    	//}
    	}
 
-	if (header->proceso_origen == esi){
+    log_warning(logger,"cerrada ");
+	//if (header->proceso_origen == esi){
 	    close(socketCliente);
-	}
+	//}
 
     free(header);
 

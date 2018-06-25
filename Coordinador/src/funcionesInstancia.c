@@ -168,11 +168,11 @@ t_instancia * siguienteEqLoad(){
 }
 
 
-t_instancia * siguienteKeyExplicit(t_sentencia * sentencia){
+t_instancia * siguienteKeyExplicit(char clave[40]){
 
 	int cantidad_instancias = list_size(lista_instancias);
 	int caracter = 97; // a
-	char * palabra = strdup(sentencia->clave);
+	char * palabra = strdup(clave);
 	char * letra = cual_es_el_string(caracter);
 
 	if(cantidad_instancias!=0){
@@ -201,7 +201,7 @@ t_instancia * siguienteKeyExplicit(t_sentencia * sentencia){
 	}
 }
 
-t_instancia * siguienteInstanciaSegunAlgoritmo(t_sentencia * sentencia){
+t_instancia * siguienteInstanciaSegunAlgoritmo(char clave[40]){
 	//TODO usar la funcion list_size para ver si mostrar o no el error
 	if(	list_size(lista_instancias)==0){
 			log_error(logger,"No hay Instancias conectadas");
@@ -218,7 +218,7 @@ t_instancia * siguienteInstanciaSegunAlgoritmo(t_sentencia * sentencia){
 			//TODO
 			break;
 		case KEY_EXPLICIT:
-			return siguienteKeyExplicit(sentencia);
+			return siguienteKeyExplicit(clave);
 			break;
 		default:
 			return siguienteEqLoad();
@@ -241,8 +241,8 @@ void loopInstancia(int socketInstancia, char * nombre){
 		if (status_head == -1 || header_rta_instancia == -1 || status_rta_instancia == -1){status = -1;}
 		else{log_info(logger, "instancia %s rdo compactacion: %d", nombre, rta->rdo_operacion);}
 
-		sem_post(&semInstanciasFin);
-		sem_wait(&semInstanciasTodasFin);
+		//sem_post(&semInstanciasFin);
+		//sem_wait(&semInstanciasTodasFin);
 		//signal instancia semaforo
 	}
 }
