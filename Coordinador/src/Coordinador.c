@@ -88,7 +88,7 @@ rta_envio enviarSentenciaInstancia(t_sentencia * sentencia){
 	header_rta_instancia = recv(proxima->socket,rta_instancia,sizeof(t_respuesta_instancia), 0);
 	//sem_post(&semInstancias);
 	rta.cod= rta_instancia->rdo_operacion;
-	log_info(logger, "Rta Instancia %srespuesta: - %d - %d",proxima->nombre,rta.cod,rta_instancia->rdo_operacion);
+	log_info(logger, "Rta Instancia %srespuesta: - %d - %d - entradas libres: %d",proxima->nombre,rta.cod,rta_instancia->rdo_operacion,rta_instancia->entradas_libres);
 	//Si estoy pidiendo el valor de la clave, recibo la clave:
 	//GET - Sé que no tiene que ir a la instancia. Voy a usar este código cuando necesite sabes el valor de la clave
 	if (sentencia->keyword == GET_){
