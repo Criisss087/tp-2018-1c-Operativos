@@ -107,11 +107,13 @@ t_esi_operacion_sin_puntero * armar_esi_operacion_sin_puntero(t_sentencia * sent
 }
 
 t_sentencia * armar_sentencia(t_esi_operacion_sin_puntero * op_sin_punt, char * valor){
+
 	t_sentencia * sentencia_con_punteros = malloc(sizeof(t_sentencia));
 	strncpy(sentencia_con_punteros->clave, op_sin_punt->clave,40);
 	sentencia_con_punteros->valor = strdup(valor);
 	sentencia_con_punteros->keyword = op_sin_punt->keyword;
 	sentencia_con_punteros->pid = op_sin_punt->pid;
+	return sentencia_con_punteros;
 
 }
 

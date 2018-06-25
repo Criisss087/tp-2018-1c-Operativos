@@ -36,6 +36,8 @@
 #define COORDINADOR_INSTANCIA_CONFIG_INICIAL 2
 #define COORDINADOR_INSTANCIA_SENTENCIA 3
 #define INSTANCIA_COORDINADOR_RTA 4
+#define COORDINADOR_INSTANCIA_CLAVES 5
+#define COORDINADOR_INSTANCIA_COMPACTACION 6
 
 #define PLANIFICADOR_COORDINADOR_HEADER_IDENTIFICACION 1
 #define COORD_PLANIFICADOR_OPERACION_CONSULTA_CLAVE_COORD 2
@@ -96,6 +98,8 @@ typedef struct {
 //Semaforos
 pthread_mutex_t mutexInstancias;
 sem_t semInstancias;
+sem_t semInstanciasFin;
+sem_t semInstanciasTodasFin;
 pthread_mutex_t bloqueo_de_Instancias;
 
 pthread_mutex_t consulta_planificador;
