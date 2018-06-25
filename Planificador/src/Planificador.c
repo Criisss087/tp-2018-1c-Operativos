@@ -1513,7 +1513,6 @@ void calcular_response_ratio(t_pcb_esi* esi)
 	if(esi->estimacion_real != 0)
 	{
 		esi->response_ratio = (esi->tiempo_espera + esi->estimacion_real) / esi->estimacion_real;
-		esi->tiempo_espera = 0;
 	}
 
 }
