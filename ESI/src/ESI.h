@@ -73,5 +73,6 @@ void enviar_linea_parseada_coordinador(t_content_header * header, t_esi_operacio
 void recibir_respuesta_coordinador(t_content_header * header);
 void enviar_al_planificador_la_rta_del_coordinador(t_content_header * header);
 void esperar_orden_planificador_para_finalizar(void);
+void abortar_esi(void);
 
 #endif /* SRC_ESI_H_ */

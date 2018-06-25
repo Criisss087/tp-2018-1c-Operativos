@@ -119,7 +119,11 @@ void finalizar_esi(void)
 	}
 
 
-	fclose(archivo_a_leer_por_el_ESI);
+	if(archivo_a_leer_por_el_ESI != NULL)
+	{
+		fclose(archivo_a_leer_por_el_ESI);
+	}
+
 	close(serverCoord);
 	close(serverPlanif);
 
@@ -301,12 +305,14 @@ void recibir_orden_planif_para_comenzar(t_content_header * header){
 
 void abrir_script(char *path){
 
-	archivo_a_leer_por_el_ESI = fopen(path, "r");
+	if(path != NULL)
+	{
+		archivo_a_leer_por_el_ESI = fopen(path, "r");
+	}
 
 	if(archivo_a_leer_por_el_ESI == NULL){
 		printf("Error al intentar abrir el archivo a leer.\n");
-		close(serverCoord);
-		close(serverPlanif);
+		finalizar_esi();
 		exit(EXIT_FAILURE);
 	}
 }
@@ -367,8 +373,8 @@ void recibir_respuesta_coordinador(t_content_header * header){
 
 	if(resultado < 0){
 		printf("Error en el recv del header de la rta del coordinador. \n");
-		finalizar_esi();
 		free(header);
+		finalizar_esi();
 		exit(EXIT_FAILURE);
 	}
 
@@ -380,48 +386,18 @@ void recibir_respuesta_coordinador(t_content_header * header){
 	if(resultado < 0){
 		printf("Error en el recv con el contenido de la rta del coordinador. \n");
 		free(respuesta_coordinador);
-		finalizar_esi();
 		free(header);
+		finalizar_esi();
 		exit(EXIT_FAILURE);
 	}
 
 	//SI recibo orden de abortar
 	if(header->operacion == RECIBIR_RESULTADO_SENTENCIA_COORD && respuesta_coordinador->resultado_del_parseado == ABORTAR){
+
 		printf("Recibi orden de aborto, aviso al planificador y fin de ejecucion. \n");
 		free(header);
-
-		//Aviso al planificador que recibi orden de abortar
-		header = crear_cabecera_mensaje(esi, planificador, ENVIAR_RESULTADO_PLANIF, sizeof(t_content_header));
-		int enviar_aviso_abortar = send(serverPlanif, header, sizeof(t_content_header),0);
-
-		if(enviar_aviso_abortar < 0){
-			printf("Error en el send del header de enviar_aviso_abortar al planificador. \n");
-			free(respuesta_coordinador);
-			finalizar_esi();
-			destruir_cabecera_mensaje(header);
-			exit(EXIT_FAILURE);
-		}
-
-		//mostrar_header(header);
-
-		confirmacion->resultado = ABORTAR;
-		enviar_aviso_abortar = send(serverPlanif, confirmacion, sizeof(t_confirmacion_sentencia),0);
-
-		if(enviar_aviso_abortar < 0){
-			printf("Error en el send del contenido de enviar_aviso_abortar al planificador. \n");
-			free(respuesta_coordinador);
-			finalizar_esi();
-			destruir_cabecera_mensaje(header);
-			exit(EXIT_FAILURE);
-		}
-
-		//Cierro!
 		free(respuesta_coordinador);
-		destruir_cabecera_mensaje(header);
-		destruir_operacion(parsed);
-
-		finalizar_esi();
-		exit(EXIT_FAILURE);
+		abortar_esi();
 
 	}
 
@@ -538,14 +514,47 @@ void esperar_orden_planificador_para_finalizar(void){
 
 }
 
+void abortar_esi(void)
+{
+	t_content_header * header = NULL;
+
+	//Aviso al planificador que recibi orden de abortar
+	header = crear_cabecera_mensaje(esi, planificador, ENVIAR_RESULTADO_PLANIF, sizeof(t_content_header));
+	int enviar_aviso_abortar = send(serverPlanif, header, sizeof(t_content_header),0);
+
+	if(enviar_aviso_abortar < 0){
+		printf("Error en el send del header de enviar_aviso_abortar al planificador. \n");
+		finalizar_esi();
+		destruir_cabecera_mensaje(header);
+		exit(EXIT_FAILURE);
+	}
+
+	confirmacion->resultado = ABORTAR;
+	enviar_aviso_abortar = send(serverPlanif, confirmacion, sizeof(t_confirmacion_sentencia),0);
+
+	if(enviar_aviso_abortar < 0){
+		printf("Error en el send del contenido de enviar_aviso_abortar al planificador. \n");
+		finalizar_esi();
+		destruir_cabecera_mensaje(header);
+		exit(EXIT_FAILURE);
+	}
+
+	//Cierro!
+	destruir_cabecera_mensaje(header);
+	destruir_operacion(parsed);
+
+	finalizar_esi();
+	exit(EXIT_FAILURE);
+
+	return;
+}
+
 int main(int argc, char **argv){
 
 	linea_a_parsear = NULL;
 	size_t direccion_de_la_linea_a_parsear = 0;
-	ssize_t read;
-	ssize_t sentencia;
-	ssize_t sentencia_actual = 1;
-	ssize_t sentencia_anterior;
+	ssize_t read = 0;
+	t_content_header *content_header;
 
 	//Obtengo los datos del archivo de configuracion
 	cargar_archivo_de_config(argv[1]);
@@ -560,25 +569,25 @@ int main(int argc, char **argv){
 	//Leo el archivo y parseo
 	while(!feof(archivo_a_leer_por_el_ESI)){
 
-		t_content_header *content_header;
 
 		recibir_orden_planif_para_comenzar(content_header);
 
 		printf("\n");
 
 		//Chequeo si debo ejecutar linea anterior o no
-		if (sentencia_actual != -1){
+		if (read != -1){ //sentencia_actual != -1){
 
+			//Si la confirmacion es distinto de 0, mantiene la linea aterior en linea_a_parsear
 			if(confirmacion->ejec_anterior == 0){
+				free(linea_a_parsear);
+				linea_a_parsear = NULL;
 				read = getline(&linea_a_parsear, &direccion_de_la_linea_a_parsear, archivo_a_leer_por_el_ESI);
-				sentencia = read;
-				sentencia_actual = sentencia;
 			}
 
-			if(confirmacion->ejec_anterior == 1){
-				sentencia_anterior = sentencia;
-				sentencia_actual = sentencia_anterior;
-			}
+			/*if(confirmacion->ejec_anterior == 1){
+				//sentencia_anterior = sentencia;
+				//sentencia_actual = sentencia_anterior;
+			}*/
 
 			printf("Ejecutar línea anterior? : %d\n", confirmacion->ejec_anterior);
 			printf("\n");
@@ -599,8 +608,12 @@ int main(int argc, char **argv){
 				printf("FIN LINEA\n");
 				printf("\n");
 			}//if parsed valido
+			else{
+				printf("La linea parseada no es válida, se aborta el ESI\n");
+				abortar_esi();
+			}
 
-		}//if read=getline...
+		}//if sentencia_actual
 
 	}//while...
 
