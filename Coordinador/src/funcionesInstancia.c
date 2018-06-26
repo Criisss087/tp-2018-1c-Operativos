@@ -132,7 +132,7 @@ void guardarEnListaDeInstancias(int socketInstancia, char *nombre){
 		log_info(logger,"existia instancia");
 		//Enviar lista de claves asignadas a la instancia
 		t_list * claves_asignadas =  getClavesAsignadas(nombre);
-		t_content_header * header = crear_cabecera_mensaje(coordinador,instancia,COORDINADOR_INSTANCIA_CLAVES, list_size(claves_asignadas));
+		t_content_header * header = crear_cabecera_mensaje(coordinador,instancia,COORDINADOR_INSTANCIA_CLAVES, list_size(claves_asignadas)*40);
 		//char array_claves[list_size(claves_asignadas)][40] = calloc(list_size(claves_asignadas),40);
 		char array_claves[list_size(claves_asignadas)][40];
 		//for (int i=0;list_size(claves_asignadas)>i; i++){array_claves[i] = NULL;}
@@ -141,6 +141,10 @@ void guardarEnListaDeInstancias(int socketInstancia, char *nombre){
 			strncpy(array_claves[contador],clave->clave,40);
 		}
 		list_iterate(claves_asignadas, *addToArray);
+
+		for(int i = 0; list_size(claves_asignadas)> i;i++){log_warning(logger,"claves de antes en instancia: %s",array_claves[i]);}
+
+		int status_h = send(socketInstancia, header, sizeof(t_content_header),0);
 		int status_claves = send(socketInstancia, array_claves,40*list_size(claves_asignadas),NULL);
 		free(claves_asignadas);
 	}else{
