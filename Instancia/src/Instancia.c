@@ -370,7 +370,13 @@ void guardarClaveValor(char clave[40], char * valor) {
 			// Guardar varias entradas
 
 			int entradasDisponibles = obtenerEntradasDisponibles();
+
 			if (entradasDisponibles >= entradasNecesariasParaGuardarValor) {
+
+				char * punteroBase =
+						tablaEntradas
+								+ (numeroEntrada
+										* configTablaEntradas->tamanioEntradas);
 
 				printf("\tTamanio total del Valor: %d\n", tamanioTotalValor);
 				printf("\tTamanio maximo a guardar por entrada: %d\n",
@@ -425,12 +431,14 @@ void guardarClaveValor(char clave[40], char * valor) {
 
 					// guardarValorEnEntrada(sentenciaRecibida->valor,	indiceEntrada->puntero);
 
-					printf("Guardando valor: %s en puntero: %p...\n", valor,
-							indiceEntrada->puntero);
-					memcpy(indiceEntrada->puntero, valor, strlen(valor));
-
-					printf("Valor guardado: %s\n", indiceEntrada->puntero);
 				}
+
+				printf("Guardando valor: %s en puntero: %p...\n", valor,
+						punteroBase);
+				memcpy(punteroBase, valor, strlen(valor));
+
+				printf("Valor guardado: %s\n", punteroBase);
+
 			} else {
 				printf("No hay mas lugar para guardar un valor NO atomico.\n");
 				//TODO: Devolver un error al coordinador
@@ -464,8 +472,8 @@ void guardarClaveValor(char clave[40], char * valor) {
 			memcpy(indiceEntrada->puntero, valor, strlen(valor));
 
 			printf("Valor guardado: %s\n", indiceEntrada->puntero);
-			imprimirTablaEntradas();
 		}
+		imprimirTablaEntradas();
 
 		printf(
 				"TODO: Se supera la cantidad maxima de entradas definida por el coordinador. Se requiere reemplazar o compactar\n");
