@@ -23,7 +23,6 @@
 #include <errno.h>
 #include <fcntl.h>
 
-
 #include "CargarArchivoDeConfiguracion.c"
 
 #define PACKAGESIZE 1024
