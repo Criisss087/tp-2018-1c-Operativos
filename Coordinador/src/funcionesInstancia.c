@@ -236,6 +236,23 @@ t_instancia * siguienteEqLoad(){
 	return list_get(lista_instancias, siguiente);
 }
 
+t_instancia * siguienteLSU(){
+	t_instancia * siguiente = list_get(lista_instancias, 0);
+	int maximo = siguiente->entradas_libres;
+	int indiceDelMaximo = 0;
+	int indiceContador = 0;
+
+	void getInstanciaMayorEspacioLibre(t_instancia * t){
+		if (t->entradas_libres > maximo){
+			maximo = t->entradas_libres;
+			indiceDelMaximo = indiceContador;
+		}
+		indiceContador++;
+	}
+
+	list_iterate(lista_instancias,*getInstanciaMayorEspacioLibre);
+	return list_get(lista_instancias,indiceDelMaximo);
+}
 
 t_instancia * siguienteKeyExplicit(char clave[40]){
 
@@ -285,6 +302,7 @@ t_instancia * siguienteInstanciaSegunAlgoritmo(char clave[40]){
 			break;
 		case LEAST_SPACE_USED:
 			//TODO
+			return siguienteLSU();
 			break;
 		case KEY_EXPLICIT:
 			return siguienteKeyExplicit(clave);
