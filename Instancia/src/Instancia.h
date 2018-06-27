@@ -23,7 +23,6 @@
 #include <errno.h>
 #include <fcntl.h>
 
-
 #include "CargarArchivoDeConfiguracion.c"
 
 #define PACKAGESIZE 1024
@@ -33,6 +32,11 @@
 #define COORDINADOR_INSTANCIA_CONFIG_INICIAL 2
 #define COORDINADOR_INSTANCIA_SENTENCIA 3
 #define INSTANCIA_COORDINADOR_RESPUESTA_SENTENCIA 4
+#define COORDINADOR_INSTANCIA_RECONEXION 5
+#define COORDINADOR_INSTANCIA_RECUPERAR_CLAVES 5
+
+#define COORDINADOR_INSTANCIA_COMPROBAR_CONEXION -1
+#define INSTANCIA_COORDINADOR_CONFIRMA_CONEXION_ACTIVA -1
 
 // struct para el envio de nombre de Instancia al Coordinador
 typedef struct{

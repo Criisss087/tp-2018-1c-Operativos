@@ -30,19 +30,19 @@ int conexionConCoordinador() {
 }
 
 t_respuesta_instancia * armarRespuestaParaCoordinador(int resultadoEjecucion) {
-		int entradasDisponibles = obtenerEntradasDisponibles();
+	int entradasDisponibles = obtenerEntradasDisponibles();
 
-		t_respuesta_instancia * resultadoAEnviar = malloc(sizeof(t_respuesta_instancia));
+	t_respuesta_instancia * resultadoAEnviar = malloc(
+			sizeof(t_respuesta_instancia));
 
-		resultadoAEnviar->entradas_libres = entradasDisponibles;
-		resultadoAEnviar->rdo_operacion = resultadoEjecucion;
+	resultadoAEnviar->entradas_libres = entradasDisponibles;
+	resultadoAEnviar->rdo_operacion = resultadoEjecucion;
 
+	printf("Resultado a enviar:\n");
+	printf("\tEntradas disponibles: %d\n", resultadoAEnviar->entradas_libres);
+	printf("\tResultado de operacion: %d\n", resultadoAEnviar->rdo_operacion);
 
-		printf("Resultado a enviar:\n");
-		printf("\tEntradas disponibles: %d\n", resultadoAEnviar->entradas_libres);
-		printf("\tResultado de operacion: %d\n", resultadoAEnviar->rdo_operacion);
-
-		return resultadoAEnviar;
+	return resultadoAEnviar;
 
 }
 
@@ -54,52 +54,75 @@ void enviarResultadoSentencia(int socketCoordinador, int keyword) {
 
 	switch (keyword) {
 	t_respuesta_instancia * resultadoAEnviar;
-	case SET_:
-		enviarHeader(socketCoordinador, instancia, coordinador,
-		INSTANCIA_COORDINADOR_RESPUESTA_SENTENCIA, sizeof(int));
+case SET_:
+	enviarHeader(socketCoordinador, instancia, coordinador,
+	INSTANCIA_COORDINADOR_RESPUESTA_SENTENCIA, sizeof(int));
 
-		printf("Enviando Respuesta de sentencia SET...\n");
+	printf("Enviando Respuesta de sentencia SET...\n");
 
-		resultadoEjecucion = EXITO_I;
+	resultadoEjecucion = EXITO_I;
 
-		resultadoAEnviar = armarRespuestaParaCoordinador(resultadoEjecucion);
+	resultadoAEnviar = armarRespuestaParaCoordinador(resultadoEjecucion);
 
-		resultado = send(socketCoordinador, resultadoAEnviar, sizeof(t_respuesta_instancia), 0);
+	resultado = send(socketCoordinador, resultadoAEnviar,
+			sizeof(t_respuesta_instancia), 0);
 
-		if (resultado == -1) {
-			printf("Error en el send");
-			// TODO: Implementar exit para abortar ejecucion
-		}
+	if (resultado == -1) {
+		printf("Error en el send");
+		// TODO: Implementar exit para abortar ejecucion
+	}
 
-		printf("\tResultado: %d\n", resultado);
-		printf("\tResultado de ejecucion enviado: %d\n", resultadoEjecucion);
-		printf("--------------------------------------------------------\n");
-		break;
+	printf("\tResultado: %d\n", resultado);
+	printf("\tResultado de ejecucion enviado: %d\n", resultadoEjecucion);
+	printf("--------------------------------------------------------\n");
+	break;
 
-	case STORE_:
-		enviarHeader(socketCoordinador, instancia, coordinador,
-		INSTANCIA_COORDINADOR_RESPUESTA_SENTENCIA, sizeof(int));
+case STORE_:
+	enviarHeader(socketCoordinador, instancia, coordinador,
+	INSTANCIA_COORDINADOR_RESPUESTA_SENTENCIA, sizeof(int));
 
-		printf("Enviando Respuesta de sentencia STORE...\n");
+	printf("Enviando Respuesta de sentencia STORE...\n");
 
-		resultadoEjecucion = EXITO_I;
+	resultadoEjecucion = EXITO_I;
 
-		resultadoAEnviar = armarRespuestaParaCoordinador(resultadoEjecucion);
+	resultadoAEnviar = armarRespuestaParaCoordinador(resultadoEjecucion);
 
-		resultado = send(socketCoordinador, resultadoAEnviar, sizeof(t_respuesta_instancia), 0);
+	resultado = send(socketCoordinador, resultadoAEnviar,
+			sizeof(t_respuesta_instancia), 0);
 
-		if (resultado == -1) {
-			printf("Error en el send");
-			// TODO: Implementar exit para abortar ejecucion
-		}
+	if (resultado == -1) {
+		printf("Error en el send");
+		// TODO: Implementar exit para abortar ejecucion
+	}
 
-		printf("\tResultado: %d\n", resultado);
-		printf("\tResultado de ejecucion enviado: %d\n", resultadoEjecucion);
-		printf("--------------------------------------------------------\n");
-		break;
+	printf("\tResultado: %d\n", resultado);
+	printf("\tResultado de ejecucion enviado: %d\n", resultadoEjecucion);
+	printf("--------------------------------------------------------\n");
+	break;
+case 3: // Keyword de reconexion
+	enviarHeader(socketCoordinador, instancia, coordinador,
+	INSTANCIA_COORDINADOR_RESPUESTA_SENTENCIA, sizeof(int));
+	printf(
+			"Enviando Respuesta de Reconexion (cantidad de entradas disponibles)...\n");
 
-	default:
-		break;
+	resultadoEjecucion = EXITO_I;
+
+	resultadoAEnviar = armarRespuestaParaCoordinador(resultadoEjecucion);
+
+	resultado = send(socketCoordinador, resultadoAEnviar,
+			sizeof(t_respuesta_instancia), 0);
+
+	if (resultado == -1) {
+		printf("Error en el send");
+		// TODO: Implementar exit para abortar ejecucion
+	}
+
+	printf("\tResultado: %d\n", resultado);
+	printf("\tResultado de ejecucion enviado: %d\n", resultadoEjecucion);
+	printf("--------------------------------------------------------\n");
+	break;
+default:
+	break;
 	}
 }
 
@@ -125,6 +148,21 @@ t_configTablaEntradas * obtenerConfigTablaEntradas(int socketCoordinador) {
 			"################################################################\n");
 
 	return configRecibida;
+}
+
+void obtenerClavesARecuperar(int socketCoordinador, int cantClaves) {
+	printf("Total de claves a recuperar: %d\n", cantClaves);
+
+	char * clave = malloc(40);
+
+	for (int i = 0; i < cantClaves; i++) {
+		recv(socketCoordinador, clave, 40, 0);
+		printf("[%d] Clave recibida para recuperar: %s\n", i + 1, clave);
+
+		recuperarClave(clave);
+	}
+
+	free(clave);
 }
 
 void crearTablaEntradas(t_configTablaEntradas * config) {
@@ -199,11 +237,11 @@ int cantidadDeEntradasRequeridasParaValor(int tamanioTotalValor) {
 	return entradasNecesariasParaGuardarValor;
 }
 
-t_indice_entrada * guardarIndiceAtomicoEnTabla(t_sentencia * sentenciaRecibida,
+t_indice_entrada * guardarIndiceAtomicoEnTabla(char clave[40], char * valor,
 		int nroEntrada) {
 
 	t_indice_entrada * indiceEntrada = malloc(sizeof(t_indice_entrada));
-	strcpy(indiceEntrada->clave, sentenciaRecibida->clave);
+	strcpy(indiceEntrada->clave, clave);
 
 	printf("Verificando si el indice ya contiene una entrada...\n");
 	if (entradaExistenteEnIndice(nroEntrada)) {
@@ -220,7 +258,7 @@ t_indice_entrada * guardarIndiceAtomicoEnTabla(t_sentencia * sentenciaRecibida,
 
 	indiceEntrada->esAtomica = true;
 	indiceEntrada->nroDeOperacion = contadorOperacion;
-	indiceEntrada->tamanioValor = strlen(sentenciaRecibida->valor);
+	indiceEntrada->tamanioValor = strlen(valor);
 
 	indiceEntrada->puntero = tablaEntradas
 			+ (indiceEntrada->numeroEntrada
@@ -233,12 +271,12 @@ t_indice_entrada * guardarIndiceAtomicoEnTabla(t_sentencia * sentenciaRecibida,
 	return indiceEntrada;
 }
 
-t_indice_entrada * guardarEnEntradaDisponible(t_sentencia * sentenciaRecibida) {
+t_indice_entrada * guardarEnEntradaDisponible(char clave[40], char * valor) {
 	t_indice_entrada * indiceEntrada;
 
 	int nroEntradaDisponible = buscarIndiceDeEntradaDisponible();
 
-	indiceEntrada = guardarIndiceAtomicoEnTabla(sentenciaRecibida,
+	indiceEntrada = guardarIndiceAtomicoEnTabla(clave, valor,
 			nroEntradaDisponible);
 
 	return indiceEntrada;
@@ -264,7 +302,7 @@ void ordenarAscPorCodDeOperacion(t_list * lista) {
 	return;
 }
 
-t_indice_entrada * aplicarAlgoritmoDeReemplazo(t_sentencia * sentenciaRecibida) {
+t_indice_entrada * aplicarAlgoritmoDeReemplazo(char clave[40], char * valor) {
 	printf("Aplicando algoritmo de reemplazo: %s\n", ALGORITMO_DE_REEMPLAZO);
 
 	t_indice_entrada * indiceEntrada;
@@ -272,7 +310,7 @@ t_indice_entrada * aplicarAlgoritmoDeReemplazo(t_sentencia * sentenciaRecibida) 
 	if (strcmp(ALGORITMO_DE_REEMPLAZO, "CIRC") == 0) {
 		numeroEntrada = 0;
 		printf("El puntero fue posicionado en la entrada: %d\n", numeroEntrada);
-		indiceEntrada = guardarIndiceAtomicoEnTabla(sentenciaRecibida,
+		indiceEntrada = guardarIndiceAtomicoEnTabla(clave, valor,
 				numeroEntrada);
 
 	} else if (strcmp(ALGORITMO_DE_REEMPLAZO, "LRU") == 0) {
@@ -285,18 +323,19 @@ t_indice_entrada * aplicarAlgoritmoDeReemplazo(t_sentencia * sentenciaRecibida) 
 		t_indice_entrada * entradaMenosUsada = list_get(listaAux, 0);
 
 		// TODO en lugar de puntero a char debe ser un char[40]
-		char * clave = obtenerClaveExistenteEnEntrada(
+		char * claveAReemplazar = obtenerClaveExistenteEnEntrada(
 				entradaMenosUsada->numeroEntrada, listaAux);
 
-		printf("Clave a ser reemplazada: %s\n", clave);
+		printf("Clave a ser reemplazada: %s\n", claveAReemplazar);
 
 		list_destroy(listaAux);
 
-		t_list * indicesQueContienenClave = obtenerIndicesDeClave(clave);
+		t_list * indicesQueContienenClave = obtenerIndicesDeClave(
+				claveAReemplazar);
 
 		t_indice_entrada * entradaBase = list_get(indicesQueContienenClave, 0);
 
-		indiceEntrada = guardarIndiceAtomicoEnTabla(sentenciaRecibida,
+		indiceEntrada = guardarIndiceAtomicoEnTabla(clave, valor,
 				entradaBase->numeroEntrada);
 
 	} else if (strcmp(ALGORITMO_DE_REEMPLAZO, "BSU") == 0) {
@@ -306,24 +345,23 @@ t_indice_entrada * aplicarAlgoritmoDeReemplazo(t_sentencia * sentenciaRecibida) 
 	return indiceEntrada;
 }
 
-void guardarClaveValor(t_sentencia * sentenciaRecibida) {
+void guardarClaveValor(char clave[40], char * valor) {
 
 // TODO: Si no existe creo el archivo asociado a una CLAVE (vacio) para guardar los VALORES cuando sea necesario
 // char * punteroArchivo = crearArchivoParaClave(sentenciaRecibida->clave);
 
-	t_list * indicesQueContienenClave = obtenerIndicesDeClave(
-			sentenciaRecibida->clave);
+	t_list * indicesQueContienenClave = obtenerIndicesDeClave(clave);
 	int cantidadDeIndices = list_size(indicesQueContienenClave);
 	printf("Cantidad de indices que contienen clave: %d\n", cantidadDeIndices);
 
 	if (cantidadDeIndices > 0) {
-		printf("La clave '%s' ya existe...\n", sentenciaRecibida->clave);
+		printf("La clave '%s' ya existe...\n", clave);
 		// TODO: Reemplazar valor (ver logica)
 		actualizarNroDeOperacion(indicesQueContienenClave);
 	} else {
 		printf("La clave no existe... guardar...\n");
 
-		int tamanioTotalValor = strlen(sentenciaRecibida->valor);
+		int tamanioTotalValor = strlen(valor);
 
 		int entradasNecesariasParaGuardarValor =
 				cantidadDeEntradasRequeridasParaValor(tamanioTotalValor);
@@ -347,7 +385,7 @@ void guardarClaveValor(t_sentencia * sentenciaRecibida) {
 
 					t_indice_entrada * indiceEntrada = malloc(
 							sizeof(t_indice_entrada));
-					strcpy(indiceEntrada->clave, sentenciaRecibida->clave);
+					strcpy(indiceEntrada->clave, clave);
 
 					// validar que no exceda canntidad total de entradas
 					indiceEntrada->numeroEntrada = numeroEntrada;
@@ -387,10 +425,9 @@ void guardarClaveValor(t_sentencia * sentenciaRecibida) {
 
 					// guardarValorEnEntrada(sentenciaRecibida->valor,	indiceEntrada->puntero);
 
-					printf("Guardando valor: %s en puntero: %p...\n",
-							sentenciaRecibida->valor, indiceEntrada->puntero);
-					memcpy(indiceEntrada->puntero, sentenciaRecibida->valor,
-							strlen(sentenciaRecibida->valor));
+					printf("Guardando valor: %s en puntero: %p...\n", valor,
+							indiceEntrada->puntero);
+					memcpy(indiceEntrada->puntero, valor, strlen(valor));
 
 					printf("Valor guardado: %s\n", indiceEntrada->puntero);
 				}
@@ -409,25 +446,22 @@ void guardarClaveValor(t_sentencia * sentenciaRecibida) {
 				int entradasDisponibles = obtenerEntradasDisponibles();
 
 				if (entradasDisponibles != 0) {
-					indiceEntrada = guardarEnEntradaDisponible(
-							sentenciaRecibida);
+					indiceEntrada = guardarEnEntradaDisponible(clave, valor);
 				} else {
 					printf("Es necesario aplicar algoritmo de reemplazo...\n");
-					indiceEntrada = aplicarAlgoritmoDeReemplazo(
-							sentenciaRecibida);
+					indiceEntrada = aplicarAlgoritmoDeReemplazo(clave, valor);
 				}
 			} else {
 				printf("No es necesario aplicar algoritmo de reemplazo\n");
-				indiceEntrada = guardarIndiceAtomicoEnTabla(sentenciaRecibida,
+				indiceEntrada = guardarIndiceAtomicoEnTabla(clave, valor,
 						numeroEntrada);
 			}
 
 			// guardarValorEnEntrada(sentenciaRecibida->valor,indiceEntrada->puntero);
 
-			printf("Guardando valor: %s en puntero: %p...\n",
-					sentenciaRecibida->valor, indiceEntrada->puntero);
-			memcpy(indiceEntrada->puntero, sentenciaRecibida->valor,
-					strlen(sentenciaRecibida->valor));
+			printf("Guardando valor: %s en puntero: %p...\n", valor,
+					indiceEntrada->puntero);
+			memcpy(indiceEntrada->puntero, valor, strlen(valor));
 
 			printf("Valor guardado: %s\n", indiceEntrada->puntero);
 			imprimirTablaEntradas();
@@ -488,6 +522,44 @@ void * append(int fd, char * valor, size_t nbytes, void *map, size_t len) {
 
 void grabarArchivoPorPrimeraVez(int fd, char * valor, int tamanio) {
 	write(fd, valor, tamanio);
+}
+
+void recuperarClave(char clave[40]) {
+	printf("Clave a recuperar: %s\n", clave);
+
+	char * path = obtenerPathArchivo(clave);
+
+	// TODO: Modularizar el open del fd
+
+	int permisos = 0664;
+	int flags = O_RDONLY; // O_RDWR | O_CREAT | O_TRUNC ;
+
+	int fileDescriptor;
+	if ((fileDescriptor = open(path, flags, permisos)) < 0) {
+		printf("No se pudo crear el archivo: %s\n", path);
+		printf("\tFile Descriptor: %d\n", fileDescriptor);
+	} else {
+		printf("File Descriptor: %d\n", fileDescriptor);
+
+		char * valor = malloc(PACKAGESIZE);
+
+		int tamanioValor = read(fileDescriptor, valor, PACKAGESIZE);
+
+		printf("Valor recuperado: %s\n", valor);
+		printf("Tamaño del Valor recuperado: %d\n", tamanioValor);
+
+		printf("Cerrando el fileDescriptor\n");
+
+		guardarClaveValor(clave, valor);
+
+		free(valor);
+
+		if (close(fileDescriptor) == 0) {
+			printf("\tArchivo cerrado correctamente.\n");
+		} else {
+			printf("\tError en el cerrado del archivo.\n");
+		}
+	}
 }
 
 void realizarStoreDeClave(char clave[40]) {
@@ -598,6 +670,8 @@ void interpretarOperacionCoordinador(t_content_header * header,
 
 	char * punteroArchivo;
 
+	char ** clavesARecuperar;
+
 	switch (header->operacion) {
 
 	case COORDINADOR_INSTANCIA_CONFIG_INICIAL:
@@ -605,6 +679,16 @@ void interpretarOperacionCoordinador(t_content_header * header,
 		configTablaEntradas = obtenerConfigTablaEntradas(socketCoordinador);
 
 		crearTablaEntradas(configTablaEntradas);
+
+		break;
+
+	case COORDINADOR_INSTANCIA_RECUPERAR_CLAVES:
+
+		printf("Recibiendo claves a recuperar...\n");
+
+		obtenerClavesARecuperar(socketCoordinador, header->cantidad_a_leer);
+
+		enviarResultadoSentencia(socketCoordinador, 3); // TODO: Añadir al enum el keyword reconexion= 3
 
 		break;
 
@@ -617,14 +701,14 @@ void interpretarOperacionCoordinador(t_content_header * header,
 		case SET_:
 			// Imprimo tabla de entradas para verificar su estado
 
-			guardarClaveValor(sentenciaRecibida);
+			guardarClaveValor(sentenciaRecibida->clave,
+					sentenciaRecibida->valor);
 			imprimirTablaEntradas();
 			enviarResultadoSentencia(socketCoordinador, SET_);
 			break;
 
 		case STORE_:
 			realizarStoreDeClave(sentenciaRecibida->clave);
-			// Liberar el indice y la entrada
 			enviarResultadoSentencia(socketCoordinador, STORE_);
 			break;
 
@@ -636,6 +720,13 @@ void interpretarOperacionCoordinador(t_content_header * header,
 
 		}
 
+		break;
+
+	case COORDINADOR_INSTANCIA_COMPROBAR_CONEXION:
+		printf("Confirmando a coordinador conexion activa de Instancia...\n");
+
+		enviarHeader(socketCoordinador, instancia, coordinador,
+		INSTANCIA_COORDINADOR_CONFIRMA_CONEXION_ACTIVA, 0);
 		break;
 	}
 }
@@ -655,9 +746,7 @@ int main(int argc, char **argv) {
 	while (status != -1 && status != 0) {
 		switch (header->proceso_origen) {
 
-		// Recibir sentencias del coordinador
 		case coordinador:
-
 			interpretarOperacionCoordinador(header, socketCoordinador);
 			break;
 
@@ -665,11 +754,8 @@ int main(int argc, char **argv) {
 			printf(
 					"El codigo de proceso no es correcto o no esta identificado.\n");
 			break;
-
 		}
-
 		status = interpretarHeader(socketCoordinador, header);
-
 	}
 
 	close(socketCoordinador);
