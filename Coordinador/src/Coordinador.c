@@ -86,6 +86,9 @@ rta_envio enviarSentenciaInstancia(t_sentencia * sentencia){
 //	sem_wait(&semInstancias);
 	//header_rta_instancia = recv(proxima->socket,cod_rta,sizeof(int), 0);
 	header_rta_instancia = recv(proxima->socket,rta_instancia,sizeof(t_respuesta_instancia), 0);
+
+	actualizarEntradasLibres(proxima->nombre,rta_instancia->entradas_libres);//TODO debería ser lo mismo actualizar el campo de "proxima"
+
 	//sem_post(&semInstancias);
 	rta.cod= rta_instancia->rdo_operacion;
 	log_info(logger, "Rta Instancia %srespuesta: - %d - %d - entradas libres: %d",proxima->nombre,rta.cod,rta_instancia->rdo_operacion,rta_instancia->entradas_libres);

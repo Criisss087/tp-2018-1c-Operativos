@@ -115,6 +115,35 @@ void enviarConfiguracionInicial(int socketInstancia){
 
 }
 
+t_instancia * getInstanciaByName(char * nombre){
+	int mismoNombre(t_instancia * instancia){return string_equals_ignore_case(instancia->nombre, nombre);}
+	return list_find(lista_instancias,*mismoNombre);
+}
+
+void actualizarEntradasLibres(char * nombre, int entradas_libres){
+	int actualizarEntradasLibresCondicional(t_instancia * t_i){
+		if (string_equals_ignore_case(t_i->nombre, nombre)){
+			t_i->entradas_libres = entradas_libres;
+		}
+	}
+	log_warning(logger,"cantidad en instancia: %d",getInstanciaByName(nombre)->entradas_libres);
+	list_map(lista_instancias,*actualizarEntradasLibresCondicional);
+	log_warning(logger,"cantidad en instancia despuesde actualizar: %d",getInstanciaByName(nombre)->entradas_libres);
+}
+
+
+void actualizarSocketInstancia(char * nombre, int socket){
+	int actualizarSocketInstanciaCondicional(t_instancia * t_i){
+		if (string_equals_ignore_case(t_i->nombre, nombre)){
+			t_i->socket = socket;
+		}
+	}
+	log_warning(logger,"socket de instancia: %d",getInstanciaByName(nombre)->socket);
+	list_map(lista_instancias,*actualizarSocketInstanciaCondicional);
+	log_warning(logger,"sokcet en instancia despuesde actualizar: %d",getInstanciaByName(nombre)->socket);
+}
+
+
 int existe(char *nombre){
 	int mismoNombre(t_instancia * instancia){return string_equals_ignore_case(instancia->nombre, nombre);}
 	return list_any_satisfy(lista_instancias, *mismoNombre);
@@ -130,6 +159,7 @@ t_list * getClavesAsignadas(char *nombre){
 void guardarEnListaDeInstancias(int socketInstancia, char *nombre){
 	if (existe(nombre)){
 		log_info(logger,"existia instancia");
+		actualizarSocketInstancia(nombre,socketInstancia);
 		//Enviar lista de claves asignadas a la instancia
 		t_list * claves_asignadas =  getClavesAsignadas(nombre);
 		t_content_header * header = crear_cabecera_mensaje(coordinador,instancia,COORDINADOR_INSTANCIA_CLAVES, list_size(claves_asignadas));
@@ -160,6 +190,8 @@ void guardarEnListaDeInstancias(int socketInstancia, char *nombre){
 			send(socketInstancia,cl,40,0);
 			i++;
 		}
+
+		//espero respuesta de instancia para
 		/*
 		for (int i = 0; list_size(claves_asignadas)>i;i++){
 			printf("enviando '%s'", array_claves[i]);
@@ -178,6 +210,7 @@ void guardarEnListaDeInstancias(int socketInstancia, char *nombre){
 		nueva->id= nuevoIDInstancia();
 		nueva->socket = socketInstancia;
 		nueva->nombre = strdup(nombre);
+		nueva->entradas_libres = CANT_MAX_ENTRADAS;
 		list_add(lista_instancias, nueva);
 		log_info(logger,"Guardada Instancia: %s", nombre);
 	}

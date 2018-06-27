@@ -66,6 +66,7 @@ typedef struct{
 	int socket;
 	int id;
 	char * nombre;
+	int entradas_libres;
 } t_instancia;
 
 typedef struct{
