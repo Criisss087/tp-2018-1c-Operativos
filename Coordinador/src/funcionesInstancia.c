@@ -191,7 +191,15 @@ void guardarEnListaDeInstancias(int socketInstancia, char *nombre){
 			i++;
 		}
 
-		//espero respuesta de instancia para
+		//espero respuesta de instancia para ver cuanto espacio libre tiene y actualizar
+		t_content_header * head_inst = malloc(sizeof(t_content_header));
+		int status_recv_header = recv(socketInstancia, head_inst, sizeof(t_content_header),0);
+
+		t_respuesta_instancia * rta_inst = malloc(sizeof(t_respuesta_instancia));
+
+		int status_recv_rta_instancia = recv(socketInstancia, rta_inst, sizeof(t_content_header),0);
+
+		actualizarEntradasLibres(nombre,rta_inst->entradas_libres);
 		/*
 		for (int i = 0; list_size(claves_asignadas)>i;i++){
 			printf("enviando '%s'", array_claves[i]);
