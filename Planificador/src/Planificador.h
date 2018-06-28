@@ -81,6 +81,9 @@ enum sentencias { GET, SET, STORE };
 //Estado de la ejecución de ESI según comando de la consola (Pausa/Continuar)
 enum estado_pausa_ejec { no_pausado, pausado };
 
+//
+enum tipo_logueo { escribir, loguear, escribir_loguear, l_info, l_warning, l_error, l_debug };
+
 /**********************************************/
 /* ESTUCTURAS								  */
 /**********************************************/
@@ -189,6 +192,7 @@ void desalojar_ejecucion(void);
 void leer_configuracion_desde_archivo(char* path_archivo);
 void configurar_signals(void);
 void captura_sigpipe(int signo);
+void logger_planificador(int tipo_esc, int tipo_log, const char* mensaje, ...);
 
 //Utilidades para la consola
 int consola_derivar_comando(char * buffer);

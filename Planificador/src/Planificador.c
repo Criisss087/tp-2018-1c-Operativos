@@ -18,8 +18,9 @@ int main(int argc, char **argv) {
 	char read_buffer[MAX_LINEA];
 	struct timeval tv = {0, 500};
 
-	logger = log_create("Log_Planificador.txt", "Planificador", true,LOG_LEVEL_TRACE);
-	log_trace(logger,"Iniciando Planificador...");
+	//Parametro booleano indica si muestra por pantalla el log o no.
+	logger = log_create("Log_Planificador.txt", "Planificador", true, LOG_LEVEL_TRACE);
+	log_trace(logger, "Iniciando Planificador...");
 
 	configurar_signals();
 	crear_listas_planificador();
@@ -1951,3 +1952,42 @@ void captura_sigpipe(int signo)
     }
 }
 
+void logger_planificador(int tipo_esc, int tipo_log, const char* mensaje, ...){
+
+	char *msj_salida = malloc(sizeof(char) * 256);
+
+	//Captura los argumentos en una lista
+	va_list args;
+	va_start(args, mensaje);
+
+	//Arma el mensaje formateado con sus argumentos en msj_salida.
+	vsprintf(msj_salida, mensaje, args);
+
+	//ESCRIBE POR PANTALLA
+	if((tipo_esc == escribir) || (tipo_esc == escribir_loguear)){
+		printf(msj_salida);
+		printf("\n");
+	}
+
+	//LOGUEA
+	if((tipo_esc == loguear) || (tipo_esc == escribir_loguear)){
+
+		if(tipo_log == l_info){
+			log_info(logger, msj_salida);
+		}
+		else if(tipo_log == l_warning){
+			log_warning(logger, msj_salida);
+		}
+		else if(tipo_log == l_error){
+			log_error(logger, msj_salida);
+		}
+		else if(tipo_log == l_debug){
+			log_debug(logger, msj_salida);
+		}
+	}
+
+	va_end(args);
+	free(msj_salida);
+
+	return;
+}
