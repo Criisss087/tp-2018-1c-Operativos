@@ -57,7 +57,7 @@ enum {ERROR_I,EXITO_I,COMPACTAR};
 //Rta Coordinador ESI Planificador
 enum {CORRECTO, CLAVE_BLOQUEADA, ABORTAR, LISTO};
 //Operaciones de sentencias (keywords)
-enum{GET_,SET_,STORE_};
+enum{GET_,SET_,STORE_,RECONEXION,OBTENER_VALOR};
 
 
 /**********************************************/
