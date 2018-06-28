@@ -382,6 +382,25 @@ int recibir_mensaje_coordinador(int coord_socket)
 		free(consulta_bloqueo);
 	}
 
+	// RECIBE STATUS DE CLAVE
+	if(content_header->operacion == OPERACION_STATUS_CLAVE){
+
+		t_status_clave st_clave = malloc(sizeof(t_status_clave));
+
+		read_size = recv(coord_socket, st_clave, sizeof(t_status_clave), 0);
+		if(read_size < 0)
+		{
+			logger_planificador(escribir_loguear, l_error, "Error al recibir el status de la clave desde el Coordinador");
+
+			//TODO Evaluar qué hacer
+			//terminar_planificador();
+			//exit(EXIT_FAILURE);
+		}
+		else{
+			status_clave(st_clave);
+		}
+	}
+
 	destruir_cabecera_mensaje(content_header);
 
 	return read_size;
@@ -918,13 +937,21 @@ void consola_matar_proceso(char* id)
 	return;
 }
 
-void consola_consultar_status_clave(char* nombre_clave)
+void consola_consultar_status_clave(char* clave_nombre)
 {
-	if(nombre_clave == NULL){
+	if(clave_nombre == NULL){
 		log_warning(logger,"CONSOLA> Parametros incorrectos (status <clave>)");
-		return;
+	}
+	else{
+		log_info(logger,"CONSOLA> COMANDO Status para clave: %s.", clave_nombre);
+		enviar_clave_coordinador(clave_nombre);
 	}
 
+	return;
+}
+
+void status_clave(t_status_clave* clave_st)
+{
 	/*
 	 status	clave: Con el objetivo de conoce el estado de una clave y de probar la correcta distribución de las mismas se deberan obtener los siguiente valores: (Este comando se utilizara para probar el sistema)
 	-Valor, en caso de no poseer valor un mensaje quec lo indique.
@@ -933,14 +960,11 @@ void consola_consultar_status_clave(char* nombre_clave)
 	-ESIs bloqueados a la espera de dicha clave.
 	 */
 
-	log_info(logger,"CONSOLA> COMANDO Status para clave: %s.", nombre_clave);
-
 	// TODO Obtener status del Coordinador.
 	// 1. Send al Coordinador pasándole la petición y la clave.
 	// 2. Recv de la estructura de consulta de status de clave.
-	t_status_clave* clave_st = NULL;
 
-	clave_st = malloc(sizeof(t_status_clave));
+	//clave_st = malloc(sizeof(t_status_clave));
 
 	//TODO Inicializado dummy - ELIMINAR
 	clave_st->valor = strdup("TraemeLaCopa");
@@ -949,16 +973,16 @@ void consola_consultar_status_clave(char* nombre_clave)
 
 	//VALOR
 	if(clave_st->valor != NULL){
-		log_info(logger,"-Valor de la clave %s: %s.", nombre_clave, clave_st->valor);
+		log_info(logger,"-Valor de la clave %s: %s.", clave_st->nombre, clave_st->valor);
 	}
 	else{
-		log_info(logger,"-La clave %s NO tiene VALOR.", nombre_clave);
+		log_info(logger,"-La clave %s NO tiene VALOR.", clave_st->nombre);
 	}
 
 	//INSTANCIA ACTUAL
 	log_info(logger, "PRE Instancia Actual.");
 	if(clave_st->instancia_actual != NULL){
-		log_info(logger,"-Instancia actual de la clave %s: %s.", nombre_clave, clave_st->instancia_actual);
+		log_info(logger,"-Instancia actual de la clave %s: %s.", clave_st->nombre, clave_st->instancia_actual);
 	}
 	//TODO Eliminar el ELSE
 	else{
@@ -968,20 +992,20 @@ void consola_consultar_status_clave(char* nombre_clave)
 	//INSTANCIA EN QUE SE GUARDARÍA LA CLAVE
 	// TODO Revisar
 	if(clave_st->instancia_guardado_distr != NULL){
-		log_info(logger,"-Instancia en que se guardaría la clave %s: %s.", nombre_clave, clave_st->instancia_guardado_distr);
+		log_info(logger,"-Instancia en que se guardaría la clave %s: %s.", clave_st->nombre, clave_st->instancia_guardado_distr);
 	}
 	//TODO Eliminar el ELSE
 	else{
-		log_info(logger,"instancia_guardado_distr ES NULL");
+		log_info(logger, "instancia_guardado_distr ES NULL");
 	}
 
 	//ESIs bloqueados por la clave
 	t_list* lista_esis_bloq_por_clave;
 
 	log_info(logger,"PRE calcular lista de ESIs bloqueados por clave.");
-	lista_esis_bloq_por_clave = esis_bloqueados_por_clave(nombre_clave);
+	lista_esis_bloq_por_clave = esis_bloqueados_por_clave(clave_st->nombre);
 
-	log_info(logger,"-Listado de ESIs bloqueados por clave %s: ", nombre_clave);
+	log_info(logger,"-Listado de ESIs bloqueados por clave %s: ", clave_st->nombre);
 	mostrar_esis_consola(lista_esis_bloq_por_clave);
 
 	return;
@@ -1269,6 +1293,37 @@ int enviar_resultado_consulta(int socket, int resultado)
 	}
 
 	free(res);
+	destruir_cabecera_mensaje(header);
+	return res_send;
+}
+
+int enviar_clave_coordinador(char* clave_nombre){
+
+	//TODO Ver qué sizeof mandar.
+	t_content_header * header = crear_cabecera_mensaje(planificador, coordinador, OPERACION_STATUS_CLAVE, sizeof(t_confirmacion_sentencia));
+
+	char* body = malloc(sizeof(char)*50);
+
+	body = strdup(clave_nombre);
+
+	logger_planificador(loguear, l_info, "Envío consulta de status por clave %s.", body);
+
+	//TODO Crear configuracion socket nuevo hilo de Coordinador
+	int socket_coordinador_cmd_status = NULL;
+
+	int res_send = send(socket_coordinador_cmd_status, header, sizeof(t_content_header), 0);
+	if(res_send < 0)
+	{
+		log_error(logger, "Error en send header al Coordinador.");
+	}
+
+	res_send = send(socket_coordinador_cmd_status, body, sizeof(char)*50, 0);
+	if(res_send < 0)
+	{
+		log_error(logger, "Error en send body al Coordinador.");
+	}
+
+	free(body);
 	destruir_cabecera_mensaje(header);
 	return res_send;
 }

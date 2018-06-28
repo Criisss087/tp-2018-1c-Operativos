@@ -64,6 +64,7 @@
 #define OPERACION_HANDSHAKE_COORD 1
 #define OPERACION_CONSULTA_CLAVE_COORD 2
 #define OPERACION_RES_CLAVE_COORD 3
+#define OPERACION_STATUS_CLAVE 4
 
 
 //Enumeracion de los comandos de la consola
@@ -142,6 +143,7 @@ typedef struct consulta_bloqueo t_consulta_bloqueo;
 
 //Estructura para consultar con el Coordinador el status de una clave
 struct status_clave{
+	char* nombre;
 	char* valor;
 	char* instancia_actual;
 	char* instancia_guardado_distr;
