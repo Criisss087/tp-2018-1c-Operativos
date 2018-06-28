@@ -63,3 +63,10 @@ dkms.conf
 # Ejecutables de ReDistinto
 dummyclient
 coordinador
+/.metadata/
+
+#Miscelaneos
+*.xml
+*.settings.xml
+*.settings
+.settings/

@@ -81,6 +81,9 @@ enum sentencias { GET, SET, STORE };
 //Estado de la ejecución de ESI según comando de la consola (Pausa/Continuar)
 enum estado_pausa_ejec { no_pausado, pausado };
 
+//
+enum tipo_logueo { escribir, loguear, escribir_loguear, l_info, l_warning, l_error, l_debug };
+
 /**********************************************/
 /* ESTUCTURAS								  */
 /**********************************************/
@@ -99,6 +102,8 @@ struct pcb_esi {
 	float estimacion_anterior;
 	int instruccion_actual;
 	int ejec_anterior;			// 1 Si en la siguiente corrida debe ejectar denuevo la ultima instruccion
+	int tiempo_espera;
+	float response_ratio;
 	t_conexion_esi * conexion;
 	char * clave_bloqueo;
 };
@@ -195,6 +200,7 @@ void desalojar_ejecucion(void);
 void leer_configuracion_desde_archivo(char* path_archivo);
 void configurar_signals(void);
 void captura_sigpipe(int signo);
+void logger_planificador(int tipo_esc, int tipo_log, const char* mensaje, ...);
 
 //Utilidades para la consola
 int consola_derivar_comando(char * buffer);
@@ -233,7 +239,10 @@ t_pcb_esi * sacar_esi_de_lista_pid(t_list *lista,int pid);
 t_pcb_esi * buscar_esi_bloqueado_por_clave(char* clave);
 t_pcb_esi * sacar_esi_bloqueado_por_clave(char* clave);
 void ordenar_lista_estimacion(t_list * lista);
+void ordenar_lista_response_ratio(t_list * lista);
 int estimar_esi(t_pcb_esi * esi);
+void aumentar_tiempo_espera_ready(void);
+void calcular_response_ratio(t_pcb_esi* esi);
 int confirmar_bloqueo_ejecucion(void);
 int confirmar_desalojo_ejecucion(void);
 int confirmar_pausa_por_consola(void);
