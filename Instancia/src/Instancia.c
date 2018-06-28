@@ -816,6 +816,8 @@ int main(int argc, char **argv) {
 		status = interpretarHeader(socketCoordinador, header);
 	}
 
+	pthread_cancel(&(threadId[1]));
+
 	close(socketCoordinador);
 
 	return 0;
