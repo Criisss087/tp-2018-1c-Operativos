@@ -12,6 +12,7 @@
 #include <stdlib.h>
 #include <redis_lib.h>
 #include <stdio.h>
+#include <unistd.h> // Para el uso de usleep()
 #include <string.h>
 #include <arpa/inet.h>
 #include <sys/socket.h>
@@ -22,6 +23,7 @@
 #include <sys/types.h>
 #include <errno.h>
 #include <fcntl.h>
+#include <pthread.h>
 
 #include "CargarArchivoDeConfiguracion.c"
 
@@ -64,6 +66,9 @@ typedef struct{
 	int nroDeOperacion;
 	char* puntero;
 } __attribute__((packed)) t_indice_entrada;
+
+// Cantidad de threads requeridos: principal + auxiliar para efectuar DUMP
+pthread_t threadId[2];
 
 int numeroEntrada = 0;
 int contadorOperacion = 0;

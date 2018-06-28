@@ -769,6 +769,20 @@ void interpretarOperacionCoordinador(t_content_header * header,
 	}
 }
 
+void iniciarDump() {
+	while(1){
+		usleep(INTERVALO_DUMP);
+		printf("#################################################\n");
+		printf("#           Comenzando proceso Dump...          #\n");
+		printf("#################################################\n");
+
+		// hacerDump();
+		printf("#################################################\n");
+		printf("#          Dump realizado correctamente.        #\n");
+		printf("#################################################\n");
+	}
+}
+
 int main(int argc, char **argv) {
 
 	cargarArchivoDeConfig(argv[1]);
@@ -777,6 +791,12 @@ int main(int argc, char **argv) {
 
 	enviarNombreInstanciaACoordinador(socketCoordinador);
 
+	int err = pthread_create(&(threadId[1]), NULL, &iniciarDump , NULL);
+        if (err != 0)
+            printf("No se pudo crear el thread para DUMP: [%s]\n", strerror(err));
+        else
+            printf("Thread para DUMP creado correctamente\n");
+	
 	t_content_header * header = malloc(sizeof(t_content_header));
 	int status = 1;
 
