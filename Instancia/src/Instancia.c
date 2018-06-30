@@ -411,7 +411,7 @@ t_indice_entrada * guardarIndiceNoAtomicoEnTabla(char clave[40], char * valor,
 	return indiceBase;
 }
 
-void actualizarEntradasConNuevoValor(char clave[40] , char * valor) {
+void actualizarEntradasConNuevoValor(char clave[40], char * valor) {
 	t_list * indices = obtenerIndicesDeClave(clave);
 	t_indice_entrada * indiceBase = list_get(indices, 0);
 	eliminarEntradasAsociadasAClave(clave);
@@ -436,14 +436,17 @@ void guardarClaveValor(char clave[40], char * valor) {
 	if (cantidadDeIndices > 0) {
 		printf("La clave '%s' ya existe. Reemplazar entrada/s...\n", clave);
 
-		int entradasNecesarias = cantidadDeEntradasRequeridasParaValor(strlen(valor));
+		int entradasNecesarias = cantidadDeEntradasRequeridasParaValor(
+				strlen(valor));
 
 		if (entradasNecesarias > cantidadDeIndices) {
-			printf("SET no podra hacer que se ocupen mas entradas (enunciado)\n");
+			printf(
+					"SET no podra hacer que se ocupen mas entradas (enunciado)\n");
 			// TODO: devolver error al Coordinador
 		} else {
-				printf("Actualizando entradas existentes con nuevo valor: %s\n", valor);
-				actualizarEntradasConNuevoValor(clave , valor);
+			printf("Actualizando entradas existentes con nuevo valor: %s\n",
+					valor);
+			actualizarEntradasConNuevoValor(clave, valor);
 		}
 
 		actualizarNroDeOperacion(indicesQueContienenClave);
@@ -463,7 +466,8 @@ void guardarClaveValor(char clave[40], char * valor) {
 				t_indice_entrada * indiceBase = guardarIndiceNoAtomicoEnTabla(
 						clave, valor, numeroEntrada);
 
-				numeroEntrada = numeroEntrada + entradasNecesariasParaGuardarValor;
+				numeroEntrada = numeroEntrada
+						+ entradasNecesariasParaGuardarValor;
 
 				// guardarValorEnEntrada(sentenciaRecibida->valor,	indiceEntrada->puntero);
 
@@ -532,13 +536,13 @@ void make_directory(const char* name) {
 
 char * obtenerPathArchivo(char clave[40]) {
 	char * puntoDeMontaje = strdup(PUNTO_DE_MONTAJE);
-	printf("Directorio donde se guardara el archivo: %s\n", puntoDeMontaje);
+	// printf("Directorio donde se guardara el archivo: %s\n", puntoDeMontaje);
 
 	char * archivo;
 	archivo = string_new();
 	string_append(&archivo, clave);
 	string_append(&archivo, ".txt");
-	printf("Nombre del archivo que se creara: %s\n", archivo);
+	// printf("Nombre del archivo que se creara: %s\n", archivo);
 
 	char * path = string_new();
 	string_append(&path, puntoDeMontaje);
@@ -620,9 +624,12 @@ void realizarStoreDeClave(char clave[40]) {
 
 	t_list * indices = obtenerIndicesDeClave(clave);
 
-	actualizarNroDeOperacion(indices);
+	if (pthread_self() == threadId[0]) {
+		// En caso de ser el hilo DUMP, no quiero actualizar operacion
+		actualizarNroDeOperacion(indices);
 
-	imprimirTablaEntradas();
+		imprimirTablaEntradas();
+	}
 
 	t_indice_entrada * primerEntrada = list_get(indices, 0);
 
@@ -648,7 +655,7 @@ void realizarStoreDeClave(char clave[40]) {
 
 	if (punteroDeArchivo != MAP_FAILED) {
 		printf("El Mapeo se efectuo correctamente\n\n");
-		printf("Puntero de archivo: %p\n", punteroDeArchivo);
+		// printf("\tPuntero de archivo: %p\n", punteroDeArchivo);
 	} else {
 		printf("Error en el Mapeo de archivo\n");
 		switch (errno) {
@@ -769,14 +776,23 @@ void interpretarOperacionCoordinador(t_content_header * header,
 	}
 }
 
+void ejecutarDump() {
+	void storearClave(t_indice_entrada * entrada) {
+		realizarStoreDeClave(entrada->clave);
+	}
+
+	list_iterate(l_indice_entradas, (void*) storearClave);
+}
+
 void iniciarDump() {
-	while(1){
-		usleep(INTERVALO_DUMP);
+	while (1) {
+		usleep(INTERVALO_DUMP * 1000000); // El producto es necesario ya que usleep recibe microsegundos como parametro
 		printf("#################################################\n");
 		printf("#           Comenzando proceso Dump...          #\n");
 		printf("#################################################\n");
 
-		// hacerDump();
+		ejecutarDump();
+
 		printf("#################################################\n");
 		printf("#          Dump realizado correctamente.        #\n");
 		printf("#################################################\n");
@@ -791,12 +807,12 @@ int main(int argc, char **argv) {
 
 	enviarNombreInstanciaACoordinador(socketCoordinador);
 
-	int err = pthread_create(&(threadId[1]), NULL, &iniciarDump , NULL);
-        if (err != 0)
-            printf("No se pudo crear el thread para DUMP: [%s]\n", strerror(err));
-        else
-            printf("Thread para DUMP creado correctamente\n");
-	
+	int err = pthread_create(&(threadId[1]), NULL, &iniciarDump, NULL);
+	if (err != 0)
+		printf("No se pudo crear el thread para DUMP: [%s]\n", strerror(err));
+	else
+		printf("Thread para DUMP creado correctamente\n");
+
 	t_content_header * header = malloc(sizeof(t_content_header));
 	int status = 1;
 
