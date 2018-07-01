@@ -94,7 +94,7 @@ rta_envio enviarSentenciaInstancia(t_sentencia * sentencia){
 	log_info(logger, "Rta Instancia %srespuesta: - %d - %d - entradas libres: %d",proxima->nombre,rta.cod,rta_instancia->rdo_operacion,rta_instancia->entradas_libres);
 	//Si estoy pidiendo el valor de la clave, recibo la clave:
 	//GET - Sé que no tiene que ir a la instancia. Voy a usar este código cuando necesite sabes el valor de la clave
-	if (sentencia->keyword == GET_){
+	if (sentencia->keyword == OBTENER_VALOR){
 		char * valor = malloc(header->cantidad_a_leer);
 		header_rta_instancia = recv(proxima->socket,valor,header->cantidad_a_leer, 0);
 		rta.valor = strdup(valor);
@@ -318,7 +318,7 @@ void indicarCompactacionATodasLasInstancias(){
 void proseguirOperacionNormal(int socketCliente, t_sentencia * sentencia_con_punteros){
 	//printf("adsf");
 	switch(sentencia_con_punteros->keyword){
-	case GET_:
+	case OBTENER_VALOR:
 		//guardarClaveInternamente(sentencia_con_punteros->clave); ya guardé cuando chequeé si podia ejecutar
 		devolverCodigoResultadoAESI(socketCliente, CORRECTO, sentencia_con_punteros->pid , esi);
 		//Ya pregunté anteriormente al planificador, y ya la bloqueó
