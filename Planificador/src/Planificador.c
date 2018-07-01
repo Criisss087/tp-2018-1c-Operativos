@@ -20,7 +20,9 @@ int main(int argc, char **argv) {
 
 	//Parametro booleano indica si muestra por pantalla el log o no.
 	logger = log_create("Log_Planificador.txt", "Planificador", true, LOG_LEVEL_TRACE);
-	log_trace(logger, "Iniciando Planificador...");
+	//log_trace(logger, "Iniciando Planificador...");
+	logger_planificador(escribir_loguear, l_info,"Iniciando Planificador...");
+
 
 	configurar_signals();
 	crear_listas_planificador();
@@ -140,7 +142,7 @@ int main(int argc, char **argv) {
 					if (FD_ISSET(conexiones_esi[i].socket, &readset)) {
 						if(recibir_mensaje_esi(conexiones_esi[i]) == 0)
 						{
-							finalizar_esi(conexiones_esi[i].pid);
+							finalizar_esi(conexiones_esi[i].pid,liberar);
 							planificar();
 							continue;
 						}
@@ -150,7 +152,7 @@ int main(int argc, char **argv) {
 					if (FD_ISSET(conexiones_esi[i].socket, &exepset)) {
 						if(recibir_mensaje_esi(conexiones_esi[i]) == 0)
 						{
-							finalizar_esi(conexiones_esi[i].pid);
+							finalizar_esi(conexiones_esi[i].pid,liberar);
 							planificar();
 							continue;
 						}
@@ -403,8 +405,9 @@ int recibir_mensaje_esi(t_conexion_esi conexion_esi)
 	log_warning(logger,"resultado recv %d! errno %d",read_size,errno);
 	if(read_size < 0)
 	{
+		free(content_header);
 		log_error(logger,"Hubo un error en recv con esi %d",conexion_esi.pid);
-		finalizar_esi(conexion_esi.pid);
+		finalizar_esi(conexion_esi.pid,no_liberar);
 		return read_size;
 	}
 
@@ -419,8 +422,9 @@ int recibir_mensaje_esi(t_conexion_esi conexion_esi)
 		log_warning(logger,"resultado recv %d! errno %d",read_size,errno);
 		if(read_size < 0)
 		{
+			free(confirmacion);
 			log_error(logger,"Hubo un error en recv con esi %d",conexion_esi.pid);
-			finalizar_esi(conexion_esi.pid);
+			finalizar_esi(conexion_esi.pid,no_liberar);
 			return read_size;
 		}
 
@@ -471,7 +475,7 @@ int recibir_mensaje_esi(t_conexion_esi conexion_esi)
 		else if(confirmacion->resultado == LISTO){
 
 			esi_aux = esi_en_ejecucion;
-			finalizar_esi(esi_aux->pid);
+			finalizar_esi(esi_aux->pid,liberar);
 
 		}
 		else if(confirmacion->resultado == CLAVE_BLOQUEADA){
@@ -497,7 +501,7 @@ int recibir_mensaje_esi(t_conexion_esi conexion_esi)
 		else if(confirmacion->resultado == ABORTAR){
 
 			esi_aux = esi_en_ejecucion;
-			finalizar_esi(esi_aux->pid);
+			finalizar_esi(esi_aux->pid,no_liberar);
 		}
 
 		free(confirmacion);
@@ -928,7 +932,7 @@ void consola_matar_proceso(char* id)
 			return;
 		}
 
-		if (!finalizar_esi(pid))
+		if (!finalizar_esi(pid,liberar))
 		{
 			log_info(logger,"ESI de ID %d Finalizado",pid);
 			enviar_confirmacion_kill(pid);
@@ -1557,7 +1561,7 @@ int confirmar_desalojo_ejecucion(void)
 	return 1;
 }
 
-int finalizar_esi(int pid_esi)
+int finalizar_esi(int pid_esi, int liberar)
 {
 	t_pcb_esi * esi_aux;
 
@@ -1584,8 +1588,11 @@ int finalizar_esi(int pid_esi)
 		/*
 		 * Si el esi tenia recursos tomados, debo liberarlos todos
 		 */
+		if(liberar)
+		{
+			desbloquear_claves_bloqueadas_pid(esi_aux->pid);
+		}
 
-		desbloquear_claves_bloqueadas_pid(esi_aux->pid);
 
 		if(esi_aux->clave_bloqueo!=NULL)
 		{
@@ -1792,7 +1799,7 @@ int confirmar_pausa_por_consola(){
 int confirmar_kill_ejecucion(void){
 
 	enviar_confirmacion_kill(esi_en_ejecucion->pid);
-	finalizar_esi(esi_en_ejecucion->pid);
+	finalizar_esi(esi_en_ejecucion->pid,liberar);
 
 	return 0;
 }
@@ -1924,11 +1931,19 @@ void configurar_signals(void)
 {
 	struct sigaction signal_struct;
 	signal_struct.sa_handler = captura_sigpipe;
-	signal_struct.sa_flags   = 0;    /* no options being used */
+	signal_struct.sa_flags   = 0;
 
 	sigemptyset(&signal_struct.sa_mask);
-	sigaddset(&signal_struct.sa_mask, SIGINT);
+
+	sigaddset(&signal_struct.sa_mask, SIGPIPE);
     if (sigaction(SIGPIPE, &signal_struct, NULL) < 0)
+    {
+        fprintf(stderr, "sigaction error\n");
+        exit(1);
+    }
+
+    sigaddset(&signal_struct.sa_mask, SIGINT);
+    if (sigaction(SIGINT, &signal_struct, NULL) < 0)
     {
         fprintf(stderr, "sigaction error\n");
         exit(1);
@@ -1940,16 +1955,18 @@ void captura_sigpipe(int signo)
 {
     int i;
 
-    printf("Caught SIGPIPE.\n");
-    printf("    This signal handler will execute for 4 seconds\n");
-    printf("    See what happens if you press Ctrl-C (SIGINT) during\n");
-    printf("    this time...\n");
-
-    for (i = 4; i >= 0; i--)
+    if(signo == SIGINT)
     {
-        printf("%d\n", i);
-        sleep(1);
+
+    	logger_planificador(escribir,l_error,"\nApretaste ctrl+c, ayudante malo, dejame terminar bien\n");
+    	terminar_planificador();
+    	exit(EXIT_FAILURE);
     }
+    else if(signo == SIGPIPE)
+    {
+    	logger_planificador(escribir,l_error,"\nSe perdió la conexión con el ESI, %d\n",esi_en_ejecucion->pid);
+    }
+
 }
 
 void logger_planificador(int tipo_esc, int tipo_log, const char* mensaje, ...){
@@ -1965,7 +1982,7 @@ void logger_planificador(int tipo_esc, int tipo_log, const char* mensaje, ...){
 
 	//ESCRIBE POR PANTALLA
 	if((tipo_esc == escribir) || (tipo_esc == escribir_loguear)){
-		printf(msj_salida);
+		printf("%s",msj_salida);
 		printf("\n");
 	}
 

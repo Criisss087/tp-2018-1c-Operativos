@@ -84,6 +84,7 @@ enum estado_pausa_ejec { no_pausado, pausado };
 //
 enum tipo_logueo { escribir, loguear, escribir_loguear, l_info, l_warning, l_error, l_debug };
 
+enum liberar_recursos{no_liberar,liberar};
 /**********************************************/
 /* ESTUCTURAS								  */
 /**********************************************/
@@ -237,7 +238,7 @@ int confirmar_desalojo_ejecucion(void);
 int confirmar_pausa_por_consola(void);
 int confirmar_kill_ejecucion(void);
 void enviar_confirmacion_kill(int pid);
-int finalizar_esi(int pid_esi);
+int finalizar_esi(int pid_esi, int liberar);
 
 //Manejo de Coordinador
 int recibir_mensaje_coordinador(int coord_socket);
