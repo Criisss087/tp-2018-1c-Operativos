@@ -283,6 +283,7 @@ int recibir_mensaje_coordinador(int coord_socket)
 	if(read_size < 0)
 	{
 		log_error(logger,"Error al recibir la cabecera de un mensaje con el Coordinador :(");
+		destruir_cabecera_mensaje(content_header);
 		terminar_planificador();
 		exit(EXIT_FAILURE);
 	}
@@ -305,6 +306,7 @@ int recibir_mensaje_coordinador(int coord_socket)
 		if(read_size < 0)
 		{
 			log_error(logger,"Error al recibir consulta de bloqueo desde el Coordinador");
+			free(consulta_bloqueo);
 			terminar_planificador();
 			exit(EXIT_FAILURE);
 		}
