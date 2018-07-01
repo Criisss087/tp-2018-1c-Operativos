@@ -99,7 +99,7 @@ case STORE_:
 	printf("\tResultado de ejecucion enviado: %d\n", resultadoEjecucion);
 	printf("--------------------------------------------------------\n");
 	break;
-case 3: // Keyword de reconexion
+case COORDINADOR_INSTANCIA_RECUPERAR_CLAVES:
 	enviarHeader(socketCoordinador, instancia, coordinador,
 	INSTANCIA_COORDINADOR_RESPUESTA_SENTENCIA, sizeof(int));
 	printf(
@@ -411,7 +411,7 @@ t_indice_entrada * guardarIndiceNoAtomicoEnTabla(char clave[40], char * valor,
 	return indiceBase;
 }
 
-void actualizarEntradasConNuevoValor(char clave[40] , char * valor) {
+void actualizarEntradasConNuevoValor(char clave[40], char * valor) {
 	t_list * indices = obtenerIndicesDeClave(clave);
 	t_indice_entrada * indiceBase = list_get(indices, 0);
 	eliminarEntradasAsociadasAClave(clave);
@@ -436,14 +436,17 @@ void guardarClaveValor(char clave[40], char * valor) {
 	if (cantidadDeIndices > 0) {
 		printf("La clave '%s' ya existe. Reemplazar entrada/s...\n", clave);
 
-		int entradasNecesarias = cantidadDeEntradasRequeridasParaValor(strlen(valor));
+		int entradasNecesarias = cantidadDeEntradasRequeridasParaValor(
+				strlen(valor));
 
 		if (entradasNecesarias > cantidadDeIndices) {
-			printf("SET no podra hacer que se ocupen mas entradas (enunciado)\n");
+			printf(
+					"SET no podra hacer que se ocupen mas entradas (enunciado)\n");
 			// TODO: devolver error al Coordinador
 		} else {
-				printf("Actualizando entradas existentes con nuevo valor: %s\n", valor);
-				actualizarEntradasConNuevoValor(clave , valor);
+			printf("Actualizando entradas existentes con nuevo valor: %s\n",
+					valor);
+			actualizarEntradasConNuevoValor(clave, valor);
 		}
 
 		actualizarNroDeOperacion(indicesQueContienenClave);
@@ -463,7 +466,8 @@ void guardarClaveValor(char clave[40], char * valor) {
 				t_indice_entrada * indiceBase = guardarIndiceNoAtomicoEnTabla(
 						clave, valor, numeroEntrada);
 
-				numeroEntrada = numeroEntrada + entradasNecesariasParaGuardarValor;
+				numeroEntrada = numeroEntrada
+						+ entradasNecesariasParaGuardarValor;
 
 				// guardarValorEnEntrada(sentenciaRecibida->valor,	indiceEntrada->puntero);
 
@@ -729,7 +733,8 @@ void interpretarOperacionCoordinador(t_content_header * header,
 
 		obtenerClavesARecuperar(socketCoordinador, header->cantidad_a_leer);
 
-		enviarResultadoSentencia(socketCoordinador, 3); // TODO: Añadir al enum el keyword reconexion= 3
+		enviarResultadoSentencia(socketCoordinador,
+				COORDINADOR_INSTANCIA_RECUPERAR_CLAVES); // TODO: Añadir al enum el keyword reconexion= 3
 
 		break;
 
@@ -738,6 +743,9 @@ void interpretarOperacionCoordinador(t_content_header * header,
 		sentenciaRecibida = recibirSentencia(socketCoordinador);
 
 		switch (sentenciaRecibida->keyword) {
+
+		case OBTENER_VALOR:
+			break;
 
 		case SET_:
 			guardarClaveValor(sentenciaRecibida->clave,
@@ -749,12 +757,6 @@ void interpretarOperacionCoordinador(t_content_header * header,
 		case STORE_:
 			realizarStoreDeClave(sentenciaRecibida->clave);
 			enviarResultadoSentencia(socketCoordinador, STORE_);
-			break;
-
-		case GET_:
-			printf(
-					"TODO: Leer clave y devolver valor... (ver si corresponde implementar el GET)\n");
-			// enviarResultadoSentencia(socketCoordinador, GET_);
 			break;
 
 		}
