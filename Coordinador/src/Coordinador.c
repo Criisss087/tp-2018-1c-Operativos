@@ -9,6 +9,8 @@
 #include "Utilidades.h"
 #include "FuncionesCoordinador.c"
 
+
+
 rta_envio enviarSentenciaInstancia(t_sentencia * sentencia){
 
 	rta_envio rta;
@@ -29,24 +31,26 @@ rta_envio enviarSentenciaInstancia(t_sentencia * sentencia){
 
 	//**
 	int tiene_clave(t_clave * clObj){
-					return (strcmp(sentencia->clave, clObj->clave)==0);
-				}
+		return (strcmp(sentencia->clave, clObj->clave)==0);
+	}
 
-		t_clave * instancias_con_clave = list_filter(lista_claves,(void*)tiene_clave);
-		if (list_size(instancias_con_clave)>1){log_error(logger,"Más de una instancia tiene asignada la clave %s",sentencia->clave);}
-		else{
-			if (list_size(instancias_con_clave )== 1){
-				//existe
-				t_clave * instanciaDuena = list_get(instancias_con_clave ,0);
-				proxima =  instanciaDuena->instancia;
-			}
-			else{
-				proxima = siguienteInstanciaSegunAlgoritmo(sentencia->clave);
-				t_clave * instanciaDuena = list_get(instancias_con_clave ,0);
-				instanciaDuena->instancia = proxima;
+	t_clave * instancias_con_clave = list_filter(lista_claves,(void*)tiene_clave);
 
-			}
+	if (list_size(instancias_con_clave)>1){log_error(logger,"Más de una instancia tiene asignada la clave %s",sentencia->clave);}
+
+	else{
+
+		if (list_size(instancias_con_clave )== 1){
+			//existe
+			t_clave * instanciaDuena = list_get(instancias_con_clave ,0);
+			proxima =  instanciaDuena->instancia;
 		}
+		else{
+			proxima = siguienteInstanciaSegunAlgoritmo(sentencia->clave);
+			t_clave * instanciaDuena = list_get(instancias_con_clave ,0);
+			instanciaDuena->instancia = proxima;
+		}
+	}
 	//**
 	log_info(logger,"Enviando a instancia: %s %s %s",proxima->nombre,sentencia->clave, sentencia->valor);
 
@@ -62,10 +66,14 @@ rta_envio enviarSentenciaInstancia(t_sentencia * sentencia){
 	rta.instancia->id = proxima->id;
 	rta.instancia->nombre = strdup(proxima->nombre);
 	rta.instancia->socket = proxima->socket;
+
 	t_content_header * header = crear_cabecera_mensaje(coordinador,instancia,COORDINADOR_INSTANCIA_SENTENCIA, sizeof(t_content_header));
 	t_esi_operacion_sin_puntero * s_sin_p = armar_esi_operacion_sin_puntero(sentencia);
+
 	int header_envio = send(proxima->socket,header,sizeof(t_content_header),0);
+
 	int sentencia_envio = send(proxima->socket, s_sin_p, sizeof(t_esi_operacion_sin_puntero),0);
+
 	if (sentencia->keyword == SET_){
 		int valor_envio = send(proxima->socket,sentencia->valor,strlen(sentencia->valor),0);
 	}
@@ -131,20 +139,76 @@ void interpretarOperacionInstancia(t_content_header * hd, int socketInstancia){
 	}
 }
 
+
+char * devolver_valor_clave(char * nombre_clave){
+	t_content_header * header = crear_cabecera_mensaje(coordinador, instancia, COORDINADOR_INSTANCIA_CLAVE_PARTICULAR, 0);
+	int consulta = send(instancia, nombre_clave, sizeof(char[40]),0);
+
+	rta_envio * valor_rta;
+
+	int rta = recv(instancia, valor_rta, sizeof(valor_rta), 0);
+
+	destruir_cabecera_mensaje(header);
+	return (valor_rta->valor);
+}
+
+char * devolver_nombre_instancia_actual(char * nombre_clave){
+	t_sentencia * clave_particular;
+	t_instancia * cual;
+
+	int tiene_clave_especificada(nombre_clavej){
+		return (strcmp(clave_particular->clave, nombre_clave) == 0);
+	}
+
+	t_clave * instancias_con_clave = list_filter(lista_claves,(void*)tiene_clave_especificada);
+
+	if(list_size(instancias_con_clave) == 1){
+		t_clave * instancia_con_clave_particular = list_get(instancias_con_clave ,0);
+		cual =  instancia_con_clave_particular->instancia;
+	}
+
+	return (cual->nombre);
+}
+
+void atender_comando_status(){
+
+	t_status_clave * st_clave = malloc(sizeof(t_status_clave));
+
+	int consulta = recv(planificador, st_clave->nombre, sizeof(st_clave->nombre), 0);
+
+	st_clave->valor = strdup(devolver_valor_clave(st_clave->nombre));
+	st_clave->instancia_actual = strdup(devolver_nombre_instancia_actual(st_clave->nombre));
+	//st_clave->instancia_guardado_distr = simular(st_clave->nombre);
+
+	t_content_header * header = crear_cabecera_mensaje(coordinador, planificador, PLANIFICADOR_COORDINADOR_CMD_STATUS,0);
+	int respuesta = send(planificador, header, sizeof(t_content_header), 0);
+
+	int contenido_rta = send(planificador, st_clave, sizeof(t_status_clave), 0);
+
+	free(st_clave);
+	destruir_cabecera_mensaje(header);
+
+}
+
 void interpretarOperacionPlanificador(t_content_header * hd, int socketCliente){
-	//log_info(logger,"Interpetando operación planificador");
+	//log_info(logger,"Interpretando operación planificador");
+
 	switch(hd->operacion){
 	case PLANIFICADOR_COORDINADOR_HEADER_IDENTIFICACION:
 		PROCESO_PLANIFICADOR.id = nuevoIDInstancia();
 		PROCESO_PLANIFICADOR.socket = socketCliente;
+		break;
+	case PLANIFICADOR_COORDINADOR_CMD_STATUS:
+		atender_comando_status();
+		break;
 	}
 }
 
 t_clave * guardarClaveInternamente(char clave[40]){
 
 	int tiene_clave(t_clave * clObj){
-				return (strcmp(clave, clObj->clave)==0);
-			}
+		return (strcmp(clave, clObj->clave)==0);
+	}
 	//log_info(logger,"guardando clave - sin instancia");
 	t_clave * instancias_con_clave = list_filter(lista_claves,(void*)tiene_clave);
 	if (list_size(instancias_con_clave )>1){log_error(logger,"Más de una instancia tiene asignada la clave %s",clave);}

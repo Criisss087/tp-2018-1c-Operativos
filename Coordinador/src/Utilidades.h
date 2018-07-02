@@ -40,10 +40,12 @@
 #define INSTANCIA_COORDINADOR_RTA 4
 #define COORDINADOR_INSTANCIA_CLAVES 5
 #define COORDINADOR_INSTANCIA_COMPACTACION 6
+#define COORDINADOR_INSTANCIA_CLAVE_PARTICULAR 7
 
 #define PLANIFICADOR_COORDINADOR_HEADER_IDENTIFICACION 1
 #define COORD_PLANIFICADOR_OPERACION_CONSULTA_CLAVE_COORD 2
 #define PLANIF_COORD_OPERACION_RES_CLAVE_COORD 3
+#define PLANIFICADOR_COORDINADOR_CMD_STATUS 4
 
 //Codigos de las operaciones de esi:
 #define ENVIA_ORDEN 1
@@ -61,6 +63,13 @@
 //***
 
 //***
+struct status_clave{
+	char* nombre;
+	char* valor;
+	char* instancia_actual;
+	char* instancia_guardado_distr;
+};
+typedef struct status_clave t_status_clave;
 
 typedef struct{
 	int socket;
