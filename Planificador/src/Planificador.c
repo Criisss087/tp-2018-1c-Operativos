@@ -19,9 +19,8 @@ int main(int argc, char **argv) {
 	struct timeval tv = {0, 500};
 
 	//Parametro booleano indica si muestra por pantalla el log o no.
-	logger = log_create("Log_Planificador.txt", "Planificador", true, LOG_LEVEL_TRACE);
-	//log_trace(logger, "Iniciando Planificador...");
-	logger_planificador(escribir_loguear, l_info,"Iniciando Planificador...");
+	logger = log_create("Log_Planificador.txt", "Planificador", false, LOG_LEVEL_TRACE);
+	logger_planificador(escribir_loguear, l_trace,"Iniciando Planificador...");
 
 
 	configurar_signals();
@@ -79,17 +78,17 @@ int main(int argc, char **argv) {
 
 
 		int result = select(max_fd+1, &readset, &writeset, &exepset, &tv);
-		//log_info(logger,"Resultado del select: %d\n",result); //Revisar rendimiento del CPU cuando select da > 1
+		logger_planificador(loguear, l_debug,"Resultado del select: %d\n",result); //Revisar rendimiento del CPU cuando select da > 1
 
 		//if(result == 0)
 		//	log_info(logger,"Select time out\n");
 		//else
 		if(result < 0 ) {
-			log_error(logger,"Error en select\n");
+			logger_planificador(escribir_loguear, l_error,"Error en select\n");
 			break;
 		}
 		else if(errno == EINTR) {
-			log_error(logger,"Me mataron! salgo del select\n");
+			logger_planificador(escribir_loguear, l_error,"Me mataron! salgo del select\n");
 			break;
 		}
 		else if(result > 0) //Hubo un cambio en algun fd
@@ -175,12 +174,12 @@ int conectar_coordinador(char * ip, char * port) {
 	int coord_socket = conectar_a_server(ip, port);
 	if (coord_socket < 0)
 	{
-		log_error(logger,"Error al intentar conectar al coordinador\n");
+		logger_planificador(escribir_loguear,l_error,"Error al intentar conectar al coordinador\n");
 		terminar_planificador();
 		exit(EXIT_FAILURE);
 	}
 	else{
-		log_trace(logger,"Conectado con el coordinador! (%d)",coord_socket);
+		logger_planificador(escribir_loguear,l_trace,"Conectado con el coordinador! (%d)",coord_socket);
 	}
 
 	/* Handshake necesario para que el coordinador identifique que la
@@ -191,12 +190,12 @@ int conectar_coordinador(char * ip, char * port) {
 	int res_send = send(coord_socket, header, sizeof(t_content_header), 0);
 	if(res_send < 0)
 	{
-		log_error(logger,"Error send header handshake con el Coordinador :( \n");
+		logger_planificador(escribir_loguear,l_error,"Error send header handshake con el Coordinador :( \n");
 		terminar_planificador();
 		exit(EXIT_FAILURE);
 	}
 	else{
-		log_trace(logger,"Handshake con Coordinador enviado correctamente");
+		logger_planificador(escribir_loguear,l_trace,"Handshake con Coordinador enviado correctamente");
 	}
 
 	destruir_cabecera_mensaje(header);
@@ -215,11 +214,11 @@ int atender_nuevo_esi(int serv_socket)
 	//Acepta la nueva conexion
 	int new_client_sock = accept(serv_socket, (struct sockaddr *)&client_addr, &client_len);
 	if (new_client_sock < 0) {
-	  log_error(logger, "Error al aceptar un nuevo ESI :(\n");
+		logger_planificador(escribir_loguear,l_error,"Error al aceptar un nuevo ESI :(\n");
 	  return -1;
 	}
 
-	log_trace(logger,"Se aceptó un nuevo ESI, conexión (%d)", new_client_sock);
+	logger_planificador(escribir_loguear,l_trace,"\nSe aceptó un nuevo ESI, conexión (%d)", new_client_sock);
 
 	//Lo agrego a la lista de conexiones esi actuales
 	for (int i = 0; i < MAX_CLIENTES; ++i) {
@@ -233,7 +232,7 @@ int atender_nuevo_esi(int serv_socket)
 
 			//Agrego el esi nuevo a la cola de listos
 			list_add(esi_listos, nuevo_esi);
-			log_info(logger,"Al nuevo ESI se le asignó el PID %d y fue agregado a ready!\n",nuevo_esi->pid);
+			logger_planificador(escribir_loguear,l_info,"Al nuevo ESI se le asignó el PID %d y fue agregado a ready!\n",nuevo_esi->pid);
 
 			/*
 			 * Si el algoritmo es con desalojo, (solo SJF) debo chequear si la estimacion del esi nuevo es
@@ -243,10 +242,10 @@ int atender_nuevo_esi(int serv_socket)
 			{
 				if((esi_en_ejecucion!=NULL) && (nuevo_esi->estimacion_real < esi_en_ejecucion->estimacion_actual))
 				{
-					log_info(logger,"El ESI nuevo de PID %d debe desalojar al ESI en ejecucion!",nuevo_esi->pid);
+					logger_planificador(escribir_loguear,l_info,"El ESI nuevo de PID %d debe desalojar al ESI en ejecucion!",nuevo_esi->pid);
 					desalojo_en_ejecucion++;
 					esi_por_desalojar = nuevo_esi;
-					log_info(logger,"Esperando a que ESI %d termine su sentencia\n",esi_en_ejecucion->pid);
+					logger_planificador(escribir_loguear,l_info,"Esperando a que ESI %d termine su sentencia\n",esi_en_ejecucion->pid);
 				}
 			}
 
@@ -255,7 +254,7 @@ int atender_nuevo_esi(int serv_socket)
 
 	 }
 
-	 // log_info(logger,"Demasiadas conexiones. Cerrando nueva conexion %s:%d.\n", client_ipv4_str, client_addr.sin_port);
+	logger_planificador(escribir_loguear,l_error,"Demasiadas conexiones. Cerrando nueva conexion\n");
 	 close(new_client_sock);
 
 	 return -1;
@@ -279,10 +278,12 @@ int recibir_mensaje_coordinador(int coord_socket)
 	//Recepcion de mensaje comun de texto, con la cabecera (para no bloquear) Borrar mas adelante
 	t_content_header *content_header = malloc(sizeof(t_content_header));
 
+	logger_planificador(loguear,l_debug,"Llegó un nuevo mensaje desde el Coordinador!");
+
 	read_size = recv(coord_socket, content_header, sizeof(t_content_header), 0);
 	if(read_size < 0)
 	{
-		log_error(logger,"Error al recibir la cabecera de un mensaje con el Coordinador :(");
+		logger_planificador(escribir_loguear,l_error,"Error al recibir la cabecera de un mensaje con el Coordinador :(");
 		destruir_cabecera_mensaje(content_header);
 		terminar_planificador();
 		exit(EXIT_FAILURE);
@@ -305,13 +306,13 @@ int recibir_mensaje_coordinador(int coord_socket)
 		read_size = recv(coord_socket, consulta_bloqueo , sizeof(t_consulta_bloqueo),0);
 		if(read_size < 0)
 		{
-			log_error(logger,"Error al recibir consulta de bloqueo desde el Coordinador");
+			logger_planificador(escribir_loguear,l_error,"Error al recibir consulta de bloqueo desde el Coordinador");
 			free(consulta_bloqueo);
 			terminar_planificador();
 			exit(EXIT_FAILURE);
 		}
 
-		log_error(logger,"Recibí la consulta PID: %d Sentencia: %d",consulta_bloqueo->pid,consulta_bloqueo->sentencia);
+		logger_planificador(escribir_loguear,l_info,"Consulta %s %s, para el ESI %d",sentencia_string(consulta_bloqueo->sentencia),consulta_bloqueo->clave,consulta_bloqueo->pid);
 
 		switch(consulta_bloqueo->sentencia)
 		{
@@ -396,47 +397,51 @@ int recibir_mensaje_coordinador(int coord_socket)
 int recibir_mensaje_esi(t_conexion_esi conexion_esi)
 {
 	int read_size;
-	t_pcb_esi *esi_aux;
-	t_confirmacion_sentencia * confirmacion;
+	t_pcb_esi *esi_aux=NULL;
+	t_confirmacion_sentencia * confirmacion=NULL;
 
 	t_content_header *content_header = malloc(sizeof(t_content_header));
+	memset(content_header, 0, sizeof(t_content_header));
 
-	log_trace(logger,"Llegó un nuevo mensaje desde el ESI %d!",conexion_esi.pid);
+	logger_planificador(loguear,l_debug,"Llegó un nuevo mensaje desde el ESI %d!",conexion_esi.pid);
 
 	read_size = recv(conexion_esi.socket, content_header, sizeof(t_content_header), 0);
-	log_warning(logger,"resultado recv %d! errno %d",read_size,errno);
+	logger_planificador(loguear,l_warning,"resultado recv %d! errno %d",read_size,errno);
 	if(read_size < 0)
 	{
 		free(content_header);
-		log_error(logger,"Hubo un error en recv con esi %d",conexion_esi.pid);
+		logger_planificador(escribir_loguear,l_error,"Hubo un error en recv con esi %d",conexion_esi.pid);
 		finalizar_esi(conexion_esi.pid,no_liberar);
 		return read_size;
 	}
 
 
-	log_info(logger,"Llego la operacion %d  se leerán %d bytes",content_header->operacion,content_header->cantidad_a_leer);
+	logger_planificador(loguear,l_debug,"Llego la operacion %d  se leerán %d bytes",content_header->operacion,content_header->cantidad_a_leer);
 
 	if(content_header->operacion == OPERACION_RES_SENTENCIA)
 	{
-		confirmacion = malloc(sizeof(t_confirmacion_sentencia));
+		confirmacion = malloc(content_header->cantidad_a_leer);
+		memset(confirmacion, 0, content_header->cantidad_a_leer);
 
-		read_size = recv(conexion_esi.socket, confirmacion, content_header->cantidad_a_leer,(int) NULL);
-		log_warning(logger,"resultado recv %d! errno %d",read_size,errno);
+		read_size = recv(conexion_esi.socket, confirmacion, content_header->cantidad_a_leer,0);
+		logger_planificador(loguear,l_warning,"resultado recv %d! errno %d",read_size,errno);
 		if(read_size < 0)
 		{
 			free(confirmacion);
-			log_error(logger,"Hubo un error en recv con esi %d",conexion_esi.pid);
+			logger_planificador(escribir_loguear,l_error,"Hubo un error en recv con esi %d",conexion_esi.pid);
 			finalizar_esi(conexion_esi.pid,no_liberar);
 			return read_size;
 		}
 
-		log_info(logger,"Resultado de (%d) = %d",conexion_esi.pid,confirmacion->resultado);
+		logger_planificador(loguear,l_trace,"Resultado de (%d) = %d",conexion_esi.pid,confirmacion->resultado);
 
 		if(confirmacion->resultado == CORRECTO){
 
 			esi_en_ejecucion->instruccion_actual++;
 			esi_en_ejecucion->estimacion_actual--;
 			esi_en_ejecucion->ejec_anterior = 0;
+
+			logger_planificador(escribir_loguear,l_info,"La sentencia se ejecutó correctamente");
 
 			//Si hay un bloqueo de clave pendiente para este esi en ejecucion, lo hago
 			if(bloqueo_en_ejecucion)
@@ -484,8 +489,9 @@ int recibir_mensaje_esi(t_conexion_esi conexion_esi)
 
 			if(confirmacion->pid == clave_a_bloquear_por_get->pid)
 			{
-				log_warning(logger,"Bloquea el esi por aca");
+				logger_planificador(loguear,l_warning,"Bloquea el esi por aca");
 
+				logger_planificador(escribir_loguear,l_info,"El ESI %d intentó acceder a la clave %s, se pasa a bloqueados",confirmacion->pid,clave_a_bloquear_por_get->clave);
 				esi_en_ejecucion->estado = bloqueado;
 				esi_en_ejecucion->ejec_anterior = 1;
 				esi_en_ejecucion->clave_bloqueo = strdup(clave_a_bloquear_por_get->clave);
@@ -503,6 +509,7 @@ int recibir_mensaje_esi(t_conexion_esi conexion_esi)
 		else if(confirmacion->resultado == ABORTAR){
 
 			esi_aux = esi_en_ejecucion;
+			logger_planificador(escribir_loguear,l_info,"El ESI %d se abortará por orden el Coordinador",confirmacion->pid);
 			finalizar_esi(esi_aux->pid,no_liberar);
 		}
 
@@ -513,6 +520,8 @@ int recibir_mensaje_esi(t_conexion_esi conexion_esi)
 
 	}
 
+	printf("\n");
+
 	destruir_cabecera_mensaje(content_header);
 
 	planificar();
@@ -522,7 +531,7 @@ int recibir_mensaje_esi(t_conexion_esi conexion_esi)
 
 int cerrar_conexion_coord(int coord_socket)
 {
-	log_trace(logger,"\nConexión con coordinador (%d) cerrada",coord_socket);
+	logger_planificador(escribir_loguear,l_trace,"\nConexión con coordinador (%d) cerrada",coord_socket);
 	close(coord_socket);
 
 	return 0;
@@ -530,7 +539,7 @@ int cerrar_conexion_coord(int coord_socket)
 
 int cerrar_conexion_esi(t_conexion_esi * esi)
 {
-	log_trace(logger,"Conexión con ESI %d cerrada\n",esi->pid);
+	logger_planificador(loguear,l_trace,"Conexión con ESI %d cerrada\n",esi->pid);
 	close(esi->socket);
 	esi->socket = NO_SOCKET;
 
@@ -543,13 +552,13 @@ int iniciar_servidor(char * port)
 
 	if(server_socket < 0)
 	{
-		log_error(logger,"\nFalló la creación del socket servidor");
+		logger_planificador(escribir_loguear,l_error,"\nFalló la creación del socket servidor");
 		terminar_planificador();
 		exit(1);
 	}
 	else
 	{
-		log_trace(logger,"Socket servidor (%d) escuchando", server_socket);
+		logger_planificador(escribir_loguear,l_trace,"Socket servidor (%d) escuchando", server_socket);
 	}
 
 	return server_socket;
@@ -570,7 +579,7 @@ void *consola() {
 	int res = 0;
 	char *buffer = NULL;
 
-	log_info(logger,"\nAbriendo consola...\n");
+	logger_planificador(escribir_loguear,l_info,"\nAbriendo consola...\n");
 
 	while(TRUE){
 
@@ -599,11 +608,13 @@ int consola_derivar_comando(char * buffer){
 	char *parametro2 = NULL;
 	int res = 0;
 
-	//log_info(logger,"string recibido: %s\n",buffer);
+	logger_planificador(loguear,l_debug,"string recibido: %s\n",buffer);
 
 	// Separa la linea de consola en comando y sus parametros
 	consola_obtener_parametros(buffer, &comando, &parametro1, &parametro2);
-	//log_info(logger,"comando: %s p1: %s p2: %s\n",comando,parametro1,parametro2);
+	logger_planificador(loguear,l_debug,"comando: %s p1: %s p2: %s\n",comando,parametro1,parametro2);
+
+	printf("\n");
 
 	// Obtiene la clave del comando a ejecutar para el switch
 	comando_key = consola_obtener_key_comando(comando);
@@ -635,7 +646,7 @@ int consola_derivar_comando(char * buffer){
 			break;
 		case salir:
 			res = 1;
-			log_info(logger,"Saliendo de la consola...");
+			logger_planificador(escribir_loguear,l_info,"Saliendo de la consola...");
 			break;
 		case mostrar:
 			mostrar_lista(parametro1);
@@ -647,7 +658,7 @@ int consola_derivar_comando(char * buffer){
 			mostrar_bloqueos();
 			break;
 		default:
-			log_warning(logger,"No reconozco el comando vieja...");
+			logger_planificador(escribir_loguear,l_warning,"No reconozco el comando vieja...");
 			break;
 	}
 
@@ -765,7 +776,7 @@ int consola_leer_stdin(char *read_buffer, size_t max_len)
 		read_count = read(STDIN_FILENO, &c, 1);
 
 		if (read_count < 0 && errno != EAGAIN && errno != EWOULDBLOCK) {
-		  log_error(logger,"Error en read() desde STDIN");
+			logger_planificador(escribir_loguear,l_error,"Error en read() desde STDIN");
 		  return -1;
 		}
 		else if (read_count < 0 && (errno == EAGAIN || errno == EWOULDBLOCK)) {
@@ -804,21 +815,21 @@ void consola_pausar(void)
 	 * ^2: Esto se puede lograr ejecutando una sycall bloqueante que espere la entrada de un humano.
 	 */
 
-	log_info(logger,"CONSOLA> COMANDO: pausar");
+	logger_planificador(escribir_loguear,l_info,"CONSOLA> COMANDO: pausar");
 
 	estado_pausa_por_consola = pausado;
-	log_info(logger,"Se pausó la ejecución.");
+	logger_planificador(escribir_loguear,l_info,"Se pausó la ejecución.");
 
 	return;
 }
 
 void consola_continuar(void)
 {
-	log_info(logger,"CONSOLA> COMANDO: continuar");
+	logger_planificador(escribir_loguear,l_info,"CONSOLA> COMANDO: continuar");
 
 	estado_pausa_por_consola = no_pausado;
 	planificar();
-	log_info(logger,"Se reanudó la ejecución.");
+	logger_planificador(escribir_loguear,l_info,"Se reanudó la ejecución.");
 
 	return;
 }
@@ -830,12 +841,12 @@ void consola_bloquear_clave(char* clave , char* id){
 	/* Debe simular GET CLAVE PID */
 	if(clave == NULL || id == NULL)
 	{
-		log_warning(logger,"CONSOLA> Parametros incorrectos (bloquear <clave> <id>)");
+		logger_planificador(escribir_loguear,l_warning,"CONSOLA> Parametros incorrectos (bloquear <clave> <id>)");
 	}
 	else
 	{
 		pid = atoi(id);
-		log_info(logger,"CONSOLA> COMANDO: Bloquear clave: %s id: %d",clave, pid);
+		logger_planificador(escribir_loguear,l_info,"CONSOLA> COMANDO: Bloquear clave: %s id: %d",clave, pid);
 
 		//Si al intentar bloquear la clave falla, bloqueo el esi
 		if(bloquear_clave(clave, pid))
@@ -853,11 +864,11 @@ void consola_desbloquear_clave(char* clave){
 	 */
 
 	if(clave == NULL){
-		log_warning(logger,"CONSOLA> Parametros incorrectos (desbloquear <clave>)");
+		logger_planificador(escribir_loguear,l_warning,"CONSOLA> Parametros incorrectos (desbloquear <clave>)");
 	}
 	else
 	{
-		log_info(logger,"CONSOLA> COMANDO: Desbloquear clave: %s",clave);
+		logger_planificador(escribir_loguear,l_info,"CONSOLA> COMANDO: Desbloquear clave: %s",clave);
 		desbloquear_clave(clave);
 		planificar();
 	}
@@ -877,12 +888,12 @@ void consola_listar_recurso(char* recurso)
 	 */
 
 	if(recurso == NULL){
-		log_warning(logger,"CONSOLA> Parametros incorrectos (listar <recurso>)");
+		logger_planificador(escribir_loguear,l_warning,"CONSOLA> Parametros incorrectos (listar <recurso>)");
 	}
 	else{
 		t_list* lista_recursos;
 
-		log_info(logger, "CONSOLA> COMANDO: Listar recurso encolados: %s",recurso);
+		logger_planificador(escribir_loguear,l_info, "CONSOLA> COMANDO: Listar recurso encolados: %s",recurso);
 
 		bool esta_bloqueado_por_clave(t_pcb_esi* esi){
 			return !strcmp(recurso, esi->clave_bloqueo);
@@ -891,7 +902,7 @@ void consola_listar_recurso(char* recurso)
 		lista_recursos = list_filter(esi_bloqueados,(void*)esta_bloqueado_por_clave);
 
 		void mostrar_esi_consola(t_pcb_esi* esi){
-			log_info(logger, "Proceso ESI bloqueado: %i", esi->pid);
+			logger_planificador(escribir_loguear,l_info, "Proceso ESI bloqueado: %i", esi->pid);
 			return;
 		}
 
@@ -899,7 +910,7 @@ void consola_listar_recurso(char* recurso)
 			list_iterate(lista_recursos, (void*)mostrar_esi_consola);
 		}
 		else{
-			log_info(logger, "NO se encontraron procesos ESI bloqueados por el recurso %s.", recurso);
+			logger_planificador(escribir_loguear,l_info,"NO se encontraron procesos ESI bloqueados por el recurso %s.", recurso);
 		}
 
 		list_destroy(lista_recursos);
@@ -919,29 +930,29 @@ void consola_matar_proceso(char* id)
 	t_pcb_esi * esi_aux = NULL;
 
 	if(id == NULL){
-		log_warning(logger,"CONSOLA> Parametros incorrectos (kill <id>)");
+		logger_planificador(escribir_loguear,l_warning,"CONSOLA> Parametros incorrectos (kill <id>)");
 	}
 	else{
-		log_info(logger,"CONSOLA> COMANDO: kill ID: %s",id);
+		logger_planificador(escribir_loguear,l_info,"CONSOLA> COMANDO: kill ID: %s",id);
 
 		pid = atoi(id);
 
 		if(esi_en_ejecucion != NULL  && esi_en_ejecucion->pid == pid)
 		{
 			/* Si el esi esta en ejecucion, esperar a que termine la instrucción*/
-			log_info(logger,"Esperando a que termine de ejecutar la sentencia\n");
+			logger_planificador(escribir_loguear,l_info,"Esperando a que termine de ejecutar la sentencia\n");
 			kill_en_ejecucion++;
 			return;
 		}
 
 		if (!finalizar_esi(pid,liberar))
 		{
-			log_info(logger,"ESI de ID %d Finalizado",pid);
+			logger_planificador(escribir_loguear,l_info,"ESI de ID %d Finalizado",pid);
 			enviar_confirmacion_kill(pid);
 		}
 		else
 		{
-			log_info(logger,"No existe el ESI de ID %d en READY, BLOQUEADOS, ni en EJECUCION",pid);
+			logger_planificador(escribir_loguear,l_info,"No existe el ESI de ID %d en READY, BLOQUEADOS, ni en EJECUCION",pid);
 		}
 
 	}
@@ -968,10 +979,10 @@ void consola_consultar_status_clave(char* clave)
 	 */
 
 	if(clave == NULL){
-		log_warning(logger,"CONSOLA> Parametros incorrectos (status <clave>)");
+		logger_planificador(escribir_loguear,l_warning,"CONSOLA> Parametros incorrectos (status <clave>)");
 	}
 	else{
-		log_info(logger,"CONSOLA> COMANDO: status clave: %s ",clave);
+		logger_planificador(escribir_loguear,l_info,"CONSOLA> COMANDO: status clave: %s ",clave);
 	}
 
 	return;
@@ -984,7 +995,7 @@ void consola_consultar_deadlock(void)
 	 * Pudiendo resolverlos manualmente con la sentencia de kill previamente descrita.
 	 */
 
-	log_info(logger,"CONSOLA> COMANDO: deadlock\n");
+	logger_planificador(escribir_loguear,l_info,"CONSOLA> COMANDO: deadlock\n");
 
 	return;
 }
@@ -994,7 +1005,7 @@ void mostrar_lista(char * name)
 	t_list * lista;
 
 	if(name == NULL)
-		log_warning(logger,"Parametros incorrectos (mostrar <lista>)");
+		logger_planificador(escribir,l_warning,"Parametros incorrectos (mostrar <lista>)");
 	else
 	{
 		lista = list_create();
@@ -1015,16 +1026,16 @@ void mostrar_lista(char * name)
 		}
 		else
 		{
-			log_warning(logger,"No existe la lista %s: ",name);
+			logger_planificador(escribir,l_warning,"No existe la lista %s: ",name);
 			list_destroy(lista);
 			return;
 		}
 
-		printf("\n\nEstado actual de la lista de %s: \n\n",name);
+		logger_planificador(escribir,l_info,"\n\nEstado actual de la lista de %s: \n\n",name);
 
 		list_iterate(lista,(void*)mostrar_esi);
 
-		printf("\nTamaño: %d \n",list_size(lista));
+		logger_planificador(escribir,l_info,"\nTamaño: %d \n",list_size(lista));
 
 		list_destroy(lista);
 		printf("\n");
@@ -1038,15 +1049,15 @@ void mostrar_esi_en_ejecucion(void)
 	if(esi_en_ejecucion!=NULL)
 	{
 		printf("\n");
-		log_info(logger,"PID ESI en ejecución actual: %d",esi_en_ejecucion->pid);
-		log_info(logger,"Estado: %d: ",esi_en_ejecucion->estado);
-		log_info(logger,"Estimacion real: %f",esi_en_ejecucion->estimacion_real);
-		log_info(logger,"Estimacion actual: %f",esi_en_ejecucion->estimacion_actual);
-		log_info(logger,"Response Ratio: %f",esi_en_ejecucion->response_ratio);
+		logger_planificador(escribir_loguear,l_info,"PID ESI en ejecución actual: %d",esi_en_ejecucion->pid);
+		logger_planificador(escribir_loguear,l_info,"Estado: %d: ",esi_en_ejecucion->estado);
+		logger_planificador(escribir_loguear,l_info,"Estimacion real: %f",esi_en_ejecucion->estimacion_real);
+		logger_planificador(escribir_loguear,l_info,"Estimacion actual: %f",esi_en_ejecucion->estimacion_actual);
+		logger_planificador(escribir_loguear,l_info,"Response Ratio: %f",esi_en_ejecucion->response_ratio);
 		printf("\n");
 	}
 	else
-		log_warning(logger,"No hay ningun ESI en ejecucion");
+		logger_planificador(escribir_loguear,l_warning,"No hay ningun ESI en ejecucion");
 
 	return;
 }
@@ -1089,7 +1100,8 @@ void stdin_no_bloqueante(void)
 
 void planificar(void)
 {
-	log_info(logger,"Replanificando...\n");
+	printf("\n");
+	//logger_planificador(escribir,l_info,"Replanificando...\n");
 	if(esi_en_ejecucion == NULL){
 		//Si no está pausada la ejecución por consola
 		if(estado_pausa_por_consola != pausado){
@@ -1113,7 +1125,7 @@ void obtener_proximo_ejecucion(void)
 	 */
 
 	lista_aux = list_duplicate(esi_listos);
-	log_info(logger,"Planificando por %s...",config.algoritmo);
+	logger_planificador(escribir_loguear,l_info,"Planificando por %s...",config.algoritmo);
 
 	if( (!strcmp(config.algoritmo, "SJF-SD")) || (!strcmp(config.algoritmo, "SJF-CD")))
 	{
@@ -1126,7 +1138,7 @@ void obtener_proximo_ejecucion(void)
 	 */
 	else if(!strcmp(config.algoritmo, "HRRN") )
 	{
-		log_info(logger,"Calculando RR para toda la lista ready...");
+		logger_planificador(escribir_loguear,l_info,"Calculando RR para toda la lista ready...");
 		list_iterate(lista_aux,(void*)calcular_response_ratio);
 		ordenar_lista_response_ratio(lista_aux);
 	}
@@ -1137,14 +1149,14 @@ void obtener_proximo_ejecucion(void)
 	esi_en_ejecucion = list_remove(lista_aux,0);
 	if(!list_is_empty(esi_listos))
 	{
-		log_info(logger,"Saco de la lista de listos el próximo esi a ejecutar");
+		logger_planificador(escribir_loguear,l_info,"Saco de la lista de listos el próximo esi a ejecutar");
 		sacar_esi_de_lista_pid(esi_listos,esi_en_ejecucion->pid);
 		esi_en_ejecucion->estado = en_ejecucion;
 	}
 	else
 	{
 		esi_en_ejecucion = NULL;
-		log_info(logger,"No hay ESIs para ejecutar! Todo en orden...");
+		logger_planificador(escribir,l_info,"No hay ESIs para ejecutar! Todo en orden...");
 	}
 
 	list_destroy(lista_aux);
@@ -1152,7 +1164,6 @@ void obtener_proximo_ejecucion(void)
 	//Si hubo un cambio en el esi en ejecucion, debo avisarle al nuevo esi en ejecucion que es su turno
 	if((esi_en_ejecucion != NULL) && (ejec_ant != esi_en_ejecucion))
 	{
-		//log_info(logger,"Aca le debo avisar al esi %d que es su turno\n", esi_en_ejecucion->pid);
 		int res = enviar_confirmacion_sentencia(esi_en_ejecucion);
 		if(!res)
 		{
@@ -1176,18 +1187,18 @@ int enviar_confirmacion_sentencia(t_pcb_esi * pcb_esi)
 	conf->ejec_anterior = pcb_esi->ejec_anterior;
 	conf->resultado		= 0;
 
-	log_info(logger,"Aviso al ESI %d que es su turno",pcb_esi->pid);
+	logger_planificador(escribir_loguear,l_info,"Aviso al ESI %d que es su turno\n",pcb_esi->pid);
 
 	int res_send = send(pcb_esi->conexion->socket, header, sizeof(t_content_header), 0);
 	if(res_send < 0)
 	{
-		log_error(logger,"Error send header al ESI %d",pcb_esi->pid);
+		logger_planificador(escribir_loguear,l_error,"Error send header al ESI %d",pcb_esi->pid);
 	}
 
 	res_send = send(pcb_esi->conexion->socket, conf, sizeof(t_confirmacion_sentencia), 0);
 	if(res_send < 0)
 	{
-		log_error(logger,"Error send ejec al ESI %d",pcb_esi->pid);
+		logger_planificador(escribir_loguear,l_error,"Error send ejec al ESI %d",pcb_esi->pid);
 	}
 
 	free(conf);
@@ -1219,12 +1230,12 @@ void enviar_confirmacion_kill(int pid)
 
 		t_content_header * header = crear_cabecera_mensaje(planificador,esi,OPERACION_CONF_KILL,sizeof(t_confirmacion_sentencia));
 
-		log_info(logger,"Aviso al ESI %d que debe finalizar por KILL",esi_aux->pid);
+		logger_planificador(escribir_loguear,l_info,"Aviso al ESI %d que debe finalizar por KILL",esi_aux->pid);
 
 		int res_send = send(esi_aux->conexion->socket, header, sizeof(t_content_header), 0);
 		if(res_send < 0)
 		{
-			log_error(logger,"Error send header al ESI %d",esi_aux->pid);
+			logger_planificador(escribir_loguear,l_error,"Error send header al ESI %d",esi_aux->pid);
 		}
 
 		destruir_cabecera_mensaje(header);
@@ -1244,18 +1255,18 @@ int enviar_resultado_consulta(int socket, int resultado)
 
 	*res = resultado;
 
-	log_info(logger,"Envío resultado (%d) de la consulta al coordinador",*res);
+	logger_planificador(loguear,l_debug,"Envío resultado (%d) de la consulta al coordinador",*res);
 
 	int res_send = send(socket, header, sizeof(t_content_header), 0);
 	if(res_send < 0)
 	{
-		log_error(logger,"Error send header resultado consulta coordinador");
+		logger_planificador(escribir_loguear,l_error,"Error send header resultado consulta coordinador");
 	}
 
 	res_send = send(socket, res, sizeof(int), 0);
 	if(res_send < 0)
 	{
-		log_error(logger,"Error send resultado consulta coordinador\n");
+		logger_planificador(escribir_loguear,l_error,"Error send resultado consulta coordinador\n");
 	}
 
 	free(res);
@@ -1284,7 +1295,7 @@ void desalojar_ejecucion(void){
 
 void terminar_planificador(void)
 {
-	log_trace(logger,"Terminando Planificador...\n");
+	logger_planificador(escribir_loguear,l_trace,"Terminando Planificador...\n");
 
 	list_destroy_and_destroy_elements(esi_listos,(void*)destruir_esi);
 	list_destroy_and_destroy_elements(esi_bloqueados,(void*)destruir_esi);
@@ -1377,7 +1388,7 @@ int bloquear_esi_pid(char * clave,int pid)
 	{
 		/* Si el esi esta en ejecucion, esperar a que termine la instrucción y desalojar */
 
-		log_info(logger,"Esperando a que termine de ejecutar la sentencia\n");
+		logger_planificador(escribir_loguear,l_info,"Esperando a que termine de ejecutar la sentencia\n");
 		if(esi_en_ejecucion->clave_bloqueo!=NULL)
 		{
 			free(esi_en_ejecucion->clave_bloqueo);
@@ -1398,11 +1409,11 @@ int bloquear_esi_pid(char * clave,int pid)
 
 		list_add(esi_bloqueados,esi_aux);
 
-		log_info(logger,"El ESI %d estaba en listos, se pasó a bloqueados",pid);
+		logger_planificador(escribir_loguear,l_info,"El ESI %d estaba en listos, se pasó a bloqueados",pid);
 	}
 	else
 	{
-		log_info(logger,"No existe el ESI de ID %d en READY ni en EJECUCION",pid);
+		logger_planificador(escribir_loguear,l_info,"No existe el ESI de ID %d en READY ni en EJECUCION",pid);
 		return 1;
 	}
 
@@ -1526,13 +1537,13 @@ void calcular_response_ratio(t_pcb_esi* esi)
 
 int confirmar_bloqueo_ejecucion(void)
 {
-	log_info(logger,"Sentencia terminada!");
+	logger_planificador(escribir_loguear,l_info,"Sentencia terminada!");
 
 	esi_en_ejecucion->estado = bloqueado;
 	esi_en_ejecucion->ejec_anterior = 1;
 
 	list_add(esi_bloqueados,esi_en_ejecucion);
-	log_info(logger,"Desalojo la ejecucion...\n");
+	logger_planificador(escribir_loguear,l_info,"Desalojo la ejecucion...\n");
 	esi_en_ejecucion = NULL;
 
 	bloqueo_en_ejecucion = 0;
@@ -1605,7 +1616,7 @@ int finalizar_esi(int pid_esi, int liberar)
 		esi_aux->estado = terminado;
 
 		list_add(esi_terminados, esi_aux);
-		log_info(logger,"Esi %d finalizado",esi_aux->pid);
+		logger_planificador(escribir_loguear,l_info,"ESI %d finalizado",esi_aux->pid);
 		cerrar_conexion_esi(esi_aux->conexion);
 	}
 
@@ -1631,35 +1642,35 @@ int bloquear_clave(char* clave , int pid)
 
 		list_add(claves_bloqueadas, clave_bloqueada);
 
-		log_info(logger,"Se creó la clave bloqueada %s",clave);
+		logger_planificador(escribir_loguear,l_info,"Se creó la clave bloqueada %s",clave);
 
 		//Busco si existe el ESI en el sistema
 		if((esi_en_ejecucion != NULL  && esi_en_ejecucion->pid == pid) || 	// EJEC
 		  (buscar_esi_en_lista_pid(esi_listos, pid) ) )						// READY
 		{
-			log_info(logger,"Se asigna la clave al ESI %d\n",pid);
+			logger_planificador(escribir_loguear,l_info,"Se asigna la clave al ESI %d\n",pid);
 		}
 		else
 		{
 			clave_bloqueada->pid = -1;
 			if(pid>-1)
-				log_info(logger,"No existe el ESI de ID %d en READY ni en EJECUCION, se asigna la clave a sistema\n",pid);
+				logger_planificador(escribir_loguear,l_info,"No existe el ESI de ID %d en READY ni en EJECUCION, se asigna la clave a sistema\n",pid);
 			else
-				log_info(logger,"Se asigna la clave a sistema\n");
+				logger_planificador(escribir_loguear,l_info,"Se asigna la clave a sistema\n");
 		}
 	}
 	else
 	{
-		log_info(logger,"La clave %s ya está bloqueada! No se agrega a la lista",clave);
+		logger_planificador(escribir_loguear,l_info,"La clave %s ya está bloqueada! No se agrega a la lista",clave);
 		if(clave_bloqueada->pid == pid)
 		{
-			log_info(logger,"La clave %s ya está asignada al ESI %d\n",clave,pid);
+			logger_planificador(escribir_loguear,l_info,"La clave %s ya está asignada al ESI %d\n",clave,pid);
 			return 0;
 		}
 		else if(clave_bloqueada->pid > -1)
-			log_info(logger,"La clave %s está asignada al ESI %d\n",clave,clave_bloqueada->pid);
+			logger_planificador(escribir_loguear,l_info,"La clave %s está asignada al ESI %d\n",clave,clave_bloqueada->pid);
 		else
-			log_info(logger,"La clave %s está asignada a sistema\n",clave);
+			logger_planificador(escribir_loguear,l_info,"La clave %s está asignada a sistema\n",clave);
 
 		return 1;
 	}
@@ -1678,7 +1689,7 @@ int desbloquear_clave(char* clave)
 
 	if(clave_bloqueada == NULL)
 	{
-		log_info(logger,"La clave %s no está bloqueada\n",clave);
+		logger_planificador(escribir_loguear,l_info,"La clave %s no está bloqueada\n",clave);
 		return 1;
 	}
 
@@ -1689,7 +1700,7 @@ int desbloquear_clave(char* clave)
 		//Si existe, lo remuevo de los bloqueados
 		esi_a_desbloquear = sacar_esi_bloqueado_por_clave(clave);
 
-		log_info(logger,"El esi %d estaba bloqueado por la clave %s, se pasa a ready",esi_a_desbloquear->pid,clave);
+		logger_planificador(escribir_loguear,l_info,"El ESI %d estaba bloqueado por la clave %s, se pasa a ready",esi_a_desbloquear->pid,clave);
 
 		free(esi_a_desbloquear->clave_bloqueo);
 		esi_a_desbloquear->clave_bloqueo = NULL;
@@ -1704,7 +1715,7 @@ int desbloquear_clave(char* clave)
 		//Si no existe otro esi bloqueado por esa clave, hay que eliminar la clave de la lista de claves bloqueadas
 		if(buscar_esi_bloqueado_por_clave(clave)==NULL)
 		{
-			log_info(logger,"No hay otro ESI bloqueados por la clave %s, se elimina de la lista de claves bloqueadas\n",clave);
+			logger_planificador(escribir_loguear,l_info,"No hay otro ESI bloqueados por la clave %s, se elimina de la lista de claves bloqueadas\n",clave);
 			list_remove_and_destroy_by_condition(claves_bloqueadas,(void*)is_clave_bloqueada,(void*)destruir_clave_bloqueada);
 			return 2;
 		}
@@ -1712,7 +1723,7 @@ int desbloquear_clave(char* clave)
 	else
 	{
 		//Si no hay esi bloqueado por esa clave, solamente lo elimino de las claves bloqueadas
-		log_info(logger,"No hay ningun ESIs bloqueados por la clave %s, se elimina de la lista de claves bloqueadas\n",clave);
+		logger_planificador(escribir_loguear,l_info,"No hay ningun ESIs bloqueados por la clave %s, se elimina de la lista de claves bloqueadas\n",clave);
 		list_remove_and_destroy_by_condition(claves_bloqueadas,(void*)is_clave_bloqueada,(void*)destruir_clave_bloqueada);
 		return 2;
 	}
@@ -1758,7 +1769,7 @@ void desbloquear_claves_bloqueadas_pid(int pid)
 
 	if(!list_is_empty(claves_bloqueadas_aux))
 	{
-		log_info(logger,"El ESI %d tiene recursos tomados, liberando claves...",pid);
+		logger_planificador(escribir_loguear,l_info,"El ESI %d tiene recursos tomados, liberando claves...",pid);
 		list_iterate(claves_bloqueadas_aux,(void*)desbloquear_recursos);
 	}
 
@@ -1785,7 +1796,7 @@ void confirmar_desbloqueo_por_store(void)
 
 int confirmar_pausa_por_consola(){
 
-	log_info(logger,"Sentencia pausada.");
+	logger_planificador(escribir_loguear,l_info,"Sentencia pausada.");
 
 	esi_en_ejecucion->estado = listo;
 	esi_en_ejecucion->tiempo_espera = 0;
@@ -1793,7 +1804,7 @@ int confirmar_pausa_por_consola(){
 	list_add(esi_listos, esi_en_ejecucion);
 	esi_en_ejecucion = NULL;
 
-	log_info(logger,"Proceso desalojado.\n");
+	logger_planificador(escribir_loguear,l_info,"ESI en ejecución desalojado.\n");
 
 	return 0;
 }
@@ -1811,7 +1822,7 @@ void leer_configuracion_desde_archivo(char* path_archivo){
 	arch_config = config_create(path_archivo);
 
 	if(arch_config==NULL){
-		log_error(logger, "ERROR. No se pudo obtener un archivo de configuración.");
+		logger_planificador(escribir_loguear,l_error,"ERROR. No se pudo obtener un archivo de configuración.");
 		terminar_planificador();
 		exit(EXIT_FAILURE);
 	}
@@ -1819,16 +1830,16 @@ void leer_configuracion_desde_archivo(char* path_archivo){
 	char* atributo=NULL;
 	char** claves_bloqueadas_config=NULL;
 
-	log_info(logger,"Obteniendo configuraciones iniciales desde archivo %s",path_archivo);
+	logger_planificador(escribir_loguear,l_info,"Obteniendo configuraciones iniciales desde archivo %s",path_archivo);
 
 	//IP_COORDINADOR
 	atributo = strdup("IP_COORDINADOR");
 	if(config_has_property(arch_config, atributo)){
 		config.ip_coordinador = strdup(config_get_string_value(arch_config, atributo));
-		log_info(logger,"%s: %s", atributo, config.ip_coordinador);
+		logger_planificador(escribir_loguear,l_info,"%s: %s", atributo, config.ip_coordinador);
 	}
 	else{
-		log_warning(logger,"ERROR. No se pudo recuperar el atributo %s, default: %s", atributo, IP_COORD);
+		logger_planificador(escribir_loguear,l_warning,"ERROR. No se pudo recuperar el atributo %s, default: %s", atributo, IP_COORD);
 		config.ip_coordinador = strdup(IP_COORD);
 	}
 
@@ -1839,10 +1850,10 @@ void leer_configuracion_desde_archivo(char* path_archivo){
 	atributo = strdup("PUERTO_COORDINADOR");
 	if(config_has_property(arch_config, atributo)){
 		config.puerto_coordinador = strdup(config_get_string_value(arch_config, atributo));
-		log_info(logger,"%s: %s", atributo, config.puerto_coordinador);
+		logger_planificador(escribir_loguear,l_info,"%s: %s", atributo, config.puerto_coordinador);
 	}
 	else{
-		log_warning(logger,"ERROR. No se pudo recuperar el atributo %s, default: %s", atributo, PORT_COORD);
+		logger_planificador(escribir_loguear,l_warning,"ERROR. No se pudo recuperar el atributo %s, default: %s", atributo, PORT_COORD);
 		config.puerto_coordinador = strdup(PORT_COORD);
 	}
 
@@ -1853,10 +1864,10 @@ void leer_configuracion_desde_archivo(char* path_archivo){
 	atributo = strdup("PUERTO_ESCUCHA");
 	if(config_has_property(arch_config, atributo)){
 		config.puerto_escucha = strdup(config_get_string_value(arch_config, atributo));
-		log_info(logger,"%s: %s", atributo, config.puerto_escucha);
+		logger_planificador(escribir_loguear,l_info,"%s: %s", atributo, config.puerto_escucha);
 	}
 	else{
-		log_warning(logger,"ERROR. No se pudo recuperar el atributo %s, default: %s", atributo, PORT_ESCUCHA);
+		logger_planificador(escribir_loguear,l_warning,"ERROR. No se pudo recuperar el atributo %s, default: %s", atributo, PORT_ESCUCHA);
 		config.puerto_escucha = strdup(PORT_ESCUCHA);
 	}
 
@@ -1867,10 +1878,10 @@ void leer_configuracion_desde_archivo(char* path_archivo){
 	atributo = strdup("ALGORITMO");
 	if(config_has_property(arch_config, atributo)){
 		config.algoritmo = strdup(config_get_string_value(arch_config, atributo));
-		log_info(logger,"%s: %s", atributo, config.algoritmo);
+		logger_planificador(escribir_loguear,l_info,"%s: %s", atributo, config.algoritmo);
 	}
 	else{
-		log_warning(logger,"ERROR. No se pudo recuperar el atributo %s, default: %s", atributo, ALGORITMO_PLAN_SJFSD);
+		logger_planificador(escribir_loguear,l_warning,"ERROR. No se pudo recuperar el atributo %s, default: %s", atributo, ALGORITMO_PLAN_SJFSD);
 		config.algoritmo = strdup(ALGORITMO_PLAN_SJFSD);
 	}
 
@@ -1882,10 +1893,10 @@ void leer_configuracion_desde_archivo(char* path_archivo){
 	if(config_has_property(arch_config, atributo)){
 		int alfa = config_get_int_value(arch_config, atributo);
 		config.alfa = alfa;
-		log_info(logger,"%s: %f", atributo, config.alfa);
+		logger_planificador(escribir_loguear,l_info,"%s: %f", atributo, config.alfa);
 	}
 	else{
-		log_warning(logger,"ERROR. No se pudo recuperar el atributo %s. Default: %d", atributo, ALPHA);
+		logger_planificador(escribir_loguear,l_warning,"ERROR. No se pudo recuperar el atributo %s. Default: %d", atributo, ALPHA);
 		config.alfa = ALPHA;
 	}
 
@@ -1896,10 +1907,10 @@ void leer_configuracion_desde_archivo(char* path_archivo){
 	atributo = strdup("ESTIMACION_INICIAL");
 	if(config_has_property(arch_config, atributo)){
 		config.estimacion_inicial = config_get_int_value(arch_config, atributo);
-		log_info(logger,"%s: %d", atributo, config.estimacion_inicial);
+		logger_planificador(escribir_loguear,l_info,"%s: %d", atributo, config.estimacion_inicial);
 	}
 	else{
-		log_warning(logger,"ERROR. No se pudo recuperar el atributo %s. Default: %d", atributo,ESTIMACION_INICIAL);
+		logger_planificador(escribir_loguear,l_warning,"ERROR. No se pudo recuperar el atributo %s. Default: %d", atributo,ESTIMACION_INICIAL);
 		config.estimacion_inicial = ESTIMACION_INICIAL;
 	}
 
@@ -1909,7 +1920,7 @@ void leer_configuracion_desde_archivo(char* path_archivo){
 	//CLAVES_BLOQUEADAS
 	atributo = strdup("CLAVES_BLOQUEADAS");
 	claves_bloqueadas_config = config_get_array_value(arch_config, atributo);
-	log_info(logger,"Bloqueando claves por archivo de config...", config.estimacion_inicial);
+	logger_planificador(escribir_loguear,l_info,"Bloqueando claves por archivo de config...", config.estimacion_inicial);
 	int i=0;
 
 	while(claves_bloqueadas_config[i]!=NULL)
@@ -1960,7 +1971,7 @@ void captura_sigpipe(int signo)
     if(signo == SIGINT)
     {
 
-    	logger_planificador(escribir,l_error,"\nApretaste ctrl+c, ayudante malo, dejame terminar bien\n");
+    	logger_planificador(escribir,l_error,"\nApretaste ctrl+c, por qué?, no hay porque\n");
     	terminar_planificador();
     	exit(EXIT_FAILURE);
     }
@@ -1973,6 +1984,10 @@ void captura_sigpipe(int signo)
 
 void logger_planificador(int tipo_esc, int tipo_log, const char* mensaje, ...){
 
+	//Colores (reset,vacio,vacio,cian,verde,vacio,amarillo,rojo)
+	static char *log_colors[8] = {"\x1b[0m","","","\x1b[36m", "\x1b[32m", "", "\x1b[33m", "\x1b[31m" };
+	char *console_buffer=NULL;
+
 	char *msj_salida = malloc(sizeof(char) * 256);
 
 	//Captura los argumentos en una lista
@@ -1984,8 +1999,14 @@ void logger_planificador(int tipo_esc, int tipo_log, const char* mensaje, ...){
 
 	//ESCRIBE POR PANTALLA
 	if((tipo_esc == escribir) || (tipo_esc == escribir_loguear)){
-		printf("%s",msj_salida);
+		//printf("%s",msj_salida);
+		//printf("\n");
+
+		console_buffer = string_from_format("%s%s%s",log_colors[tipo_log],msj_salida, log_colors[0]);
+		printf("%s",console_buffer);
 		printf("\n");
+		fflush(stdout);
+		free(console_buffer);
 	}
 
 	//LOGUEA
@@ -2003,10 +2024,18 @@ void logger_planificador(int tipo_esc, int tipo_log, const char* mensaje, ...){
 		else if(tipo_log == l_debug){
 			log_debug(logger, msj_salida);
 		}
+		else if(tipo_log == l_trace){
+			log_trace(logger, msj_salida);
+		}
 	}
 
 	va_end(args);
 	free(msj_salida);
 
 	return;
+}
+
+char * sentencia_string(int sentencia)
+{
+	return sentencias[sentencia];
 }

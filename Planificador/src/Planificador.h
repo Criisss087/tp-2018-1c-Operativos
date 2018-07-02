@@ -82,9 +82,12 @@ enum sentencias { GET, SET, STORE };
 enum estado_pausa_ejec { no_pausado, pausado };
 
 //
-enum tipo_logueo { escribir, loguear, escribir_loguear, l_info, l_warning, l_error, l_debug };
+enum tipo_logueo { escribir, loguear, escribir_loguear, l_trace, l_debug, l_info, l_warning, l_error};
 
 enum liberar_recursos{no_liberar,liberar};
+
+char* sentencias[3] = {"GET","SET","STORE"};
+
 /**********************************************/
 /* ESTUCTURAS								  */
 /**********************************************/
@@ -194,6 +197,7 @@ void leer_configuracion_desde_archivo(char* path_archivo);
 void configurar_signals(void);
 void captura_sigpipe(int signo);
 void logger_planificador(int tipo_esc, int tipo_log, const char* mensaje, ...);
+char * sentencia_string(int sentencia);
 
 //Utilidades para la consola
 int consola_derivar_comando(char * buffer);
