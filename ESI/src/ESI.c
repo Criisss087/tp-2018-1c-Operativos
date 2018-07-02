@@ -41,6 +41,7 @@ int conectar_coordinador(char * ip, char * puerto){
 	if (resultado_conexion_coordinador < 0){
 		freeaddrinfo(serverInfoCoord);
 		close(serverCoord);
+		finalizar_esi();
 		printf("Error al intentar conectar al coordinador\n");
 		exit(EXIT_FAILURE);
 	}
@@ -71,6 +72,7 @@ int conectar_planificador(char * ip, char * puerto){
 	if (resultado_conexion_planificador < 0){
 		freeaddrinfo(serverInfoPlanif);
 		close(serverPlanif);
+		finalizar_esi();
 		printf("Error al intentar conectar al planificador\n");
 		exit(EXIT_FAILURE);
 	}
@@ -87,6 +89,7 @@ void finalizar_esi(void)
 	if(confirmacion != NULL){
 		free(confirmacion);
 	}
+
 
 	if(linea_a_parsear){
 		free(linea_a_parsear);
@@ -549,6 +552,36 @@ void abortar_esi(void)
 	return;
 }
 
+void configurar_signals(void)
+{
+	struct sigaction signal_struct;
+	signal_struct.sa_handler = captura_sigint;
+	signal_struct.sa_flags   = 0;
+
+	sigemptyset(&signal_struct.sa_mask);
+
+    sigaddset(&signal_struct.sa_mask, SIGINT);
+    if (sigaction(SIGINT, &signal_struct, NULL) < 0)
+    {
+        fprintf(stderr, "sigaction error\n");
+        exit(1);
+    }
+
+}
+
+void captura_sigint(int signo)
+{
+    if(signo == SIGINT)
+    {
+
+    	printf("\nApretaste ctrl+c, por qué?, no hay porque\n");
+    	destruir_operacion(parsed);
+    	finalizar_esi();
+    	exit(EXIT_FAILURE);
+    }
+
+}
+
 int main(int argc, char **argv){
 
 	linea_a_parsear = NULL;
@@ -558,6 +591,7 @@ int main(int argc, char **argv){
 
 	//Obtengo los datos del archivo de configuracion
 	cargar_archivo_de_config(argv[1]);
+	configurar_signals();
 
 	printf("Iniciando conexion a servidores... \n");
 	serverCoord = conectar_coordinador(IP_COORDINADOR, PUERTO_COORDINADOR);
@@ -568,7 +602,6 @@ int main(int argc, char **argv){
 
 	//Leo el archivo y parseo
 	while(!feof(archivo_a_leer_por_el_ESI)){
-
 
 		recibir_orden_planif_para_comenzar(content_header);
 
@@ -600,13 +633,11 @@ int main(int argc, char **argv){
 				recibir_respuesta_coordinador(content_header);
 				printf("\n");
 				enviar_al_planificador_la_rta_del_coordinador(content_header);
-
 				free(confirmacion);
 				destruir_operacion(parsed);
 
 				printf("\n");
 				printf("FIN LINEA\n");
-				printf("\n");
 			}//if parsed valido
 			else{
 				printf("La linea parseada no es válida, se aborta el ESI\n");

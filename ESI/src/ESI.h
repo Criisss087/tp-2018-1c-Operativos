@@ -18,6 +18,7 @@
 #include <parsi/parser.h>
 #include <redis_lib.h>
 #include <commons/config.h>
+#include <signal.h>
 
 //Codigos de las operaciones:
 #define RECIBIR_ORDEN_EJECUCION 1
@@ -62,6 +63,8 @@ char * PUERTO_PLANIFICADOR;
 struct addrinfo* crear_addrinfo(char *, char *);
 int conectar_coordinador(char *, char *);
 int conectar_planificador(char *, char *);
+void configurar_signals(void);
+void captura_sigint(int signo);
 void finalizar_esi(void);
 void mostrar_sentencia(t_esi_operacion_sin_puntero * sentencia, char*valor);
 void mostrar_header(t_content_header * content_header);
