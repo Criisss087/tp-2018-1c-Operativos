@@ -15,10 +15,13 @@
 #include <string.h>
 #include <arpa/inet.h>
 #include <sys/socket.h>
-#include <commons/collections/list.h> // Para manejo de strings
+#include <commons/collections/list.h> // Para manejo de listas
+#include <commons/string.h> // Para manejo de strings
 #include <sys/mman.h> // Para el uso de mmap()
 #include <sys/stat.h>
+#include <sys/types.h>
 #include <errno.h>
+#include <fcntl.h>
 
 #include "CargarArchivoDeConfiguracion.c"
 
@@ -29,8 +32,11 @@
 #define COORDINADOR_INSTANCIA_CONFIG_INICIAL 2
 #define COORDINADOR_INSTANCIA_SENTENCIA 3
 #define INSTANCIA_COORDINADOR_RESPUESTA_SENTENCIA 4
+#define COORDINADOR_INSTANCIA_RECONEXION 5
+#define COORDINADOR_INSTANCIA_RECUPERAR_CLAVES 5
 
-enum algoritmos { circ, lru, bsu };
+#define COORDINADOR_INSTANCIA_COMPROBAR_CONEXION -1
+#define INSTANCIA_COORDINADOR_CONFIRMA_CONEXION_ACTIVA -1
 
 // struct para el envio de nombre de Instancia al Coordinador
 typedef struct{
@@ -55,11 +61,12 @@ typedef struct{
 	char clave[40];
 	int tamanioValor;
 	bool esAtomica;
+	int nroDeOperacion;
 	char* puntero;
-	char* punteroArchivo;
 } __attribute__((packed)) t_indice_entrada;
 
 int numeroEntrada = 0;
+int contadorOperacion = 0;
 
 char * tablaEntradas;
 
