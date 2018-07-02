@@ -337,16 +337,46 @@ void actualizarListaDeClavesYValoresExistentes() {
 		i = i + cantidadDeEntradasRequeridasParaValor(tamanioValor);
 	}
 }
-char * obtenerClaveDeMayorEspacioUtilizado() {
+t_list * obtenerClavesDeMayorEspacioUtilizado() {
+	t_indice_entrada * entradaAnterior list_get(l_indice_entradas, 0);
+	t_indice_entrada * entradaActual;
+	t_list * clavesConMayorValor;
 
-	actualizarListaDeClavesYValoresExistentes();
+	char claveAnterior[40];
+	char claveActual[40];
+	strcpy(claveAnterior, entradaAnterior->clave);
 
-	ordenarDescPorTamanioValor(l_claves_existentes);
+	int tamanioParcial = 0;
+	int mayorTamanio = 0;
 
-	t_claveValor * claveValor = list_get(l_claves_existentes, 0);
-	char clave[40] = claveValor->clave;
+	for (int i = 0; i < list_size(l_indice_entradas); i++) {
+		entradaActual = list_get(l_indice_entradas, i);
+		strcpy(claveActual, entradaActual->clave);
 
-	return clave;
+		if(!strcmp(claveActual, claveAnterior)) {
+			tamanioParcial = 0;
+		}
+			
+		tamanioParcial = tamanioParcial + entradaActual->tamanioValor;
+	
+		if(tamanioParcial > mayorTamanio) {
+			if (!strcmp(claveActual, claveAnterior)) { 
+				list_clean(clavesConMayorValor);
+				list_add(clavesConMayorValor, claveActual);
+			}
+			mayorTamanio = tamanioParcial;
+		} else {
+			if(tamanioParcial == mayorTamanio){
+				list_add(clavesConMayorValor, claveActual);
+			}
+		}
+
+		strcpy(claveAnterior, claveActual);
+		}
+
+	}
+
+	return clavesConMayorValor;
 }
 
 t_indice_entrada * aplicarAlgoritmoDeReemplazo(char clave[40], char * valor) {
@@ -388,16 +418,29 @@ t_indice_entrada * aplicarAlgoritmoDeReemplazo(char clave[40], char * valor) {
 
 	} else if (strcmp(ALGORITMO_DE_REEMPLAZO, "BSU") == 0) {
 
-		char * claveAReemplazar = obtenerClaveDeMayorEspacioUtilizado();
-		printf("Clave a ser reemplazada: %s\n", claveAReemplazar);
+		t_list * claves = obtenerClavesDeMayorEspacioUtilizado();
 
-		t_list * indicesQueContienenClave = obtenerIndicesDeClave(
-				claveAReemplazar);
+		// Compruebo que no haya empates en el algoritmo
+		if(list_size(claves) == 1) {
+			char claveAReemplazar[40] = list_get(claves, 0);
+			printf("Clave a ser reemplazada: %s\n", claveAReemplazar);
 
-		t_indice_entrada * entradaBase = list_get(indicesQueContienenClave, 0);
+			t_list * indicesQueContienenClave = obtenerIndicesDeClave(
+					claveAReemplazar);
 
-		indiceEntrada = guardarIndiceAtomicoEnTabla(clave, valor,
-				entradaBase->numeroEntrada);
+			t_indice_entrada * entradaBase = list_get(indicesQueContienenClave, 0);
+
+			indiceEntrada = guardarIndiceAtomicoEnTabla(clave, valor,
+					entradaBase->numeroEntrada);
+		} else {
+			// TODO: Modularizar el algoritmo circular
+			printf("Hay empate con el algoritmo BSU. Ejecutando algoritmo desempatador...\n");
+
+			numeroEntrada = 0;
+			printf("El puntero fue posicionado en la entrada: %d\n", numeroEntrada);
+			indiceEntrada = guardarIndiceAtomicoEnTabla(clave, valor,
+				numeroEntrada);
+		}
 	}
 
 	return indiceEntrada;

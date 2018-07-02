@@ -56,7 +56,6 @@ t_configTablaEntradas * configTablaEntradas;
 // Lista de indice de Entradas
 
 t_list * l_indice_entradas;
-t_list * l_claves_existentes;
 
 // Estructura de Tabla de indice de Entradas
 typedef struct {
@@ -67,11 +66,6 @@ typedef struct {
 	int nroDeOperacion;
 	char* puntero;
 } __attribute__((packed)) t_indice_entrada;
-
-typedef struct {
-	char clave[40];
-	int tamanioTotalValor;
-} __attribute__((packed)) t_claveValor;
 
 // Cantidad de threads requeridos: principal + auxiliar para efectuar DUMP
 pthread_t threadId[2];
