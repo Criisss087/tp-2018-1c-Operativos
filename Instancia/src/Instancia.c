@@ -302,6 +302,53 @@ void ordenarAscPorCodDeOperacion(t_list * lista) {
 	return;
 }
 
+void ordenarDescPorTamanioValor(t_list * lista) {
+	_Bool mayorEspacioUtilizado(t_claveValor * clave1,
+			t_claveValor * clave2) {
+		return (clave1->tamanioTotalValor >= clave2->tamanioTotalValor);
+	}
+
+	printf("Ordenando lista por Mayor espacio utilizado...\n");
+	list_sort(lista, (void*) mayorEspacioUtilizado);
+
+	return;
+}
+
+void actualizarListaDeClavesYValoresExistentes() {
+	int i = 0;
+	// TODO: Eliminar todos los elementos que existian previamente en la lista
+	list_clean(l_claves_existentes);
+
+	while (i <= list_size(l_indice_entradas)) {
+		t_indice_entrada * entrada = list_get(l_indice_entradas, i);
+		char clave[40] = obtenerClaveExistenteEnEntrada(entrada);
+
+		t_claveValor * claveValor;
+		strcpy(claveValor->clave, clave);
+
+		t_list * indices = obtenerIndicesDeClave(clave);
+		int tamanioValorCompleto = obtenerTamanioTotalDeValorGuardado(indices);
+
+		claveValor->tamanioTotalValor = tamanioValorCompleto;
+
+		list_add(l_claves_existentes, claveValor);
+
+		// Asigno a i la posicion de la siguiente entrada
+		i = i + cantidadDeEntradasRequeridasParaValor(tamanioValor);
+	}
+}
+char * obtenerClaveDeMayorEspacioUtilizado() {
+
+	actualizarListaDeClavesYValoresExistentes();
+
+	ordenarDescPorTamanioValor(l_claves_existentes);
+
+	t_claveValor * claveValor = list_get(l_claves_existentes, 0);
+	char clave[40] = claveValor->clave;
+
+	return clave;
+}
+
 t_indice_entrada * aplicarAlgoritmoDeReemplazo(char clave[40], char * valor) {
 	printf("Aplicando algoritmo de reemplazo: %s\n", ALGORITMO_DE_REEMPLAZO);
 
@@ -328,6 +375,7 @@ t_indice_entrada * aplicarAlgoritmoDeReemplazo(char clave[40], char * valor) {
 
 		printf("Clave a ser reemplazada: %s\n", claveAReemplazar);
 
+		// TODO: Eliminar los elementos de la lista destruida
 		list_destroy(listaAux);
 
 		t_list * indicesQueContienenClave = obtenerIndicesDeClave(
@@ -339,7 +387,17 @@ t_indice_entrada * aplicarAlgoritmoDeReemplazo(char clave[40], char * valor) {
 				entradaBase->numeroEntrada);
 
 	} else if (strcmp(ALGORITMO_DE_REEMPLAZO, "BSU") == 0) {
-		printf("Algoritmo BSU aun no desarrollado\n");
+
+		char * claveAReemplazar = obtenerClaveDeMayorEspacioUtilizado();
+		printf("Clave a ser reemplazada: %s\n", claveAReemplazar);
+
+		t_list * indicesQueContienenClave = obtenerIndicesDeClave(
+				claveAReemplazar);
+
+		t_indice_entrada * entradaBase = list_get(indicesQueContienenClave, 0);
+
+		indiceEntrada = guardarIndiceAtomicoEnTabla(clave, valor,
+				entradaBase->numeroEntrada);
 	}
 
 	return indiceEntrada;

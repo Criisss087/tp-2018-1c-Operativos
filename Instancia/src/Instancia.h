@@ -41,11 +41,11 @@
 #define INSTANCIA_COORDINADOR_CONFIRMA_CONEXION_ACTIVA -1
 
 // struct para el envio de nombre de Instancia al Coordinador
-typedef struct{
+typedef struct {
 	char nombreInstancia[40];
 } __attribute__((packed)) t_info_instancia;
 
-typedef struct{
+typedef struct {
 		int keyword;
 		char clave[40];
 		char* valor;
@@ -56,9 +56,10 @@ t_configTablaEntradas * configTablaEntradas;
 // Lista de indice de Entradas
 
 t_list * l_indice_entradas;
+t_list * l_claves_existentes;
 
 // Estructura de Tabla de indice de Entradas
-typedef struct{
+typedef struct {
 	int numeroEntrada;
 	char clave[40];
 	int tamanioValor;
@@ -66,6 +67,11 @@ typedef struct{
 	int nroDeOperacion;
 	char* puntero;
 } __attribute__((packed)) t_indice_entrada;
+
+typedef struct {
+	char clave[40];
+	int tamanioTotalValor;
+} __attribute__((packed)) t_claveValor;
 
 // Cantidad de threads requeridos: principal + auxiliar para efectuar DUMP
 pthread_t threadId[2];
