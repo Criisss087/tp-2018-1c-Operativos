@@ -46,7 +46,7 @@ rta_envio enviarSentenciaInstancia(t_sentencia * sentencia){
 			proxima =  instanciaDuena->instancia;
 		}
 		else{
-			proxima = siguienteInstanciaSegunAlgoritmo(sentencia->clave);
+			proxima = siguienteInstanciaSegunAlgoritmo(sentencia->clave, false);
 			t_clave * instanciaDuena = list_get(instancias_con_clave ,0);
 			instanciaDuena->instancia = proxima;
 		}
@@ -178,7 +178,7 @@ void atender_comando_status(){
 
 	st_clave->valor = strdup(devolver_valor_clave(st_clave->nombre));
 	st_clave->instancia_actual = strdup(devolver_nombre_instancia_actual(st_clave->nombre));
-	//st_clave->instancia_guardado_distr = simular(st_clave->nombre);
+	//st_clave->instancia_guardado_distr = simular(st_clave->nombre); --------------siguienteInstanciaSegunAlgoritmo(clave, true)
 
 	t_content_header * header = crear_cabecera_mensaje(coordinador, planificador, PLANIFICADOR_COORDINADOR_CMD_STATUS,0);
 	int respuesta = send(planificador, header, sizeof(t_content_header), 0);
@@ -224,7 +224,7 @@ t_clave * guardarClaveInternamente(char clave[40]){
 			//log_warning(logger,"no existía la clave");
 			t_clave * claveObjeto = malloc(sizeof(t_clave));
 			//asigno la instancia la primera vez que envio a una
-			claveObjeto->instancia = siguienteInstanciaSegunAlgoritmo(clave);
+			claveObjeto->instancia = siguienteInstanciaSegunAlgoritmo(clave, false);
 			strncpy(claveObjeto,clave,40);
 
 			list_add(lista_claves,claveObjeto);

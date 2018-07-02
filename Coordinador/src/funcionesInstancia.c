@@ -225,15 +225,34 @@ void guardarEnListaDeInstancias(int socketInstancia, char *nombre){
 
 }
 
-t_instancia * siguienteEqLoad(){
+t_instancia * siguienteEqLoad(simulacion){
 	//Quizá convenga hacer que recorra la lista de atrás para adelante,
 	//para no estar siempre con las nuevas dejando las viejas para lo último.
 	//Como no va a haber la misma cantidad de conexiones con instancias como con esis por ejemplo, no creo que sea tan necesario.
 	int cant = list_size(lista_instancias);
-	indice_actual_lista++;
-	if (indice_actual_lista>cant){indice_actual_lista = indice_actual_lista - cant;}
-	int siguiente = indice_actual_lista % cant;
-	return list_get(lista_instancias, siguiente);
+	int indice_actual_de_mentira = indice_actual_lista;
+
+	if(simulacion == false){
+		indice_actual_lista++;
+
+		if (indice_actual_lista > cant){
+			indice_actual_lista = indice_actual_lista - cant;
+		}
+
+		int siguiente = indice_actual_lista % cant;
+
+		return list_get(lista_instancias, siguiente);
+	}else{
+		indice_actual_de_mentira++;
+
+		if (indice_actual_de_mentira > cant){
+			indice_actual_de_mentira = indice_actual_de_mentira - cant;
+		}
+
+		int siguiente = indice_actual_de_mentira % cant;
+
+		return list_get(lista_instancias, siguiente);
+	}
 }
 
 t_instancia * siguienteLSU(){
@@ -287,13 +306,14 @@ t_instancia * siguienteKeyExplicit(char clave[40]){
 	}
 }
 
-t_instancia * siguienteInstanciaSegunAlgoritmo(char clave[40]){
+t_instancia * siguienteInstanciaSegunAlgoritmo(char clave[40], bool simulacion){
+
 	//TODO usar la funcion list_size para ver si mostrar o no el error
 	if(	list_size(lista_instancias)==0){
-			log_error(logger,"No hay Instancias conectadas");
-			t_instancia * instancia_error = malloc(sizeof(t_instancia));
-			strncpy(instancia_error->nombre,"ERROR",5);
-			return instancia_error;
+		log_error(logger,"No hay Instancias conectadas");
+		t_instancia * instancia_error = malloc(sizeof(t_instancia));
+		strncpy(instancia_error->nombre,"ERROR",5);
+		return instancia_error;
 	}
 
 	switch(ALGORITMO_DISTRIBUCION){
@@ -301,15 +321,14 @@ t_instancia * siguienteInstanciaSegunAlgoritmo(char clave[40]){
 			return siguienteEqLoad();
 			break;
 		case LEAST_SPACE_USED:
-			//TODO
 			return siguienteLSU();
 			break;
 		case KEY_EXPLICIT:
 			return siguienteKeyExplicit(clave);
-			break;
+		break;
 		default:
-			return siguienteEqLoad();
-		}
+		return siguienteEqLoad(simulacion);
+	}
 }
 
 void loopInstancia(int socketInstancia, char * nombre){
