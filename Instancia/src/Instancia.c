@@ -99,7 +99,7 @@ case STORE_:
 	printf("\tResultado de ejecucion enviado: %d\n", resultadoEjecucion);
 	printf("--------------------------------------------------------\n");
 	break;
-case 3: // Keyword de reconexion
+case COORDINADOR_INSTANCIA_RECUPERAR_CLAVES: // Keyword de reconexion
 	enviarHeader(socketCoordinador, instancia, coordinador,
 	INSTANCIA_COORDINADOR_RESPUESTA_SENTENCIA, sizeof(int));
 	printf(
@@ -736,7 +736,7 @@ void interpretarOperacionCoordinador(t_content_header * header,
 
 		obtenerClavesARecuperar(socketCoordinador, header->cantidad_a_leer);
 
-		enviarResultadoSentencia(socketCoordinador, 3); // TODO: Añadir al enum el keyword reconexion= 3
+		enviarResultadoSentencia(socketCoordinador, COORDINADOR_INSTANCIA_RECUPERAR_CLAVES);
 
 		break;
 
@@ -745,6 +745,9 @@ void interpretarOperacionCoordinador(t_content_header * header,
 		sentenciaRecibida = recibirSentencia(socketCoordinador);
 
 		switch (sentenciaRecibida->keyword) {
+
+		case OBTENER_VALOR:
+			break;
 
 		case SET_:
 			guardarClaveValor(sentenciaRecibida->clave,
@@ -756,12 +759,6 @@ void interpretarOperacionCoordinador(t_content_header * header,
 		case STORE_:
 			realizarStoreDeClave(sentenciaRecibida->clave);
 			enviarResultadoSentencia(socketCoordinador, STORE_);
-			break;
-
-		case GET_:
-			printf(
-					"TODO: Leer clave y devolver valor... (ver si corresponde implementar el GET)\n");
-			// enviarResultadoSentencia(socketCoordinador, GET_);
 			break;
 
 		}
