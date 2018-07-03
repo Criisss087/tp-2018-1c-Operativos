@@ -73,6 +73,8 @@ pthread_t threadId[2];
 int numeroEntrada = 0;
 int contadorOperacion = 0;
 
+int respuestaParaCoordinador;
+
 char * tablaEntradas;
 
 #endif /* SRC_UTILIDADES_H_ */

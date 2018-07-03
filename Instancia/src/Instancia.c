@@ -60,9 +60,7 @@ case SET_:
 
 	printf("Enviando Respuesta de sentencia SET...\n");
 
-	resultadoEjecucion = EXITO_I;
-
-	resultadoAEnviar = armarRespuestaParaCoordinador(resultadoEjecucion);
+	resultadoAEnviar = armarRespuestaParaCoordinador(respuestaParaCoordinador);
 
 	resultado = send(socketCoordinador, resultadoAEnviar,
 			sizeof(t_respuesta_instancia), 0);
@@ -73,7 +71,7 @@ case SET_:
 	}
 
 	printf("\tResultado: %d\n", resultado);
-	printf("\tResultado de ejecucion enviado: %d\n", resultadoEjecucion);
+	printf("\tResultado de ejecucion enviado: %d\n", respuestaParaCoordinador);
 	printf("--------------------------------------------------------\n");
 	break;
 
@@ -302,80 +300,57 @@ void ordenarAscPorCodDeOperacion(t_list * lista) {
 	return;
 }
 
-void ordenarDescPorTamanioValor(t_list * lista) {
-	_Bool mayorEspacioUtilizado(t_claveValor * clave1,
-			t_claveValor * clave2) {
-		return (clave1->tamanioTotalValor >= clave2->tamanioTotalValor);
-	}
-
-	printf("Ordenando lista por Mayor espacio utilizado...\n");
-	list_sort(lista, (void*) mayorEspacioUtilizado);
-
-	return;
-}
-
-void actualizarListaDeClavesYValoresExistentes() {
-	int i = 0;
-	// TODO: Eliminar todos los elementos que existian previamente en la lista
-	list_clean(l_claves_existentes);
-
-	while (i <= list_size(l_indice_entradas)) {
-		t_indice_entrada * entrada = list_get(l_indice_entradas, i);
-		char clave[40] = obtenerClaveExistenteEnEntrada(entrada);
-
-		t_claveValor * claveValor;
-		strcpy(claveValor->clave, clave);
-
-		t_list * indices = obtenerIndicesDeClave(clave);
-		int tamanioValorCompleto = obtenerTamanioTotalDeValorGuardado(indices);
-
-		claveValor->tamanioTotalValor = tamanioValorCompleto;
-
-		list_add(l_claves_existentes, claveValor);
-
-		// Asigno a i la posicion de la siguiente entrada
-		i = i + cantidadDeEntradasRequeridasParaValor(tamanioValor);
-	}
-}
 t_list * obtenerClavesDeMayorEspacioUtilizado() {
-	t_indice_entrada * entradaAnterior list_get(l_indice_entradas, 0);
-	t_indice_entrada * entradaActual;
-	t_list * clavesConMayorValor;
+	printf("Obteniendo clave/s con valores asociados de mayor tamaño...\n");
 
-	char claveAnterior[40];
-	char claveActual[40];
+	t_indice_entrada * entradaAnterior = list_get(l_indice_entradas, 0);
+	t_indice_entrada * entradaActual;
+	t_list * clavesConMayorValor = list_create();
+
+	char * claveAnterior = malloc(sizeof(char *));
+	char * claveActual = malloc(sizeof(char *));
 	strcpy(claveAnterior, entradaAnterior->clave);
 
 	int tamanioParcial = 0;
 	int mayorTamanio = 0;
 
 	for (int i = 0; i < list_size(l_indice_entradas); i++) {
+		printf("Recorriendo entrada: %d\n", i);
 		entradaActual = list_get(l_indice_entradas, i);
 		strcpy(claveActual, entradaActual->clave);
 
-		if(!strcmp(claveActual, claveAnterior)) {
+		if (strcmp(claveActual, claveAnterior) != 0) {
+			printf("\tCambio de clave...\n");
 			tamanioParcial = 0;
 		}
-			
+
 		tamanioParcial = tamanioParcial + entradaActual->tamanioValor;
-	
-		if(tamanioParcial > mayorTamanio) {
-			if (!strcmp(claveActual, claveAnterior)) { 
+		printf("Tamanio parcial: %d. Mayor tamanio: %d\n", tamanioParcial,
+				mayorTamanio);
+
+		if (tamanioParcial > mayorTamanio) {
+			if (strcmp(claveActual, claveAnterior) != 0) {
+				printf("\tNueva clave con mayor valor encontrada\n");
 				list_clean(clavesConMayorValor);
+				printf("\t\tClean de lista efectuado.\n");
 				list_add(clavesConMayorValor, claveActual);
+				printf("\t\tAgregando nueva clave de mayor valor.\n");
 			}
+
 			mayorTamanio = tamanioParcial;
+
 		} else {
-			if(tamanioParcial == mayorTamanio){
+			if (tamanioParcial == mayorTamanio) {
+				printf(
+						"\tAgregando otra clave ya que tienen mismo tamanio maximo\n");
 				list_add(clavesConMayorValor, claveActual);
 			}
 		}
 
 		strcpy(claveAnterior, claveActual);
-		}
-
 	}
 
+	printf("Devolviendo claves con mayor valor\n");
 	return clavesConMayorValor;
 }
 
@@ -421,25 +396,29 @@ t_indice_entrada * aplicarAlgoritmoDeReemplazo(char clave[40], char * valor) {
 		t_list * claves = obtenerClavesDeMayorEspacioUtilizado();
 
 		// Compruebo que no haya empates en el algoritmo
-		if(list_size(claves) == 1) {
-			char claveAReemplazar[40] = list_get(claves, 0);
+		if (list_size(claves) == 1) {
+			// char claveAReemplazar[40] = list_get(claves, 0);
+			char * claveAReemplazar = list_get(claves, 0);
 			printf("Clave a ser reemplazada: %s\n", claveAReemplazar);
 
 			t_list * indicesQueContienenClave = obtenerIndicesDeClave(
 					claveAReemplazar);
 
-			t_indice_entrada * entradaBase = list_get(indicesQueContienenClave, 0);
+			t_indice_entrada * entradaBase = list_get(indicesQueContienenClave,
+					0);
 
 			indiceEntrada = guardarIndiceAtomicoEnTabla(clave, valor,
 					entradaBase->numeroEntrada);
 		} else {
 			// TODO: Modularizar el algoritmo circular
-			printf("Hay empate con el algoritmo BSU. Ejecutando algoritmo desempatador...\n");
+			printf(
+					"Hay empate con el algoritmo BSU. Ejecutando algoritmo desempatador...\n");
 
 			numeroEntrada = 0;
-			printf("El puntero fue posicionado en la entrada: %d\n", numeroEntrada);
+			printf("El puntero fue posicionado en la entrada: %d\n",
+					numeroEntrada);
 			indiceEntrada = guardarIndiceAtomicoEnTabla(clave, valor,
-				numeroEntrada);
+					numeroEntrada);
 		}
 	}
 
@@ -517,14 +496,14 @@ void actualizarEntradasConNuevoValor(char clave[40], char * valor) {
 	t_indice_entrada * indiceBase = list_get(indices, 0);
 	eliminarEntradasAsociadasAClave(clave);
 
-	// Me guardo el numero de entrada para no perderlo al guardar claveValor
+// Me guardo el numero de entrada para no perderlo al guardar claveValor
 	int nroEntradaAux = numeroEntrada;
 
-	// Seteo el numero de entrada con el de las claves ya existentes.
+// Seteo el numero de entrada con el de las claves ya existentes.
 	numeroEntrada = indiceBase->numeroEntrada;
 	guardarClaveValor(clave, valor);
 
-	// Recupero el numero de entrada
+// Recupero el numero de entrada
 	numeroEntrada = nroEntradaAux;
 }
 
@@ -551,6 +530,8 @@ void guardarClaveValor(char clave[40], char * valor) {
 		}
 
 		actualizarNroDeOperacion(indicesQueContienenClave);
+
+		respuestaParaCoordinador = EXITO_I;
 	} else {
 		printf("La clave no existe... guardar...\n");
 
@@ -578,8 +559,11 @@ void guardarClaveValor(char clave[40], char * valor) {
 
 				printf("Valor guardado: %s\n", indiceBase->puntero);
 
+				respuestaParaCoordinador = EXITO_I;
+
 			} else {
 				printf("No hay mas lugar para guardar un valor NO atomico.\n");
+				respuestaParaCoordinador = ERROR_I;
 				//TODO: Devolver un error al coordinador
 			}
 
@@ -611,6 +595,8 @@ void guardarClaveValor(char clave[40], char * valor) {
 			memcpy(indiceEntrada->puntero, valor, strlen(valor));
 
 			printf("Valor guardado: %s\n", indiceEntrada->puntero);
+
+			respuestaParaCoordinador = EXITO_I;
 		}
 
 		imprimirTablaEntradas();
@@ -637,13 +623,13 @@ void make_directory(const char* name) {
 
 char * obtenerPathArchivo(char clave[40]) {
 	char * puntoDeMontaje = strdup(PUNTO_DE_MONTAJE);
-	// printf("Directorio donde se guardara el archivo: %s\n", puntoDeMontaje);
+// printf("Directorio donde se guardara el archivo: %s\n", puntoDeMontaje);
 
 	char * archivo;
 	archivo = string_new();
 	string_append(&archivo, clave);
 	string_append(&archivo, ".txt");
-	// printf("Nombre del archivo que se creara: %s\n", archivo);
+// printf("Nombre del archivo que se creara: %s\n", archivo);
 
 	char * path = string_new();
 	string_append(&path, puntoDeMontaje);
@@ -837,7 +823,8 @@ void interpretarOperacionCoordinador(t_content_header * header,
 
 		obtenerClavesARecuperar(socketCoordinador, header->cantidad_a_leer);
 
-		enviarResultadoSentencia(socketCoordinador, COORDINADOR_INSTANCIA_RECUPERAR_CLAVES);
+		enviarResultadoSentencia(socketCoordinador,
+		COORDINADOR_INSTANCIA_RECUPERAR_CLAVES);
 
 		break;
 
