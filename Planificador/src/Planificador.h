@@ -64,7 +64,7 @@
 #define OPERACION_HANDSHAKE_COORD 1
 #define OPERACION_CONSULTA_CLAVE_COORD 2
 #define OPERACION_RES_CLAVE_COORD 3
-#define OPERACION_STATUS_CLAVE 4
+#define PLANIFICADOR_COORDINADOR_CMD_STATUS 4
 
 
 //Enumeracion de los comandos de la consola
@@ -231,7 +231,7 @@ void inicializar_conexiones_esi(void);
 int atender_nuevo_esi(int serv_socket);
 int recibir_mensaje_esi(t_conexion_esi esi);
 int cerrar_conexion_esi(t_conexion_esi * esi);
-int enviar_confirmacion_sentencia(t_pcb_esi * pcb_esi);
+int enviar_esi_confirmacion_sentencia(t_pcb_esi * pcb_esi);
 t_pcb_esi * crear_esi(t_conexion_esi * conexion);
 int destruir_esi(t_pcb_esi * esi);
 void mostrar_esi(t_pcb_esi * esi);
@@ -249,14 +249,14 @@ int confirmar_bloqueo_ejecucion(void);
 int confirmar_desalojo_ejecucion(void);
 int confirmar_pausa_por_consola(void);
 int confirmar_kill_ejecucion(void);
-void enviar_confirmacion_kill(int pid);
+void enviar_esi_confirmacion_kill(int pid);
 int finalizar_esi(int pid_esi);
 
 //Manejo de Coordinador
 int recibir_mensaje_coordinador(int coord_socket);
 int cerrar_conexion_coord(int coord_socket);
-int enviar_resultado_consulta(int socket, int resultado);
-int enviar_clave_coordinador(char* clave_nombre);
+int enviar_coordinador_resultado_consulta(int socket, int resultado);
+int enviar_coordinador_clave_status(char* clave_nombre);
 
 //Manejo de claves
 int bloquear_clave(char* clave , int pid);

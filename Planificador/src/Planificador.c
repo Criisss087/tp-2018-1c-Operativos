@@ -377,15 +377,15 @@ int recibir_mensaje_coordinador(int coord_socket)
 				break;
 		}
 
-		enviar_resultado_consulta(coord_socket, resultado_consulta);
+		enviar_coordinador_resultado_consulta(coord_socket, resultado_consulta);
 
 		free(consulta_bloqueo);
 	}
 
 	// RECIBE STATUS DE CLAVE
-	if(content_header->operacion == OPERACION_STATUS_CLAVE){
+	if(content_header->operacion == PLANIFICADOR_COORDINADOR_CMD_STATUS){
 
-		t_status_clave st_clave = malloc(sizeof(t_status_clave));
+		t_status_clave *st_clave = malloc(sizeof(t_status_clave));
 
 		read_size = recv(coord_socket, st_clave, sizeof(t_status_clave), 0);
 		if(read_size < 0)
@@ -399,6 +399,8 @@ int recibir_mensaje_coordinador(int coord_socket)
 		else{
 			status_clave(st_clave);
 		}
+
+		//TODO free(st_clave); ??
 	}
 
 	destruir_cabecera_mensaje(content_header);
@@ -481,7 +483,7 @@ int recibir_mensaje_esi(t_conexion_esi conexion_esi)
 			// Ordenar ejecutar siguiente sentencia del ESI
 			if(esi_en_ejecucion!=NULL)
 			{
-				enviar_confirmacion_sentencia(esi_en_ejecucion);
+				enviar_esi_confirmacion_sentencia(esi_en_ejecucion);
 			}
 
 		}
@@ -925,7 +927,7 @@ void consola_matar_proceso(char* id)
 		if (!finalizar_esi(pid))
 		{
 			log_info(logger,"ESI de ID %d Finalizado",pid);
-			enviar_confirmacion_kill(pid);
+			enviar_esi_confirmacion_kill(pid);
 		}
 		else
 		{
@@ -945,7 +947,7 @@ void consola_consultar_status_clave(char* clave_nombre)
 	else{
 		log_info(logger,"CONSOLA> COMANDO Status para clave: %s.", clave_nombre);
 
-		if(enviar_clave_coordinador(clave_nombre) < 0){
+		if(enviar_coordinador_clave_status(clave_nombre) < 0){
 			logger_planificador(loguear, l_error, "ERROR al consultar status clave al Coordinador.");
 		}
 	}
@@ -1193,7 +1195,7 @@ void obtener_proximo_ejecucion(void)
 	if((esi_en_ejecucion != NULL) && (ejec_ant != esi_en_ejecucion))
 	{
 		//log_info(logger,"Aca le debo avisar al esi %d que es su turno\n", esi_en_ejecucion->pid);
-		int res = enviar_confirmacion_sentencia(esi_en_ejecucion);
+		int res = enviar_esi_confirmacion_sentencia(esi_en_ejecucion);
 		if(!res)
 		{
 			//Validar resultado del envio
@@ -1203,7 +1205,7 @@ void obtener_proximo_ejecucion(void)
 	return;
 }
 
-int enviar_confirmacion_sentencia(t_pcb_esi * pcb_esi)
+int enviar_esi_confirmacion_sentencia(t_pcb_esi * pcb_esi)
 {
 
 	t_content_header * header = crear_cabecera_mensaje(planificador,esi,OPERACION_CONF_SENTENCIA,sizeof(t_confirmacion_sentencia));
@@ -1235,7 +1237,7 @@ int enviar_confirmacion_sentencia(t_pcb_esi * pcb_esi)
 	return res_send;
 }
 
-void enviar_confirmacion_kill(int pid)
+void enviar_esi_confirmacion_kill(int pid)
 {
 
 	t_pcb_esi * esi_aux;
@@ -1274,7 +1276,7 @@ void enviar_confirmacion_kill(int pid)
 	return;
 }
 
-int enviar_resultado_consulta(int socket, int resultado)
+int enviar_coordinador_resultado_consulta(int socket, int resultado)
 {
 	t_content_header * header = crear_cabecera_mensaje(planificador,coordinador,OPERACION_RES_CLAVE_COORD,sizeof(int));
 
@@ -1303,35 +1305,33 @@ int enviar_resultado_consulta(int socket, int resultado)
 	return res_send;
 }
 
-int enviar_clave_coordinador(char* clave_nombre){
+int enviar_coordinador_clave_status(char* clave_nombre){
 
 	//TODO Ver qué sizeof mandar.
-	t_content_header * header = crear_cabecera_mensaje(planificador, coordinador, OPERACION_STATUS_CLAVE, sizeof(char)*50);
+	t_content_header *header = crear_cabecera_mensaje(planificador, coordinador, PLANIFICADOR_COORDINADOR_CMD_STATUS, sizeof(char)*50);
 
-	char* body = malloc(sizeof(char)*50);
+	t_status_clave *st_clave = malloc(sizeof(t_status_clave));
+	st_clave->nombre = strdup(clave_nombre);
 
-	body = strdup(clave_nombre);
+	logger_planificador(loguear, l_info, "Envío consulta de status por clave %s.", st_clave->nombre);
 
-	logger_planificador(loguear, l_info, "Envío consulta de status por clave %s.", body);
-
-	//TODO Crear configuracion socket nuevo hilo de Coordinador
-	int socket_coordinador_cmd_status = NULL;
+	//TODO Recuperar socket del coordinador
+	int socket_coordinador = NULL;
 
 	//Envía Header al Coordinador
-	int res_send = send(socket_coordinador_cmd_status, header, sizeof(t_content_header), 0);
-	if(res_send < 0)
-	{
+	int res_send = send(socket_coordinador, header, sizeof(t_content_header), 0);
+	if(res_send < 0){
 		log_error(logger, "Error al enviar header al Coordinador.");
 	}
 
 	//Envía Body al Coordinador
-	res_send = send(socket_coordinador_cmd_status, body, sizeof(char)*50, 0);
-	if(res_send < 0)
-	{
+	res_send = send(socket_coordinador, st_clave->nombre, sizeof(char)*50, 0);
+	if(res_send < 0){
 		log_error(logger, "Error en send body al Coordinador.");
 	}
 
-	free(body);
+	free(st_clave->nombre);
+	free(st_clave);
 	destruir_cabecera_mensaje(header);
 	return res_send;
 }
@@ -1870,7 +1870,7 @@ int confirmar_pausa_por_consola(){
 
 int confirmar_kill_ejecucion(void){
 
-	enviar_confirmacion_kill(esi_en_ejecucion->pid);
+	enviar_esi_confirmacion_kill(esi_en_ejecucion->pid);
 	finalizar_esi(esi_en_ejecucion->pid);
 
 	return 0;
