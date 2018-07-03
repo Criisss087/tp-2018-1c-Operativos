@@ -256,6 +256,7 @@ int finalizar_esi(int pid_esi);
 int recibir_mensaje_coordinador(int coord_socket);
 int cerrar_conexion_coord(int coord_socket);
 int enviar_resultado_consulta(int socket, int resultado);
+int enviar_clave_coordinador(char* clave_nombre);
 
 //Manejo de claves
 int bloquear_clave(char* clave , int pid);

@@ -944,7 +944,10 @@ void consola_consultar_status_clave(char* clave_nombre)
 	}
 	else{
 		log_info(logger,"CONSOLA> COMANDO Status para clave: %s.", clave_nombre);
-		enviar_clave_coordinador(clave_nombre);
+
+		if(enviar_clave_coordinador(clave_nombre) < 0){
+			logger_planificador(loguear, l_error, "ERROR al consultar status clave al Coordinador.");
+		}
 	}
 
 	return;
@@ -967,16 +970,18 @@ void status_clave(t_status_clave* clave_st)
 	//clave_st = malloc(sizeof(t_status_clave));
 
 	//TODO Inicializado dummy - ELIMINAR
+	/*
 	clave_st->valor = strdup("TraemeLaCopa");
 	clave_st->instancia_actual = strdup("InstanciaDummy");
 	clave_st->instancia_guardado_distr = NULL;
+	*/
 
 	//VALOR
 	if(clave_st->valor != NULL){
-		log_info(logger,"-Valor de la clave %s: %s.", clave_st->nombre, clave_st->valor);
+		logger_planificador(escribir, NULL, "-Valor de la clave %s: %s.", clave_st->nombre, clave_st->valor);
 	}
 	else{
-		log_info(logger,"-La clave %s NO tiene VALOR.", clave_st->nombre);
+		logger_planificador(escribir, NULL, "-La clave %s NO tiene VALOR.", clave_st->nombre);
 	}
 
 	//INSTANCIA ACTUAL
@@ -1007,6 +1012,7 @@ void status_clave(t_status_clave* clave_st)
 
 	log_info(logger,"-Listado de ESIs bloqueados por clave %s: ", clave_st->nombre);
 	mostrar_esis_consola(lista_esis_bloq_por_clave);
+
 
 	return;
 }
@@ -1300,7 +1306,7 @@ int enviar_resultado_consulta(int socket, int resultado)
 int enviar_clave_coordinador(char* clave_nombre){
 
 	//TODO Ver qué sizeof mandar.
-	t_content_header * header = crear_cabecera_mensaje(planificador, coordinador, OPERACION_STATUS_CLAVE, sizeof(t_confirmacion_sentencia));
+	t_content_header * header = crear_cabecera_mensaje(planificador, coordinador, OPERACION_STATUS_CLAVE, sizeof(char)*50);
 
 	char* body = malloc(sizeof(char)*50);
 
@@ -1311,12 +1317,14 @@ int enviar_clave_coordinador(char* clave_nombre){
 	//TODO Crear configuracion socket nuevo hilo de Coordinador
 	int socket_coordinador_cmd_status = NULL;
 
+	//Envía Header al Coordinador
 	int res_send = send(socket_coordinador_cmd_status, header, sizeof(t_content_header), 0);
 	if(res_send < 0)
 	{
-		log_error(logger, "Error en send header al Coordinador.");
+		log_error(logger, "Error al enviar header al Coordinador.");
 	}
 
+	//Envía Body al Coordinador
 	res_send = send(socket_coordinador_cmd_status, body, sizeof(char)*50, 0);
 	if(res_send < 0)
 	{
