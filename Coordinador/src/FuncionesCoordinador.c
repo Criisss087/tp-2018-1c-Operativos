@@ -7,6 +7,8 @@
 
 #include "funcionesInstancia.c"
 #include "Utilidades.h"
+#include "FuncionesPlanificador.c"
+
 void crear_hilo_conexion(int socket, void(*funcion_a_ejecutar)(int)){
 	pthread_t hilo;
 	pthread_create(&hilo,NULL,*funcion_a_ejecutar,socket);
@@ -87,6 +89,7 @@ void seteosIniciales(char *path){
 }
 
 struct addrinfo* crear_addrinfo(){
+	//arma el socket listener principal (no para el que escucha la peticion status del planif)
 	struct addrinfo hints;
 	struct addrinfo *serverInfo;
 

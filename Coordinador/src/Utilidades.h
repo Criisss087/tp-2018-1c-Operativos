@@ -64,12 +64,22 @@
 
 //***
 struct status_clave{
-	char* nombre;
-	char* valor;
-	char* instancia_actual;
-	char* instancia_guardado_distr;
+	int tamanio_valor;
+	int tamanio_instancia_nombre;
+	int cod;
 };
+//0 = coord no tiene la clave, 1=inst caida, 2= inst simulada, 3=	correcto, 4= instancia no tiene la clave
+//Devolver -1 en tamanio_valor cuando no tiene asociada una instancia la clave
+
 typedef struct status_clave t_status_clave;
+
+typedef struct {
+	char * valor;
+	char * nombre_instancia;
+	int tamanio_valor;
+	int tamanio_instancia_nombre;
+	int cod;
+} t_status_clave_interno;
 
 typedef struct{
 	int socket;
@@ -133,6 +143,7 @@ char * PUERTO = "8888";
 int TAMANIO_ENTRADAS = 300;
 int CANT_MAX_ENTRADAS = 50;
 int RETARDO = 0; //ms
+
 
 t_log * logger;
 t_log * logger_operaciones;

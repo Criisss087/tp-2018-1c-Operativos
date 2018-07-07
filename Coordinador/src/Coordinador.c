@@ -10,7 +10,6 @@
 #include "FuncionesCoordinador.c"
 
 
-
 rta_envio enviarSentenciaInstancia(t_sentencia * sentencia){
 
 	rta_envio rta;
@@ -170,26 +169,6 @@ char * devolver_nombre_instancia_actual(char * nombre_clave){
 	return (cual->nombre);
 }
 
-void atender_comando_status(){
-
-	t_status_clave * st_clave = malloc(sizeof(t_status_clave));
-
-	int consulta = recv(planificador, st_clave->nombre, sizeof(st_clave->nombre), 0);
-
-	st_clave->valor = strdup(devolver_valor_clave(st_clave->nombre));
-	st_clave->instancia_actual = strdup(devolver_nombre_instancia_actual(st_clave->nombre));
-	//st_clave->instancia_guardado_distr = simular(st_clave->nombre); --------------siguienteInstanciaSegunAlgoritmo(clave, true)
-
-	t_content_header * header = crear_cabecera_mensaje(coordinador, planificador, PLANIFICADOR_COORDINADOR_CMD_STATUS,0);
-	int respuesta = send(planificador, header, sizeof(t_content_header), 0);
-
-	int contenido_rta = send(planificador, st_clave, sizeof(t_status_clave), 0);
-
-	free(st_clave);
-	destruir_cabecera_mensaje(header);
-
-}
-
 void interpretarOperacionPlanificador(t_content_header * hd, int socketCliente){
 	//log_info(logger,"Interpretando operación planificador");
 
@@ -198,9 +177,9 @@ void interpretarOperacionPlanificador(t_content_header * hd, int socketCliente){
 		PROCESO_PLANIFICADOR.id = nuevoIDInstancia();
 		PROCESO_PLANIFICADOR.socket = socketCliente;
 		break;
-	case PLANIFICADOR_COORDINADOR_CMD_STATUS:
-		atender_comando_status();
-		break;
+	default:
+		//TODO
+		;
 	}
 }
 
@@ -575,6 +554,8 @@ int main(int argc, char **argv){
 	//sem_wait(&semInstancias);
 //	sem_post(&semInstancias);
 
+
+	armar_hilo_planificador_status();
 
 	struct addrinfo *serverInfo = crear_addrinfo();
 	int listenningSocket = socket(serverInfo->ai_family, serverInfo->ai_socktype, serverInfo->ai_protocol);
