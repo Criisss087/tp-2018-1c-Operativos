@@ -311,19 +311,20 @@ void indicarCompactacionATodasLasInstancias(){
 	for (int i = 0; list_size(lista_instancias) >i; i++){
 		sem_post(&semInstancias);
 	}
+	/*
 	for (int i = 0; list_size(lista_instancias) >i; i++){
 		sem_wait(&semInstanciasFin);
 	}
 	for (int i = 0; list_size(lista_instancias) >i; i++){
 		sem_post(&semInstanciasTodasFin);
-	}
+	}*/
 
 }
 
 void proseguirOperacionNormal(int socketCliente, t_sentencia * sentencia_con_punteros){
 	//printf("adsf");
 	switch(sentencia_con_punteros->keyword){
-	case OBTENER_VALOR:
+	case OBTENER_VALOR://get
 		//guardarClaveInternamente(sentencia_con_punteros->clave); ya guardé cuando chequeé si podia ejecutar
 		devolverCodigoResultadoAESI(socketCliente, CORRECTO, sentencia_con_punteros->pid , esi);
 		//Ya pregunté anteriormente al planificador, y ya la bloqueó
