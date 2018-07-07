@@ -41,8 +41,8 @@ t_status_clave_interno * buscar_clave(char * nombre_clave){
 			if (chequearConectividadProceso(clave->instancia)==DESCONECTADO){
 				//5
 				st->cod = INSTANCIA_CAIDA;
-				st->nombre_instancia = NULL;
-				st->tamanio_instancia_nombre =-1;
+				st->nombre_instancia = strdup(clave->instancia->nombre);
+				st->tamanio_instancia_nombre =strlen(clave->instancia->nombre);
 				st->tamanio_valor=-1;
 				st->valor=NULL;
 			}else{
@@ -148,8 +148,15 @@ void atender_comando_status(){
 		int rdo_send_st_clave = send(socket_planif, st_clave, sizeof(t_status_clave),0);
 
 		//Ahora mando valor y nombre instancia, en ese orden.
-		int rdo_send_valor = send(socket_planif, st_clave_interno->valor, st_clave_interno->tamanio_valor, 0);
-		int rdo_send_instancia = send(socket_planif, st_clave_interno->nombre_instancia, st_clave_interno->tamanio_instancia_nombre, 0);
+		if (st_clave->cod != COORDINADOR_SIN_CLAVE){
+			//Se envía siempre el nombre de la instancia para los siguientes casos:
+			//INSTANCIA_SIMULADA, INSTANCIA_SIN_CLAVE, CORRECTO_CONSULTA_VALOR, INSTANCIA_CAIDA
+			int rdo_send_instancia = send(socket_planif, st_clave_interno->nombre_instancia, st_clave_interno->tamanio_instancia_nombre, 0);
+			//Si es caso feliz, se envía el valor.
+			if (st_clave->cod != CORRECTO_CONSULTA_VALOR){
+				int rdo_send_valor = send(socket_planif, st_clave_interno->valor, st_clave_interno->tamanio_valor, 0);
+			}
+		}
 
 		free(st_clave);
 		free(st_clave_interno);
