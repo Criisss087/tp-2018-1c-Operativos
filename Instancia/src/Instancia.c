@@ -52,75 +52,103 @@ void enviarResultadoSentencia(int socketCoordinador, int keyword) {
 	int resultado;
 	int resultadoEjecucion;
 
-	switch (keyword) {
 	t_respuesta_instancia * resultadoAEnviar;
-case SET_:
-	enviarHeader(socketCoordinador, instancia, coordinador,
-	INSTANCIA_COORDINADOR_RESPUESTA_SENTENCIA, sizeof(int));
+	switch (keyword) {
 
-	printf("Enviando Respuesta de sentencia SET...\n");
+	case SET_:
+		enviarHeader(socketCoordinador, instancia, coordinador,
+		INSTANCIA_COORDINADOR_RESPUESTA_SENTENCIA, sizeof(int));
 
-	resultadoAEnviar = armarRespuestaParaCoordinador(respuestaParaCoordinador);
+		printf("Enviando Respuesta de sentencia SET...\n");
 
-	resultado = send(socketCoordinador, resultadoAEnviar,
-			sizeof(t_respuesta_instancia), 0);
+		resultadoAEnviar = armarRespuestaParaCoordinador(
+				respuestaParaCoordinador);
 
-	if (resultado == -1) {
-		printf("Error en el send");
-		// TODO: Implementar exit para abortar ejecucion
-	}
+		resultado = send(socketCoordinador, resultadoAEnviar,
+				sizeof(t_respuesta_instancia), 0);
 
-	printf("\tResultado: %d\n", resultado);
-	printf("\tResultado de ejecucion enviado: %d\n", respuestaParaCoordinador);
-	printf("--------------------------------------------------------\n");
-	break;
+		if (resultado == -1) {
+			printf("Error en el send");
+			// TODO: Implementar exit para abortar ejecucion
+		}
 
-case STORE_:
-	enviarHeader(socketCoordinador, instancia, coordinador,
-	INSTANCIA_COORDINADOR_RESPUESTA_SENTENCIA, sizeof(int));
+		printf("\tResultado: %d\n", resultado);
+		printf("\tResultado de ejecucion enviado: %d\n",
+				respuestaParaCoordinador);
+		printf("--------------------------------------------------------\n");
+		break;
 
-	printf("Enviando Respuesta de sentencia STORE...\n");
+	case STORE_:
+		enviarHeader(socketCoordinador, instancia, coordinador,
+		INSTANCIA_COORDINADOR_RESPUESTA_SENTENCIA, sizeof(int));
 
-	resultadoEjecucion = EXITO_I;
+		printf("Enviando Respuesta de sentencia STORE...\n");
 
-	resultadoAEnviar = armarRespuestaParaCoordinador(resultadoEjecucion);
+		resultadoEjecucion = EXITO_I;
 
-	resultado = send(socketCoordinador, resultadoAEnviar,
-			sizeof(t_respuesta_instancia), 0);
+		resultadoAEnviar = armarRespuestaParaCoordinador(resultadoEjecucion);
 
-	if (resultado == -1) {
-		printf("Error en el send");
-		// TODO: Implementar exit para abortar ejecucion
-	}
+		resultado = send(socketCoordinador, resultadoAEnviar,
+				sizeof(t_respuesta_instancia), 0);
 
-	printf("\tResultado: %d\n", resultado);
-	printf("\tResultado de ejecucion enviado: %d\n", resultadoEjecucion);
-	printf("--------------------------------------------------------\n");
-	break;
-case COORDINADOR_INSTANCIA_RECUPERAR_CLAVES:
-	enviarHeader(socketCoordinador, instancia, coordinador,
-	INSTANCIA_COORDINADOR_RESPUESTA_SENTENCIA, sizeof(int));
-	printf(
-			"Enviando Respuesta de Reconexion (cantidad de entradas disponibles)...\n");
+		if (resultado == -1) {
+			printf("Error en el send");
+			// TODO: Implementar exit para abortar ejecucion
+		}
 
-	resultadoEjecucion = EXITO_I;
+		printf("\tResultado: %d\n", resultado);
+		printf("\tResultado de ejecucion enviado: %d\n", resultadoEjecucion);
+		printf("--------------------------------------------------------\n");
+		break;
 
-	resultadoAEnviar = armarRespuestaParaCoordinador(resultadoEjecucion);
+	case COORDINADOR_INSTANCIA_RECUPERAR_CLAVES:
+		enviarHeader(socketCoordinador, instancia, coordinador,
+		INSTANCIA_COORDINADOR_RESPUESTA_SENTENCIA, sizeof(int));
+		printf(
+				"Enviando Respuesta de Reconexion (cantidad de entradas disponibles)...\n");
 
-	resultado = send(socketCoordinador, resultadoAEnviar,
-			sizeof(t_respuesta_instancia), 0);
+		resultadoEjecucion = EXITO_I;
 
-	if (resultado == -1) {
-		printf("Error en el send");
-		// TODO: Implementar exit para abortar ejecucion
-	}
+		resultadoAEnviar = armarRespuestaParaCoordinador(resultadoEjecucion);
 
-	printf("\tResultado: %d\n", resultado);
-	printf("\tResultado de ejecucion enviado: %d\n", resultadoEjecucion);
-	printf("--------------------------------------------------------\n");
-	break;
-default:
-	break;
+		resultado = send(socketCoordinador, resultadoAEnviar,
+				sizeof(t_respuesta_instancia), 0);
+
+		if (resultado == -1) {
+			printf("Error en el send");
+			// TODO: Implementar exit para abortar ejecucion
+		}
+
+		printf("\tResultado: %d\n", resultado);
+		printf("\tResultado de ejecucion enviado: %d\n", resultadoEjecucion);
+		printf("--------------------------------------------------------\n");
+		break;
+
+	case COORDINADOR_INSTANCIA_COMPACTAR:
+		enviarHeader(socketCoordinador, instancia, coordinador,
+		INSTANCIA_COORDINADOR_RESPUESTA_SENTENCIA, sizeof(int));
+
+		printf("Enviando aviso de finalizacion de Compactacion...\n");
+
+		resultadoAEnviar = armarRespuestaParaCoordinador(
+				respuestaParaCoordinador);
+
+		resultado = send(socketCoordinador, resultadoAEnviar,
+				sizeof(t_respuesta_instancia), 0);
+
+		if (resultado == -1) {
+			printf("Error en el send");
+			// TODO: Implementar exit para abortar ejecucion
+		}
+
+		printf("\tResultado: %d\n", resultado);
+		printf("\tResultado de ejecucion enviado: %d\n",
+				respuestaParaCoordinador);
+		printf("--------------------------------------------------------\n");
+		break;
+
+	default:
+		break;
 	}
 }
 
@@ -146,6 +174,59 @@ t_configTablaEntradas * obtenerConfigTablaEntradas(int socketCoordinador) {
 			"################################################################\n");
 
 	return configRecibida;
+}
+
+char * obtenerPathArchivo(char clave[40]) {
+	char * puntoDeMontaje = strdup(PUNTO_DE_MONTAJE);
+// printf("Directorio donde se guardara el archivo: %s\n", puntoDeMontaje);
+
+	char * archivo;
+	archivo = string_new();
+	string_append(&archivo, clave);
+	string_append(&archivo, ".txt");
+// printf("Nombre del archivo que se creara: %s\n", archivo);
+
+	char * path = string_new();
+	string_append(&path, puntoDeMontaje);
+	string_append(&path, archivo);
+	printf("Path del archivo a crear: %s\n", path);
+
+	return path;
+}
+
+void recuperarClave(char clave[40]) {
+	printf("Clave a recuperar: %s\n", clave);
+
+	char * path = obtenerPathArchivo(clave);
+
+	int permisos = 0664;
+	int flags = O_RDONLY;
+
+	int fileDescriptor;
+	if ((fileDescriptor = open(path, flags, permisos)) < 0) {
+		printf("No se pudo crear el archivo: %s\n", path);
+		printf("\tFile Descriptor: %d\n", fileDescriptor);
+	} else {
+		printf("File Descriptor: %d\n", fileDescriptor);
+
+		char * valor = malloc(PACKAGESIZE);
+
+		int tamanioValor = read(fileDescriptor, valor, PACKAGESIZE);
+
+		printf("Valor recuperado: %s\n", valor);
+		printf("Tamaño del Valor recuperado: %d\n", tamanioValor);
+
+		guardarClaveValor(clave, valor);
+
+		free(valor);
+
+		printf("Cerrando el fileDescriptor...\n");
+		if (close(fileDescriptor) == 0) {
+			printf("\tArchivo cerrado correctamente.\n");
+		} else {
+			printf("\tError en el cerrado del archivo.\n");
+		}
+	}
 }
 
 void obtenerClavesARecuperar(int socketCoordinador, int cantClaves) {
@@ -507,6 +588,39 @@ void actualizarEntradasConNuevoValor(char clave[40], char * valor) {
 	numeroEntrada = nroEntradaAux;
 }
 
+_Bool hayEntradasContiguasDisponibles(int cantRequerida) {
+
+	printf("Obteniendo mayor cantidad de entradas contiguas disponibles...\n");
+	int mayorCantDeEntradasContiguasDisp = 0;
+	int contAux = 0;
+
+	for (int i = 0; i < configTablaEntradas->cantTotalEntradas; i++) {
+		_Bool entradaLibre = entradaExistenteEnIndice(i);
+		// printf("\t\tEntrada [%d] ocupada: %d\n", i, entradaLibre);
+		if (!entradaLibre) {
+			// printf("\t\tIncrementando contador auxiliar..\n");
+			contAux++;
+			if (i == (configTablaEntradas->cantTotalEntradas - 1)) {
+				// printf("\t\tUltima entrada...\n");
+				mayorCantDeEntradasContiguasDisp = contAux;
+			}
+		} else {
+			contAux = 0;
+			if (contAux > mayorCantDeEntradasContiguasDisp) {
+				mayorCantDeEntradasContiguasDisp = contAux;
+			}
+		}
+	}
+
+	//printf("Retornando siempre FALSE.\n");
+	// return false;
+
+	printf("\tMayor cantidad de entradas contiguas disponibles: %d\n",
+			mayorCantDeEntradasContiguasDisp);
+
+	return mayorCantDeEntradasContiguasDisp >= cantRequerida;
+}
+
 void guardarClaveValor(char clave[40], char * valor) {
 
 	t_list * indicesQueContienenClave = obtenerIndicesDeClave(clave);
@@ -545,21 +659,36 @@ void guardarClaveValor(char clave[40], char * valor) {
 
 			if (entradasDisponibles >= entradasNecesariasParaGuardarValor) {
 
-				t_indice_entrada * indiceBase = guardarIndiceNoAtomicoEnTabla(
-						clave, valor, numeroEntrada);
+				if (hayEntradasContiguasDisponibles(
+						entradasNecesariasParaGuardarValor)) {
 
-				numeroEntrada = numeroEntrada
-						+ entradasNecesariasParaGuardarValor;
+					printf("No es necesario compactar tabla de entradas...\n");
 
-				// guardarValorEnEntrada(sentenciaRecibida->valor,	indiceEntrada->puntero);
+					// TODO: Buscar donde se encuentra el PRIMER indiceBase para guardar la clave
 
-				printf("Guardando valor: %s en puntero: %p...\n", valor,
-						indiceBase->puntero);
-				memcpy(indiceBase->puntero, valor, strlen(valor));
+					t_indice_entrada * indiceBase =
+							guardarIndiceNoAtomicoEnTabla(clave, valor,
+									numeroEntrada);
 
-				printf("Valor guardado: %s\n", indiceBase->puntero);
+					numeroEntrada = numeroEntrada
+							+ entradasNecesariasParaGuardarValor;
 
-				respuestaParaCoordinador = EXITO_I;
+					// guardarValorEnEntrada(sentenciaRecibida->valor,	indiceEntrada->puntero);
+
+					printf("Guardando valor: %s en puntero: %p...\n", valor,
+							indiceBase->puntero);
+					memcpy(indiceBase->puntero, valor, strlen(valor));
+
+					printf("Valor guardado: %s\n", indiceBase->puntero);
+
+					respuestaParaCoordinador = EXITO_I;
+				} else {
+
+					printf(
+							"Es necesario compactar... Enviando solicitud al Coordinador...\n");
+					respuestaParaCoordinador = COMPACTAR;
+
+				}
 
 			} else {
 				printf("No hay mas lugar para guardar un valor NO atomico.\n");
@@ -601,8 +730,6 @@ void guardarClaveValor(char clave[40], char * valor) {
 
 		imprimirTablaEntradas();
 
-		printf(
-				"TODO: Se supera la cantidad maxima de entradas definida por el coordinador. Se requiere reemplazar o compactar\n");
 	}
 }
 
@@ -619,24 +746,6 @@ void make_directory(const char* name) {
 				"No se puede crear el directorio... o ya existe...\t check = %d\n",
 				check);
 	}
-}
-
-char * obtenerPathArchivo(char clave[40]) {
-	char * puntoDeMontaje = strdup(PUNTO_DE_MONTAJE);
-// printf("Directorio donde se guardara el archivo: %s\n", puntoDeMontaje);
-
-	char * archivo;
-	archivo = string_new();
-	string_append(&archivo, clave);
-	string_append(&archivo, ".txt");
-// printf("Nombre del archivo que se creara: %s\n", archivo);
-
-	char * path = string_new();
-	string_append(&path, puntoDeMontaje);
-	string_append(&path, archivo);
-	printf("Path del archivo a crear: %s\n", path);
-
-	return path;
 }
 
 size_t getFileSize(const char* filename) {
@@ -656,41 +765,6 @@ void * append(int fd, char * valor, size_t nbytes, void *map, size_t len) {
 
 void grabarArchivoPorPrimeraVez(int fd, char * valor, int tamanio) {
 	write(fd, valor, tamanio);
-}
-
-void recuperarClave(char clave[40]) {
-	printf("Clave a recuperar: %s\n", clave);
-
-	char * path = obtenerPathArchivo(clave);
-
-	int permisos = 0664;
-	int flags = O_RDONLY;
-
-	int fileDescriptor;
-	if ((fileDescriptor = open(path, flags, permisos)) < 0) {
-		printf("No se pudo crear el archivo: %s\n", path);
-		printf("\tFile Descriptor: %d\n", fileDescriptor);
-	} else {
-		printf("File Descriptor: %d\n", fileDescriptor);
-
-		char * valor = malloc(PACKAGESIZE);
-
-		int tamanioValor = read(fileDescriptor, valor, PACKAGESIZE);
-
-		printf("Valor recuperado: %s\n", valor);
-		printf("Tamaño del Valor recuperado: %d\n", tamanioValor);
-
-		guardarClaveValor(clave, valor);
-
-		free(valor);
-
-		printf("Cerrando el fileDescriptor...\n");
-		if (close(fileDescriptor) == 0) {
-			printf("\tArchivo cerrado correctamente.\n");
-		} else {
-			printf("\tError en el cerrado del archivo.\n");
-		}
-	}
 }
 
 void realizarStoreDeClave(char clave[40]) {
@@ -824,7 +898,7 @@ void interpretarOperacionCoordinador(t_content_header * header,
 		obtenerClavesARecuperar(socketCoordinador, header->cantidad_a_leer);
 
 		enviarResultadoSentencia(socketCoordinador,
-				COORDINADOR_INSTANCIA_RECUPERAR_CLAVES); // TODO: Añadir al enum el keyword reconexion= 3
+		COORDINADOR_INSTANCIA_RECUPERAR_CLAVES);
 
 		break;
 
@@ -840,7 +914,8 @@ void interpretarOperacionCoordinador(t_content_header * header,
 		case SET_:
 			guardarClaveValor(sentenciaRecibida->clave,
 					sentenciaRecibida->valor);
-			imprimirTablaEntradas();
+			// TODO: Probablemente el siguiente print sea innecesario.
+			// imprimirTablaEntradas();
 			enviarResultadoSentencia(socketCoordinador, SET_);
 			break;
 
@@ -858,6 +933,19 @@ void interpretarOperacionCoordinador(t_content_header * header,
 		enviarHeader(socketCoordinador, instancia, coordinador,
 		INSTANCIA_COORDINADOR_CONFIRMA_CONEXION_ACTIVA, 0);
 		break;
+
+	case COORDINADOR_INSTANCIA_COMPACTAR:
+		printf("Iniciando proceso de Compactacion...\n");
+		printf("TODO: compactar()\n");
+
+
+		// Esta linea se debe eliminar luego de implementar compactar()
+		respuestaParaCoordinador = EXITO_I;
+
+		// compactar();
+
+		enviarResultadoSentencia(socketCoordinador, COORDINADOR_INSTANCIA_COMPACTAR);
+
 	}
 }
 
@@ -892,7 +980,7 @@ int main(int argc, char **argv) {
 
 	enviarNombreInstanciaACoordinador(socketCoordinador);
 
-	int err = pthread_create(&(threadId[1]), NULL, &iniciarDump, NULL);
+	int err = pthread_create(&(threadId[1]), NULL, (void *) iniciarDump, NULL);
 	if (err != 0)
 		printf("No se pudo crear el thread para DUMP: [%s]\n", strerror(err));
 	else
@@ -917,7 +1005,7 @@ int main(int argc, char **argv) {
 		status = interpretarHeader(socketCoordinador, header);
 	}
 
-	pthread_cancel(&(threadId[1]));
+	pthread_cancel(threadId[1]);
 
 	close(socketCoordinador);
 
