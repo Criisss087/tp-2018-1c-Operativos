@@ -41,7 +41,7 @@ rta_envio enviarSentenciaInstancia(t_sentencia * sentencia){
 				proxima =  instanciaDuena->instancia;
 			}
 			else{
-				proxima = siguienteInstanciaSegunAlgoritmo(sentencia->clave);
+				proxima = siguienteInstanciaSegunAlgoritmo(sentencia->clave, ASIGNAR);
 				t_clave * instanciaDuena = list_get(instancias_con_clave ,0);
 				instanciaDuena->instancia = proxima;
 
@@ -160,7 +160,7 @@ t_clave * guardarClaveInternamente(char clave[40]){
 			//log_warning(logger,"no existía la clave");
 			t_clave * claveObjeto = malloc(sizeof(t_clave));
 			//asigno la instancia la primera vez que envio a una
-			claveObjeto->instancia = siguienteInstanciaSegunAlgoritmo(clave);
+			claveObjeto->instancia = siguienteInstanciaSegunAlgoritmo(clave,  ASIGNAR);
 			strncpy(claveObjeto,clave,40);
 
 			list_add(lista_claves,claveObjeto);
@@ -176,8 +176,12 @@ t_clave * guardarClaveInternamente(char clave[40]){
 }
 
 int chequearConectividadProceso(t_instancia * instancia){
-	//TODO
-	return 1;
+	t_content_header * st_connect = crear_cabecera_mensaje(coordinador,instancia,COORDINADOR_INSTANCIA_CHEQUEO_CONEXION,0);
+	int status_connect = send(instancia->socket,st_connect,sizeof(t_content_header),0);
+	int status_recv = recv(instancia->socket,st_connect,sizeof(t_content_header),0);
+	free(st_connect);
+	if (status_recv ==-1){return DESCONECTADO;}
+	else return CONECTADO;
 }
 
 void loopPlanificadorConsulta(){
@@ -220,6 +224,7 @@ int puedoEjecutarSentencia(t_sentencia * sentencia){
 	log_info(logger,"Chequeando si puedo ejecutar la sentencia...");
 	if(	list_size(lista_instancias)==0){return ABORTAR;}
 
+	//TODO: que guardarclave... setee como null la instancia si la sentencia es get
 	t_clave * clave_obj = guardarClaveInternamente(sentencia->clave);
 
 	if (sentencia->keyword == SET_){
@@ -511,6 +516,7 @@ int main(int argc, char **argv){
 	//sem_wait(&semInstancias);
 //	sem_post(&semInstancias);
 
+	armar_hilo_planificador_status();
 
 	struct addrinfo *serverInfo = crear_addrinfo();
 	int listenningSocket = socket(serverInfo->ai_family, serverInfo->ai_socktype, serverInfo->ai_protocol);

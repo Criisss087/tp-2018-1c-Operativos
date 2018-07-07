@@ -225,15 +225,25 @@ void guardarEnListaDeInstancias(int socketInstancia, char *nombre){
 
 }
 
-t_instancia * siguienteEqLoad(){
+t_instancia * siguienteEqLoad(int cod){
 	//Quizá convenga hacer que recorra la lista de atrás para adelante,
 	//para no estar siempre con las nuevas dejando las viejas para lo último.
 	//Como no va a haber la misma cantidad de conexiones con instancias como con esis por ejemplo, no creo que sea tan necesario.
-	int cant = list_size(lista_instancias);
-	indice_actual_lista++;
-	if (indice_actual_lista>cant){indice_actual_lista = indice_actual_lista - cant;}
-	int siguiente = indice_actual_lista % cant;
-	return list_get(lista_instancias, siguiente);
+	if (cod == ASIGNAR){
+		int cant = list_size(lista_instancias);
+		indice_actual_lista++;
+		if (indice_actual_lista>cant){indice_actual_lista = indice_actual_lista - cant;}
+		int siguiente = indice_actual_lista % cant;
+		return list_get(lista_instancias, siguiente);
+	}
+	else{
+		int cant = list_size(lista_instancias);
+		int indice_actual_lista_aux = indice_actual_lista;
+		indice_actual_lista_aux++;
+		if (indice_actual_lista_aux>cant){indice_actual_lista_aux = indice_actual_lista_aux - cant;}
+		int siguiente = indice_actual_lista_aux % cant;
+		return list_get(lista_instancias, siguiente);
+	}
 }
 
 t_instancia * siguienteLSU(){
@@ -287,8 +297,7 @@ t_instancia * siguienteKeyExplicit(char clave[40]){
 	}
 }
 
-t_instancia * siguienteInstanciaSegunAlgoritmo(char clave[40]){
-	//TODO usar la funcion list_size para ver si mostrar o no el error
+t_instancia * siguienteInstanciaSegunAlgoritmo(char clave[40], int cod){
 	if(	list_size(lista_instancias)==0){
 			log_error(logger,"No hay Instancias conectadas");
 			t_instancia * instancia_error = malloc(sizeof(t_instancia));
@@ -298,17 +307,16 @@ t_instancia * siguienteInstanciaSegunAlgoritmo(char clave[40]){
 
 	switch(ALGORITMO_DISTRIBUCION){
 		case EQUITATIVE_LOAD:
-			return siguienteEqLoad();
+			return siguienteEqLoad(cod);
 			break;
 		case LEAST_SPACE_USED:
-			//TODO
 			return siguienteLSU();
 			break;
 		case KEY_EXPLICIT:
 			return siguienteKeyExplicit(clave);
 			break;
 		default:
-			return siguienteEqLoad();
+			return siguienteEqLoad(cod);
 		}
 }
 
