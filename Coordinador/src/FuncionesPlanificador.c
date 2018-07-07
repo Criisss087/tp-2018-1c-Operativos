@@ -9,7 +9,7 @@ t_status_clave_interno * buscar_clave(char * nombre_clave){
 						//7-tiene valor: lo devuelve, devolver cod= 3
 						//8-No tiene valor: devolver cod= 4
 
-	t_instancia * getClaveByName(char * nombre){
+	t_clave * getClaveByName(char * nombre){
 		int mismoNombre(t_clave * clave){return string_equals_ignore_case(clave->clave, nombre);}
 		return list_find(lista_claves,*mismoNombre);
 	}
@@ -47,12 +47,17 @@ t_status_clave_interno * buscar_clave(char * nombre_clave){
 				st->valor=NULL;
 			}else{
 				//6
-				//Send header
-				t_content_header * header_consulta_valor_instancia = crear_cabecera_mensaje(coordinador,instancia,OBTENER_VALOR,clave->clave);
-				int send_header = send(clave->instancia->socket,header_consulta_valor_instancia,sizeof(header_consulta_valor_instancia),0);
-				//Send Clave
-				char * clave_nombre = strdup(clave->clave);
-				int send_clave = send(clave->instancia->socket, clave_nombre, strlen(clave_nombre),0);
+				//////////////
+				t_content_header * header_peticion_valor = crear_cabecera_mensaje(coordinador,instancia,COORDINADOR_INSTANCIA_SENTENCIA, sizeof(t_content_header));
+				int header_envio = send(clave->instancia->socket,header_peticion_valor,sizeof(t_content_header),0);
+
+				t_esi_operacion_sin_puntero * sentencia_obtener_valor = malloc(sizeof(t_esi_operacion_sin_puntero));
+				strncpy(sentencia_obtener_valor->clave,clave->clave,40);
+				sentencia_obtener_valor->keyword = OBTENER_VALOR;
+				sentencia_obtener_valor->pid = 0;
+				sentencia_obtener_valor->tam_valor = 0;
+				int sentencia_envio = send(clave->instancia->socket, sentencia_obtener_valor, sizeof(t_esi_operacion_sin_puntero),0);
+				///////////////
 
 				//recv header
 				t_content_header * header_rta_inst = malloc(sizeof(t_content_header));
