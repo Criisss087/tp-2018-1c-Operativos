@@ -23,6 +23,7 @@
 #include <commons/collections/list.h>
 #include <commons/config.h>
 #include <semaphore.h>
+#include <signal.h>			// Señales
 
 #define IP "0.0.0.0"
 

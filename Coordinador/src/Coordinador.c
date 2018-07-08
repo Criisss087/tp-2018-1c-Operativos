@@ -140,7 +140,7 @@ void interpretarOperacionPlanificador(t_content_header * hd, int socketCliente){
 	}
 }
 
-t_clave * guardarClaveInternamente(char clave[40]){
+t_clave * guardarClaveInternamente(char clave[40], int keyword){
 
 	int tiene_clave(t_clave * clObj){
 				return (strcmp(clave, clObj->clave)==0);
@@ -157,11 +157,17 @@ t_clave * guardarClaveInternamente(char clave[40]){
 		}
 		else{
 			//no existe
-			//log_warning(logger,"no existía la clave");
+			log_warning(logger,"no existía la clave");
 			t_clave * claveObjeto = malloc(sizeof(t_clave));
 			//asigno la instancia la primera vez que envio a una
-			claveObjeto->instancia = siguienteInstanciaSegunAlgoritmo(clave,  ASIGNAR);
-			strncpy(claveObjeto,clave,40);
+			log_warning(logger,"keyword: %d", keyword);
+			log_warning(logger,"GET: %d", GET);
+			log_warning(logger,"OBTENER_VALOR: %d", OBTENER_VALOR);
+			if (keyword != GET){
+				log_warning(logger,"set o store - asigno instancia");
+				claveObjeto->instancia = siguienteInstanciaSegunAlgoritmo(clave,  ASIGNAR);
+			}else claveObjeto->instancia = NULL;
+			strncpy(claveObjeto->clave,clave,40);
 
 			list_add(lista_claves,claveObjeto);
 
@@ -180,6 +186,7 @@ int chequearConectividadProceso(t_instancia * instancia){
 	int status_connect = send(instancia->socket,st_connect,sizeof(t_content_header),0);
 	int status_recv = recv(instancia->socket,st_connect,sizeof(t_content_header),0);
 	free(st_connect);
+
 	if (status_recv ==-1){return DESCONECTADO;}
 	else return CONECTADO;
 }
@@ -225,15 +232,20 @@ int puedoEjecutarSentencia(t_sentencia * sentencia){
 	if(	list_size(lista_instancias)==0){return ABORTAR;}
 
 	//TODO: que guardarclave... setee como null la instancia si la sentencia es get
-	t_clave * clave_obj = guardarClaveInternamente(sentencia->clave);
+	t_clave * clave_obj = guardarClaveInternamente(sentencia->clave,sentencia->keyword);
 
 	if (sentencia->keyword == SET_){
 		log_info(logger,"aca no rompe");
 		if (clave_obj->instancia != NULL){
 			log_info(logger,"aca si");
-			if (chequearConectividadProceso(clave_obj->instancia)==0){
-				return ABORTAR;
+			if (clave_obj->instancia != NULL){
+				if (chequearConectividadProceso(clave_obj->instancia)==DESCONECTADO){
+					log_error(logger, "chequCOnectProc 0");
+					return ABORTAR;
+				}
+				else return CORRECTO;
 			}
+			else return CORRECTO;
 		}
 		else {
 			log_info(logger,"abort");

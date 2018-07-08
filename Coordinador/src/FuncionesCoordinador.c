@@ -21,6 +21,7 @@ void interpretarOperacionPlanificador(t_content_header *, int);
 void interpretarOperacionESI(t_content_header *, int);
 void interpretarHeader(t_content_header * , int);
 void *escucharMensajesEntrantes(int);
+void configurar_signals();
 
 void cargarArchivoConfiguracion(char * path){
 	log_info(logger,"Cargando archivo de configuración...");
@@ -86,6 +87,7 @@ void seteosIniciales(char *path){
 	lista_instancias = list_create();
 	lista_claves = list_create();
 	indice_actual_lista = -1; //TODO usar la funcion list_size para ver si mostrar o no el error
+	configurar_signals();
 }
 
 struct addrinfo* crear_addrinfo(){
@@ -140,4 +142,48 @@ void log_error_operacion_esi(t_sentencia * sentencia, int puedoEnviar){
 	log_info(logger_operaciones, "ESI %d = %s %s %v - ERROR: %s",sentencia->pid,keyw,sentencia->clave,sentencia->valor, error);
 	free(keyw);
 	free(error);
+}
+
+void captura_sigpipe(int signo)
+{
+    int i;
+
+    if(signo == SIGINT)
+    {
+    	//TODO finalizar ejecución
+    	log_warning(logger, "Finalizando proceso...");
+    	exit(EXIT_FAILURE);
+    }
+    else if(signo == SIGPIPE)
+    {
+    	log_error(logger,"Se desconectó un proceso al que se quizo enviar");
+    }
+
+}
+
+
+void configurar_signals(void)
+{
+	struct sigaction signal_struct;
+	signal_struct.sa_handler = captura_sigpipe;
+	signal_struct.sa_flags   = 0;
+
+	sigemptyset(&signal_struct.sa_mask);
+
+	sigaddset(&signal_struct.sa_mask, SIGPIPE);
+    if (sigaction(SIGPIPE, &signal_struct, NULL) < 0)
+    {
+    	log_error(logger,"SIGACTION error");
+        //fprintf(stderr, "sigaction error\n");
+        //exit(1);
+    }
+
+    sigaddset(&signal_struct.sa_mask, SIGINT);
+    if (sigaction(SIGINT, &signal_struct, NULL) < 0)
+    {
+    	log_error(logger,"SIGACTION error");
+    	//fprintf(stderr, "sigaction error\n");
+        //exit(1);
+    }
+
 }
