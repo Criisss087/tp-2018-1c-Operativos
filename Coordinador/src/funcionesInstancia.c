@@ -151,7 +151,10 @@ int existe(char *nombre){
 
 t_list * getClavesAsignadas(char *nombre){
 	int asignada(t_clave * clave){
-		return string_equals_ignore_case(clave->instancia->nombre,nombre);
+		if (clave->instancia!=NULL){
+			return string_equals_ignore_case(clave->instancia->nombre,nombre);
+		}
+		return 0;
 	}
 	return list_filter(lista_claves,*asignada);
 }
@@ -160,17 +163,22 @@ void guardarEnListaDeInstancias(int socketInstancia, char *nombre){
 	if (existe(nombre)){
 		log_info(logger,"existia instancia");
 		actualizarSocketInstancia(nombre,socketInstancia);
+		log_error(logger,"prueba reincorporar isntancia con clave1");
 		//Enviar lista de claves asignadas a la instancia
 		t_list * claves_asignadas =  getClavesAsignadas(nombre);
+		log_error(logger,"prueba reincorporar isntancia con clave2");
 		t_content_header * header = crear_cabecera_mensaje(coordinador,instancia,COORDINADOR_INSTANCIA_CLAVES, list_size(claves_asignadas));
 		//char array_claves[list_size(claves_asignadas)][40] = calloc(list_size(claves_asignadas),40);
 		char array_claves[list_size(claves_asignadas)][40];
+		log_error(logger,"prueba reincorporar isntancia con clave3");
 		//for (int i=0;list_size(claves_asignadas)>i; i++){array_claves[i] = NULL;}
 		int contador = 0;
+		log_error(logger,"prueba reincorporar isntancia con clave4");
 		void addToArray(t_clave * clave){
 			strncpy(array_claves[contador],clave->clave,40);
 			contador++;
 		}
+		log_error(logger,"prueba reincorporar isntancia con clave5");
 		list_iterate(claves_asignadas, *addToArray);
 		log_info(logger,"despues de armar array claves--");
 		for(int i = 0; list_size(claves_asignadas)> i;i++){log_warning(logger,"claves de antes en instancia: %s",array_claves[i]);}
@@ -324,20 +332,26 @@ void loopInstancia(int socketInstancia, char * nombre){
 	//Para que quede el hilo esperando para compactar
 	//wait instancia semaforo
 	int status = 1;
+	t_instancia * aux = malloc(sizeof(t_instancia));
+	aux->socket = socketInstancia;
 	while (status){
 		sem_wait(&semInstancias);
 		//enviar orden de compactación
-		t_content_header * header = crear_cabecera_mensaje(coordinador, instancia, COORDINADOR_INSTANCIA_COMPACTACION,0);
-		int status_head = send(socketInstancia,header,sizeof(t_content_header),0);
+		if (chequearConectividadProceso(aux) == CONECTADO){
+			t_content_header * header = crear_cabecera_mensaje(coordinador, instancia, COORDINADOR_INSTANCIA_COMPACTACION,0);
+			int status_head = send(socketInstancia,header,sizeof(t_content_header),0);
 
-		int header_rta_instancia = recv(socketInstancia,header,sizeof(t_content_header), 0);
-		t_respuesta_instancia * rta = malloc(sizeof(t_respuesta_instancia));
-		int status_rta_instancia = recv(socketInstancia, rta, sizeof(t_respuesta_instancia), 0);
-		if (status_head == -1 || header_rta_instancia == -1 || status_rta_instancia == -1){status = -1;}
-		else{log_info(logger, "instancia %s rdo compactacion: %d", nombre, rta->rdo_operacion);}
+			int header_rta_instancia = recv(socketInstancia,header,sizeof(t_content_header), 0);
+			t_respuesta_instancia * rta = malloc(sizeof(t_respuesta_instancia));
+			int status_rta_instancia = recv(socketInstancia, rta, sizeof(t_respuesta_instancia), 0);
+			if (status_head == -1 || header_rta_instancia == -1 || status_rta_instancia == -1){status = -1;}
+			else{log_info(logger, "instancia %s rdo compactacion: %d", nombre, rta->rdo_operacion);}
 
-		//sem_post(&semInstanciasFin);
-		//sem_wait(&semInstanciasTodasFin);
-		//signal instancia semaforo
+			//sem_post(&semInstanciasFin);
+			//sem_wait(&semInstanciasTodasFin);
+			//signal instancia semaforo
+		}
+		else status = 0;
 	}
+	free(aux);
 }
