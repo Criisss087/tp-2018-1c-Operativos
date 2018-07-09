@@ -7,6 +7,8 @@
 
 #include "funcionesInstancia.c"
 #include "Utilidades.h"
+#include "FuncionesPlanificador.c"
+
 void crear_hilo_conexion(int socket, void(*funcion_a_ejecutar)(int)){
 	pthread_t hilo;
 	pthread_create(&hilo,NULL,*funcion_a_ejecutar,socket);
@@ -82,10 +84,12 @@ void seteosIniciales(char *path){
 		log_warning(logger,"Configuraciones cargadas por defecto");
 	}
 	lista_instancias = list_create();
+	lista_claves = list_create();
 	indice_actual_lista = -1; //TODO usar la funcion list_size para ver si mostrar o no el error
 }
 
 struct addrinfo* crear_addrinfo(){
+	//arma el socket listener principal (no para el que escucha la peticion status del planif)
 	struct addrinfo hints;
 	struct addrinfo *serverInfo;
 
@@ -106,11 +110,13 @@ t_esi_operacion_sin_puntero * armar_esi_operacion_sin_puntero(t_sentencia * sent
 }
 
 t_sentencia * armar_sentencia(t_esi_operacion_sin_puntero * op_sin_punt, char * valor){
+
 	t_sentencia * sentencia_con_punteros = malloc(sizeof(t_sentencia));
 	strncpy(sentencia_con_punteros->clave, op_sin_punt->clave,40);
 	sentencia_con_punteros->valor = strdup(valor);
 	sentencia_con_punteros->keyword = op_sin_punt->keyword;
 	sentencia_con_punteros->pid = op_sin_punt->pid;
+	return sentencia_con_punteros;
 
 }
 

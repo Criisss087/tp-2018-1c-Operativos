@@ -41,6 +41,12 @@ typedef struct{
 	int pid;
 } __attribute__((packed)) t_esi_operacion_sin_puntero;
 
+typedef struct{
+	int rdo_operacion;
+	int entradas_libres;
+} __attribute__((packed)) t_respuesta_instancia;
+
+
 /**********************************************/
 /* ENUMS									  */
 /**********************************************/
