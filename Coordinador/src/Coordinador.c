@@ -140,8 +140,8 @@ void interpretarOperacionInstancia(t_content_header * hd, int socketInstancia){
 			//log_info(logger,"Tamaño nombre: %d - Nombre: %s",strlen(nombre),nombre);
 			enviarConfiguracionInicial(socketInstancia);
 			guardarEnListaDeInstancias(socketInstancia, nombre);
-
-			loopInstancia(socketInstancia, nombre);
+			t_instancia * inst_guardada = getInstanciaByName(nombre);
+			loopInstancia(inst_guardada, nombre);
 			free(nombre);
 			break;
 
@@ -342,12 +342,12 @@ void indicarCompactacionATodasLasInstancias(){
 	for (int i = 0; list_size(lista_instancias) >i; i++){
 		sem_post(&semInstancias);
 	}
-	/*
 	for (int i = 0; list_size(lista_instancias) >i; i++){
 		sem_wait(&semInstanciasFin);
 	}
+	/*
 	for (int i = 0; list_size(lista_instancias) >i; i++){
-		sem_post(&semInstanciasTodasFin);
+		sem_wait(&semInstanciasTodasFin);
 	}*/
 
 }

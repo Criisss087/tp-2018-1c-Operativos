@@ -328,30 +328,31 @@ t_instancia * siguienteInstanciaSegunAlgoritmo(char clave[40], int cod){
 		}
 }
 
-void loopInstancia(int socketInstancia, char * nombre){
+void loopInstancia(t_instancia * inst, char * nombre){
 	//Para que quede el hilo esperando para compactar
 	//wait instancia semaforo
+
 	int status = 1;
-	t_instancia * aux = malloc(sizeof(t_instancia));
-	aux->socket = socketInstancia;
 	while (status){
 		sem_wait(&semInstancias);
 		//enviar orden de compactación
-		if (chequearConectividadProceso(aux) == CONECTADO){
+		if (chequearConectividadProceso(inst) == CONECTADO){
 			t_content_header * header = crear_cabecera_mensaje(coordinador, instancia, COORDINADOR_INSTANCIA_COMPACTACION,0);
-			int status_head = send(socketInstancia,header,sizeof(t_content_header),0);
+			int status_head = send(inst->socket,header,sizeof(t_content_header),0);
 
-			int header_rta_instancia = recv(socketInstancia,header,sizeof(t_content_header), 0);
+			int header_rta_instancia = recv(inst->socket,header,sizeof(t_content_header), 0);
 			t_respuesta_instancia * rta = malloc(sizeof(t_respuesta_instancia));
-			int status_rta_instancia = recv(socketInstancia, rta, sizeof(t_respuesta_instancia), 0);
-			if (status_head == -1 || header_rta_instancia == -1 || status_rta_instancia == -1){status = -1;}
+			int status_rta_instancia = recv(inst->socket, rta, sizeof(t_respuesta_instancia), 0);
+			if (status_head == -1 || header_rta_instancia == -1 || status_rta_instancia == -1 || status_head == 0 || header_rta_instancia == 0 || status_rta_instancia == 0){status = -1;}
 			else{log_info(logger, "instancia %s rdo compactacion: %d", nombre, rta->rdo_operacion);}
 
-			//sem_post(&semInstanciasFin);
+			sem_post(&semInstanciasFin);
 			//sem_wait(&semInstanciasTodasFin);
 			//signal instancia semaforo
 		}
-		else status = 0;
+		else {
+			status = 0;
+			sem_post(&semInstanciasFin);
+		}
 	}
-	free(aux);
 }
