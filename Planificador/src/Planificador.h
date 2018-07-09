@@ -168,6 +168,7 @@ int desalojo_en_ejecucion = 0;		// Desalojar al ESI en ejecucion por SJF-CD
 int bloqueo_por_get = 0;			// Bloquear clave por resultado positivo de GET
 int desbloqueo_por_store = 0;		// Desbloquear clave por resultado positivo de STORE
 int kill_en_ejecucion = 0;			// Matar al ESI en ejecucion
+int kill_flag = 0;					// Flag para mandar la confirmacion de kill en finalizar_esi
 
 struct config config;
 

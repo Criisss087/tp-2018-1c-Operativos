@@ -945,10 +945,11 @@ void consola_matar_proceso(char* id)
 			return;
 		}
 
+		kill_flag++;
+
 		if (!finalizar_esi(pid,liberar))
 		{
 			logger_planificador(escribir_loguear,l_info,"ESI de ID %d Finalizado",pid);
-			enviar_confirmacion_kill(pid);
 		}
 		else
 		{
@@ -1209,8 +1210,7 @@ int enviar_confirmacion_sentencia(t_pcb_esi * pcb_esi)
 void enviar_confirmacion_kill(int pid)
 {
 
-	t_pcb_esi * esi_aux;
-
+	t_pcb_esi * esi_aux= NULL;
 
 	if(esi_en_ejecucion!=NULL && pid == esi_en_ejecucion->pid)
 	{
@@ -1578,6 +1578,13 @@ int finalizar_esi(int pid_esi, int liberar)
 {
 	t_pcb_esi * esi_aux;
 
+	//Si se finaliza el esi por KILL, antes, debe mandarle el aviso al esi
+	if(kill_flag)
+	{
+		enviar_confirmacion_kill(pid_esi);
+		kill_flag = 0;
+	}
+
 	if(esi_en_ejecucion!=NULL && pid_esi == esi_en_ejecucion->pid)
 	{
 		esi_aux = esi_en_ejecucion;
@@ -1614,9 +1621,8 @@ int finalizar_esi(int pid_esi, int liberar)
 		}
 
 		esi_aux->estado = terminado;
-
 		list_add(esi_terminados, esi_aux);
-		logger_planificador(escribir_loguear,l_info,"ESI %d finalizado",esi_aux->pid);
+		logger_planificador(escribir_loguear,l_info,"ESI %d pasado a finalizados",esi_aux->pid);
 		cerrar_conexion_esi(esi_aux->conexion);
 	}
 
