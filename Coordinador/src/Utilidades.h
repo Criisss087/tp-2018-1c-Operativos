@@ -88,6 +88,7 @@ typedef struct{
 	int id;
 	char * nombre;
 	int entradas_libres;
+	int flag_thread;
 } t_instancia;
 
 typedef struct{

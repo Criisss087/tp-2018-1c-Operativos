@@ -227,6 +227,7 @@ void guardarEnListaDeInstancias(int socketInstancia, char *nombre){
 		nueva->socket = socketInstancia;
 		nueva->nombre = strdup(nombre);
 		nueva->entradas_libres = CANT_MAX_ENTRADAS;
+		nueva->flag_thread = 0;
 		list_add(lista_instancias, nueva);
 		log_info(logger,"Guardada Instancia: %s", nombre);
 	}
@@ -331,7 +332,7 @@ t_instancia * siguienteInstanciaSegunAlgoritmo(char clave[40], int cod){
 void loopInstancia(t_instancia * inst, char * nombre){
 	//Para que quede el hilo esperando para compactar
 	//wait instancia semaforo
-
+	inst->flag_thread = 1;
 	int status = 1;
 	while (status){
 		sem_wait(&semInstancias);
@@ -355,4 +356,5 @@ void loopInstancia(t_instancia * inst, char * nombre){
 			sem_post(&semInstanciasFin);
 		}
 	}
+	inst->flag_thread = 0;
 }

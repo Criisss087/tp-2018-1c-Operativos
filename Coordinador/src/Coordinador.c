@@ -141,7 +141,10 @@ void interpretarOperacionInstancia(t_content_header * hd, int socketInstancia){
 			enviarConfiguracionInicial(socketInstancia);
 			guardarEnListaDeInstancias(socketInstancia, nombre);
 			t_instancia * inst_guardada = getInstanciaByName(nombre);
-			loopInstancia(inst_guardada, nombre);
+			if (inst_guardada->flag_thread != 1){
+				loopInstancia(inst_guardada, nombre);
+			}
+
 			free(nombre);
 			break;
 
@@ -215,7 +218,7 @@ int chequearConectividadProceso(t_instancia * instancia){
 	int status_recv = recv(instancia->socket,st_connect,sizeof(t_content_header),0);
 	free(st_connect);
 	log_error(logger, "cheqconectproce status_recv %d", status_recv);
-	if (status_recv ==-1 || status_recv == 0){return DESCONECTADO;}
+	if (status_recv ==-1 || status_recv == 0){instancia->flag_thread = 0; return DESCONECTADO;}
 	else return CONECTADO;
 }
 
