@@ -876,6 +876,28 @@ void grabarArchivo(char clave[40]) {
 	}
 }
 
+void compactar() {
+
+	int cantEntradasExistentes = list_size(l_indice_entradas);
+	// TODO: Ordenar ascendentemente pro nroDeOperacion
+
+	t_list * listaAuxiliar = list_create();
+
+	for (int i = 0; i < cantEntradasExistentes, i++) {
+		t_indice_entrada * entrada = list_get(l_indice_entradas, i);
+		t_indice_entrada * entradaAux;
+
+		entradaAux->numeroEntrada = i;
+		strcpy(entradaAux->clave, entrada->clave);
+		entradaAux-> tamanioValor = entrada->tamanioValor;
+		entradaAux->esAtomica = entrada->esAtomica;
+		entradaAux->nroDeOperacion = entrada->nroDeOperacion;
+		entradaAux->puntero = tablaEntradas + (i * configTablaEntradas->tamanioEntradas);
+
+		list_add(listaAuxiliar, entradaAux);
+	}
+}
+
 void interpretarOperacionCoordinador(t_content_header * header,
 		int socketCoordinador) {
 
