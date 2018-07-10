@@ -144,6 +144,13 @@ struct consulta_bloqueo{
 };
 typedef struct consulta_bloqueo t_consulta_bloqueo;
 
+struct deadlock{
+	int pid;
+	char* clave_tomada;
+	char* clave_pedida;
+};
+typedef struct deadlock t_deadlock;
+
 /**********************************************/
 /* DATOS GLOBALES							  */
 /**********************************************/
@@ -261,3 +268,7 @@ void desbloquear_claves_bloqueadas_pid(int pid);
 void confirmar_bloqueo_por_get(void);
 void confirmar_desbloqueo_por_store(void);
 
+void dummy_genera_deadlock(void);
+void mostrar_deadlock(t_list * deadlock);
+int buscar_esi_en_deadlock(t_list* lista_deadlocks,int pid);
+void destruir_lista_deadlocks(t_list * lista_deadlocks);

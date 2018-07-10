@@ -29,6 +29,9 @@ int main(int argc, char **argv) {
 	inicializar_conexiones_esi();
 	stdin_no_bloqueante();
 
+	//TODO: Borrar al terminar TODAS las pruebas
+	//dummy_genera_deadlock();
+
 	//Crea el socket servidor para recibir ESIs (ya bindeado y escuchando)
 	int serv_socket = iniciar_servidor(config.puerto_escucha);
 
@@ -958,6 +961,9 @@ void consola_matar_proceso(char* id)
 
 	}
 
+	if(esi_en_ejecucion==NULL)
+		planificar();
+
 	return;
 }
 
@@ -989,6 +995,83 @@ void consola_consultar_status_clave(char* clave)
 	return;
 }
 
+void dummy_genera_deadlock(void)
+{
+
+	//TODO: Borrar funcion al terminar TODAS las pruebas
+
+	t_pcb_esi * esi = NULL;
+	t_claves_bloqueadas * clave_bloqueada = NULL;
+
+	clave_bloqueada = malloc(sizeof(t_claves_bloqueadas));
+	memset(clave_bloqueada, 0, sizeof(t_claves_bloqueadas));
+
+	clave_bloqueada->clave = strdup("clave0");
+	clave_bloqueada->pid = 0;
+	list_add(claves_bloqueadas, clave_bloqueada);
+
+	clave_bloqueada = malloc(sizeof(t_claves_bloqueadas));
+	memset(clave_bloqueada, 0, sizeof(t_claves_bloqueadas));
+
+	clave_bloqueada->clave = strdup("clave1");
+	clave_bloqueada->pid = 1;
+	list_add(claves_bloqueadas, clave_bloqueada);
+
+	clave_bloqueada = malloc(sizeof(t_claves_bloqueadas));
+	memset(clave_bloqueada, 0, sizeof(t_claves_bloqueadas));
+
+	clave_bloqueada->clave = strdup("clave2");
+	clave_bloqueada->pid = 2;
+	list_add(claves_bloqueadas, clave_bloqueada);
+
+
+	esi = malloc(sizeof(t_pcb_esi));
+	memset(esi,0,sizeof(t_pcb_esi));
+
+	esi->pid = 0;
+
+	t_conexion_esi * conexion = malloc(sizeof(t_conexion_esi));
+	esi->conexion = conexion;
+	esi->estado = bloqueado;
+	esi->instruccion_actual = 0;
+	esi->tiempo_espera = 0;
+	esi->ejec_anterior = 0;
+	esi->clave_bloqueo = strdup("clave1");
+
+	list_add(esi_bloqueados,esi);
+
+	esi = malloc(sizeof(t_pcb_esi));
+	memset(esi,0,sizeof(t_pcb_esi));
+	esi->pid = 1;
+
+	conexion = malloc(sizeof(t_conexion_esi));
+	esi->conexion = conexion;
+
+	esi->estado = bloqueado;
+	esi->instruccion_actual = 0;
+	esi->tiempo_espera = 0;
+	esi->ejec_anterior = 0;
+	esi->clave_bloqueo = strdup("clave2");
+
+	list_add(esi_bloqueados,esi);
+
+	esi = malloc(sizeof(t_pcb_esi));
+	memset(esi,0,sizeof(t_pcb_esi));
+	esi->pid = 2;
+
+	conexion = malloc(sizeof(t_conexion_esi));
+	esi->conexion = conexion;
+
+	esi->estado = bloqueado;
+	esi->instruccion_actual = 0;
+	esi->tiempo_espera = 0;
+	esi->ejec_anterior = 0;
+	esi->clave_bloqueo = strdup("clave0");
+
+	list_add(esi_bloqueados,esi);
+
+}
+
 void consola_consultar_deadlock(void)
 {
 	/* deadlock: Esta consola también permitirá analizar los deadlocks que existan en el
@@ -996,9 +1079,209 @@ void consola_consultar_deadlock(void)
 	 * Pudiendo resolverlos manualmente con la sentencia de kill previamente descrita.
 	 */
 
+	int tam_block = list_size(esi_bloqueados);
+	int analizar= 0;
+	t_pcb_esi * esi_aux = NULL;
+	t_pcb_esi * esi_analizado = NULL;
+	t_list * claves_bloqueadas_aux;
+	t_claves_bloqueadas * clave_analizada;
+	t_claves_bloqueadas * clave_aux;
+
+	t_deadlock * esi_inicial;
+	t_deadlock * esi_aux_deadlock;
+
+	t_list * deadlock;
+	t_list * lista_deadlocks;
+
+	int seguir_buscando = 0;
+
+
 	logger_planificador(escribir_loguear,l_info,"CONSOLA> COMANDO: deadlock\n");
 
+	lista_deadlocks = list_create();
+
+	for(int i=0;i<tam_block;i++)
+	{
+		esi_analizado = list_get(esi_bloqueados,i);
+		esi_aux = esi_analizado;
+
+		//Si el esi ya se encuentra en un deadlock, no lo analizo
+		analizar = buscar_esi_en_deadlock(lista_deadlocks,esi_analizado->pid);
+		if(analizar){
+			logger_planificador(loguear,l_debug,"No se analiza el esi %d porque ya esta en un deadlock",esi_analizado->pid);
+			continue;
+		}
+
+
+		deadlock = list_create();
+
+		esi_inicial = malloc(sizeof(t_deadlock));
+		memset(esi_inicial,0,sizeof(t_deadlock));
+		esi_inicial->pid = esi_aux->pid;
+		esi_inicial->clave_pedida = strdup(esi_aux->clave_bloqueo);
+
+		list_add(deadlock,esi_inicial);
+
+		logger_planificador(loguear,l_debug,"Analizando al esi %d",esi_analizado->pid);
+		seguir_buscando++;
+
+		while(seguir_buscando)
+		{
+
+			logger_planificador(loguear,l_debug,"busco la clave %s\n",esi_aux->clave_bloqueo);
+			clave_aux = buscar_clave_bloqueada(esi_aux->clave_bloqueo);
+			if(clave_aux)
+			{
+				logger_planificador(loguear,l_debug,"Encontre la clave bloqueada %s\n",clave_aux->clave);
+
+				esi_aux_deadlock = malloc(sizeof(t_deadlock));
+				memset(esi_aux_deadlock,0,sizeof(t_deadlock));
+				esi_aux_deadlock->pid = clave_aux->pid;
+				esi_aux_deadlock->clave_tomada = strdup(clave_aux->clave);
+
+				list_add(deadlock,esi_aux_deadlock);
+
+				logger_planificador(loguear,l_debug,"busco esi %d que tiene %s\n",clave_aux->pid,clave_aux->clave);
+				esi_aux = buscar_esi_en_lista_pid(esi_bloqueados,clave_aux->pid);
+				if(esi_aux)
+				{
+					logger_planificador(loguear,l_debug,"el esi %d fue bloqueado por %s\n",esi_aux->pid,esi_aux->clave_bloqueo);
+					esi_aux_deadlock->clave_pedida = strdup(esi_aux->clave_bloqueo);
+
+
+					logger_planificador(loguear,l_debug,"busco la clave bloqueada %s\n",esi_aux->clave_bloqueo);
+					clave_aux = buscar_clave_bloqueada(esi_aux->clave_bloqueo);
+					if(clave_aux)
+					{
+						logger_planificador(loguear,l_debug,"La clave bloqueada %s la tiene el esi %d\n",clave_aux->clave,clave_aux->pid);
+
+						logger_planificador(loguear,l_debug,"Comparo al esi %d que tiene la clave %s con el esi analizado %d\n",clave_aux->pid,clave_aux->clave,esi_analizado->pid);
+						if(clave_aux->pid == esi_analizado->pid)
+						{
+							esi_inicial->clave_tomada = strdup(clave_aux->clave);
+							logger_planificador(loguear,l_debug,"Se encontró un deadlock analizando al esi %d\n",esi_analizado->pid);
+
+							seguir_buscando = 0;
+
+							t_list* deadlock_aux = list_create();
+							list_add_all(deadlock_aux,deadlock);
+
+							list_add(lista_deadlocks,deadlock_aux);
+							list_clean(deadlock);
+
+						}
+					}
+					else{
+						logger_planificador(loguear,l_debug,"No hay deadlock para %d\n",esi_aux->pid);
+						seguir_buscando = 0;
+					}
+				}
+				else{
+					logger_planificador(loguear,l_debug,"No hay deadlock para %d\n",esi_aux->pid);
+					seguir_buscando = 0;
+				}
+			}
+			else{
+				logger_planificador(loguear,l_debug,"No hay deadlock para %d\n",esi_aux->pid);
+				seguir_buscando = 0;
+			}
+
+		}//End while
+
+		list_destroy(deadlock);
+
+	}//End for
+
+	if(list_size(lista_deadlocks))
+	{
+		list_iterate(lista_deadlocks,(void*)mostrar_deadlock);
+	}
+	else{
+		logger_planificador(escribir_loguear,l_info,"No se encontraron deadlocks en el estado actual del sistema\n");
+	}
+
+
+	destruir_lista_deadlocks(lista_deadlocks);
 	return;
+}
+
+int buscar_esi_en_deadlock(t_list* lista_deadlocks,int pid){
+
+	bool deadlock_tiene_pid(t_list * deadlock)
+	{
+
+		bool is_pid_en_deadlock(t_deadlock * esi_en_deadlock){
+			return (esi_en_deadlock->pid==pid);
+		}
+
+		return(list_find(deadlock,(void*)is_pid_en_deadlock));
+	}
+
+	t_list * aux = NULL;
+
+	if(list_size(lista_deadlocks)){
+
+		aux = list_find(lista_deadlocks,(void*)deadlock_tiene_pid);
+			if(aux!=NULL)
+				return 1;
+			else
+				return 0;
+
+	}
+	else{
+		return 0;
+	}
+
+
+
+}
+
+void destruir_lista_deadlocks(t_list * lista_deadlocks){
+
+	void destruir_deadlock(t_list * deadlock)
+	{
+
+		void destruir_esi_en_deadlock(t_deadlock * esi_en_deadlock )
+		{
+			if(esi_en_deadlock->clave_pedida!=NULL)
+			{
+				free(esi_en_deadlock->clave_pedida);
+				esi_en_deadlock->clave_pedida = NULL;
+			}
+
+			if(esi_en_deadlock->clave_tomada!=NULL)
+			{
+				free(esi_en_deadlock->clave_tomada);
+				esi_en_deadlock->clave_tomada = NULL;
+			}
+
+			free(esi_en_deadlock);
+		}
+
+
+		list_destroy_and_destroy_elements(deadlock,(void*)destruir_esi_en_deadlock);
+	}
+
+
+	list_destroy_and_destroy_elements(lista_deadlocks,(void*)destruir_deadlock);
+}
+
+void mostrar_deadlock(t_list * deadlock)
+{
+	void mostrar_esi_en_deadlock(t_deadlock * esi)
+	{
+		logger_planificador(escribir_loguear,l_info,"PID esi: %d\n", esi->pid);
+		logger_planificador(escribir_loguear,l_info,"Clave pedida: %s\n", esi->clave_pedida);
+		logger_planificador(escribir_loguear,l_info,"Clave tomada: %s\n", esi->clave_tomada);
+
+		printf("\n");
+
+		return;
+	}
+
+	printf("Deadlock encontrado:\n\n");
+
+	list_iterate(deadlock,(void*)mostrar_esi_en_deadlock);
 }
 
 void mostrar_lista(char * name)
