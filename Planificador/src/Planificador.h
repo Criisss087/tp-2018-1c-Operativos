@@ -88,6 +88,8 @@ enum tipo_logueo { escribir, loguear, escribir_loguear, l_info, l_warning, l_err
 
 enum hand {no_handshake, handshake};
 
+enum codigos_status {COORDINADOR_SIN_CLAVE, INSTANCIA_CAIDA, INSTANCIA_SIMULADA, CORRECTO_CONSULTA_VALOR, INSTANCIA_SIN_CLAVE};
+
 /**********************************************/
 /* ESTUCTURAS								  */
 /**********************************************/
@@ -182,17 +184,13 @@ int desalojo_en_ejecucion = 0;		// Desalojar al ESI en ejecucion por SJF-CD
 int bloqueo_por_get = 0;			// Bloquear clave por resultado positivo de GET
 int desbloqueo_por_store = 0;		// Desbloquear clave por resultado positivo de STORE
 int kill_en_ejecucion = 0;			// Matar al ESI en ejecucion
+char * clave_status = NULL;			// Clave para el comando status
 
 struct config config;
 
 //Globales para la configuracion del archivo.
 t_config* arch_config = NULL;
 
-/*
-sem_t sem_ejecucion_esi;
-sem_t sem_bloqueo_esi_ejec;
-pthread_mutex_t mutex_esi_en_ejecucion;
-*/
 
 /**********************************************/
 /* FUNCIONES								  */
@@ -217,6 +215,7 @@ int consola_derivar_comando(char * buffer);
 int consola_obtener_key_comando(char* comando);
 void consola_obtener_parametros(char* buffer, char** comando, char** parametro1, char** parametro2);//Falta implementarla
 int consola_leer_stdin(char *read_buffer, size_t max_len);
+void status_clave(t_status_clave* clave_st, char * clave);
 
 //Funciones de la consola
 void consola_pausar(void);

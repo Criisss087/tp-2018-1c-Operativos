@@ -433,7 +433,8 @@ int recibir_mensaje_coordinador(int coord_socket)
 			//exit(EXIT_FAILURE);
 		}
 		else{
-			status_clave(st_clave);
+			status_clave(st_clave,clave_status);
+			free(clave_status);
 		}
 
 		free(st_clave);
@@ -983,6 +984,8 @@ void consola_consultar_status_clave(char* clave_nombre)
 	else{
 		log_info(logger,"CONSOLA> COMANDO Status para clave: %s.", clave_nombre);
 
+		clave_status = strdup(clave_nombre);
+
 		if(enviar_coordinador_clave_status(clave_nombre) < 0){
 			logger_planificador(loguear, l_error, "ERROR al consultar status clave al Coordinador.");
 		}
@@ -991,7 +994,7 @@ void consola_consultar_status_clave(char* clave_nombre)
 	return;
 }
 
-void status_clave(t_status_clave* clave_st)
+void status_clave(t_status_clave* clave_st, char * clave)
 {
 	/*
 	 status	clave: Con el objetivo de conoce el estado de una clave y de probar la correcta distribución de las mismas se deberan obtener los siguiente valores: (Este comando se utilizara para probar el sistema)
@@ -1001,55 +1004,97 @@ void status_clave(t_status_clave* clave_st)
 	-ESIs bloqueados a la espera de dicha clave.
 	 */
 
-	// TODO Obtener status del Coordinador.
-	// 1. Send al Coordinador pasándole la petición y la clave.
-	// 2. Recv de la estructura de consulta de status de clave.
+	int res;
+	char * nombre_instancia=NULL;
+	char * valor=NULL;
 
-	//clave_st = malloc(sizeof(t_status_clave));
+	if(clave_st->tamanio_instancia_nombre != -1){
 
-	//TODO Inicializado dummy - ELIMINAR
-	/*
-	clave_st->valor = strdup("TraemeLaCopa");
-	clave_st->instancia_actual = strdup("InstanciaDummy");
-	clave_st->instancia_guardado_distr = NULL;
-	*/
+		nombre_instancia = malloc(clave_st->tamanio_instancia_nombre);
 
-	//VALOR
-	if(clave_st->valor != NULL){
-		logger_planificador(escribir, NULL, "-Valor de la clave %s: %s.", clave_st->nombre, clave_st->valor);
-	}
-	else{
-		logger_planificador(escribir, NULL, "-La clave %s NO tiene VALOR.", clave_st->nombre);
-	}
+		res = recv(coord_status_socket, nombre_instancia, clave_st->tamanio_instancia_nombre, 0);
+		if(res < 0)
+		{
+			logger_planificador(escribir_loguear, l_error, "Error al recibir nombre instancia");
 
-	//INSTANCIA ACTUAL
-	log_info(logger, "PRE Instancia Actual.");
-	if(clave_st->instancia_actual != NULL){
-		log_info(logger,"-Instancia actual de la clave %s: %s.", clave_st->nombre, clave_st->instancia_actual);
-	}
-	//TODO Eliminar el ELSE
-	else{
-		log_info(logger,"instancia_actual ES NULL");
+			//TODO Evaluar qué hacer
+			//terminar_planificador();
+			//exit(EXIT_FAILURE);
+		}
+
 	}
 
-	//INSTANCIA EN QUE SE GUARDARÍA LA CLAVE
-	// TODO Revisar
-	if(clave_st->instancia_guardado_distr != NULL){
-		log_info(logger,"-Instancia en que se guardaría la clave %s: %s.", clave_st->nombre, clave_st->instancia_guardado_distr);
+	//Valor de la clave
+	if(clave_st->tamanio_valor != -1){
+
+		valor = malloc(clave_st->tamanio_valor);
+
+		res = recv(coord_status_socket, valor, clave_st->tamanio_valor, 0);
+		if(res < 0)
+		{
+			logger_planificador(escribir_loguear, l_error, "Error al recibir el valor de la clave");
+
+			//TODO Evaluar qué hacer
+			//terminar_planificador();
+			//exit(EXIT_FAILURE);
+		}
+
 	}
-	//TODO Eliminar el ELSE
-	else{
-		log_info(logger, "instancia_guardado_distr ES NULL");
+
+	switch(clave_st->cod)
+	{
+		//Buscar clave en lista interna de claves
+			//1-Si no existe, devolver cod = 0
+			//2-Si existe, mirar si tiene asociada una instancia
+				//3-Si no tiene asociada instancia, simular, y devolver (no va a devolver valor)( cod =2)
+				//4-Si tiene asociada instancia, consultarle a la misma
+					//5-Si la inst esta caida, devolver 1 en cod
+					//6-Si la inst no esta caida:
+						//7-tiene valor: lo devuelve, devolver cod= 3
+						//8-No tiene valor: devolver cod= 4
+
+		case COORDINADOR_SIN_CLAVE:
+			log_info(logger,"La clave %s no existe en el coordinador", clave);
+			break;
+
+		case INSTANCIA_CAIDA:
+			log_info(logger,"La instancia donde se encotraba la clave %s era %s, está caida",clave,nombre_instancia);
+			break;
+
+		case INSTANCIA_SIMULADA:
+			log_info(logger,"La instancia donde se encuentra la clave es %s, fue simulada",nombre_instancia);
+			break;
+
+		case CORRECTO_CONSULTA_VALOR:
+			log_info(logger,"La instancia donde se encuentra la clave es %s",nombre_instancia);
+			log_info(logger,"El valor de la clave es %s",valor);
+			break;
+
+		case INSTANCIA_SIN_CLAVE:
+			log_info(logger,"La instancia donde se encuentra la clave es %s",nombre_instancia);
+			log_info(logger,"El clave no tiene valor");
+			break;
+
 	}
 
 	//ESIs bloqueados por la clave
 	t_list* lista_esis_bloq_por_clave;
 
-	log_info(logger,"PRE calcular lista de ESIs bloqueados por clave.");
-	lista_esis_bloq_por_clave = esis_bloqueados_por_clave(clave_st->nombre);
+	lista_esis_bloq_por_clave = esis_bloqueados_por_clave(clave);
 
-	log_info(logger,"-Listado de ESIs bloqueados por clave %s: ", clave_st->nombre);
+	log_info(logger,"Listado de ESIs bloqueados por clave %s: \n\n", clave);
 	mostrar_esis_consola(lista_esis_bloq_por_clave);
+
+	list_destroy(lista_esis_bloq_por_clave);
+
+	if(valor!=NULL){
+		free(valor);
+	}
+
+	if(nombre_instancia!=NULL){
+		free(nombre_instancia);
+	}
+
 
 
 	return;
