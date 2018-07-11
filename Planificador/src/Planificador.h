@@ -37,6 +37,7 @@
 #define IP_COORD "127.0.0.1"
 #define PORT_COORD "8888"
 #define PORT_ESCUCHA "8080"
+#define PUERTO_STATUS "42578"
 #define STDIN 0
 #define TRUE 1
 #define FALSE 0
@@ -51,15 +52,20 @@
 #define ALGORITMO_PLAN_SJFSD "SJF-SD"
 #define ALGORITMO_PLAN_HRRN "HRRN"
 
+//Resultados de sentencia ESI
 #define RESULTADO_ESI_OK_SIG 0
 #define RESULTADO_ESI_BLOQUEADA 1
 #define RESULTADO_ESI_ABORTADO 2
 #define RESULTADO_ESI_OK_FINAL 3
+//Operaciones ESI
 #define OPERACION_CONF_SENTENCIA 1
 #define OPERACION_RES_SENTENCIA 2
+#define OPERACION_CONF_KILL 3
+//Operaciones Coordinador
 #define OPERACION_HANDSHAKE_COORD 1
 #define OPERACION_CONSULTA_CLAVE_COORD 2
 #define OPERACION_RES_CLAVE_COORD 3
+#define PLANIFICADOR_COORDINADOR_CMD_STATUS 4
 
 
 //Enumeracion de los comandos de la consola
@@ -76,6 +82,11 @@ enum sentencias { GET, SET, STORE };
 
 //Estado de la ejecución de ESI según comando de la consola (Pausa/Continuar)
 enum estado_pausa_ejec { no_pausado, pausado };
+
+//
+enum tipo_logueo { escribir, loguear, escribir_loguear, l_info, l_warning, l_error, l_debug };
+
+enum hand {no_handshake, handshake};
 
 /**********************************************/
 /* ESTUCTURAS								  */
@@ -95,6 +106,8 @@ struct pcb_esi {
 	float estimacion_anterior;
 	int instruccion_actual;
 	int ejec_anterior;			// 1 Si en la siguiente corrida debe ejectar denuevo la ultima instruccion
+	int tiempo_espera;
+	float response_ratio;
 	t_conexion_esi * conexion;
 	char * clave_bloqueo;
 };
@@ -131,6 +144,18 @@ struct consulta_bloqueo{
 };
 typedef struct consulta_bloqueo t_consulta_bloqueo;
 
+//Estructura para consultar con el Coordinador el status de una clave
+struct status_clave{
+	/*char* nombre;
+	char* valor;
+	char* instancia_actual;
+	char* instancia_guardado_distr;*/
+	int tamanio_valor;
+	int tamanio_instancia_nombre;
+	int cod;
+};
+typedef struct status_clave t_status_clave;
+
 /**********************************************/
 /* DATOS GLOBALES							  */
 /**********************************************/
@@ -143,8 +168,10 @@ t_list * esi_terminados;
 t_list * claves_bloqueadas;
 t_pcb_esi * esi_en_ejecucion = NULL;
 t_pcb_esi * esi_por_desalojar = NULL;
-t_consulta_bloqueo * clave_a_bloquear_por_set = NULL;
+t_consulta_bloqueo * clave_a_bloquear_por_get = NULL;
 t_consulta_bloqueo * clave_a_desbloquear_por_store = NULL;
+
+int coord_status_socket;
 
 int esi_seq_pid = 0;
 int estado_pausa_por_consola = no_pausado; // Pausa la ejecución de ESI y desaloja al proceso.
@@ -152,8 +179,9 @@ int estado_pausa_por_consola = no_pausado; // Pausa la ejecución de ESI y desal
 // Globales para capturar eventos al recibir el resultado de la sentencia del ESI
 int bloqueo_en_ejecucion = 0;		// Bloquear al ESI en ejecucion
 int desalojo_en_ejecucion = 0;		// Desalojar al ESI en ejecucion por SJF-CD
-int bloqueo_por_set = 0;			// Bloquear clave por resultado positivo de SET
+int bloqueo_por_get = 0;			// Bloquear clave por resultado positivo de GET
 int desbloqueo_por_store = 0;		// Desbloquear clave por resultado positivo de STORE
+int kill_en_ejecucion = 0;			// Matar al ESI en ejecucion
 
 struct config config;
 
@@ -170,7 +198,7 @@ pthread_mutex_t mutex_esi_en_ejecucion;
 /* FUNCIONES								  */
 /**********************************************/
 int* conexiones(void);
-int conectar_coordinador(char * ip, char * port);
+int conectar_coordinador(char * ip, char * port, int handshake);
 int iniciar_servidor(char *port);
 void *consola();
 void stdin_no_bloqueante(void);
@@ -179,8 +207,10 @@ void terminar_planificador(void);
 void planificar(void);
 void obtener_proximo_ejecucion(void);
 void desalojar_ejecucion(void);
-
 void leer_configuracion_desde_archivo(char* path_archivo);
+void configurar_signals(void);
+void captura_sigpipe(int signo);
+void logger_planificador(int tipo_esc, int tipo_log, const char* mensaje, ...);
 
 //Utilidades para la consola
 int consola_derivar_comando(char * buffer);
@@ -201,12 +231,15 @@ void mostrar_lista(char* lista);
 void mostrar_esi_en_ejecucion(void);
 void mostrar_bloqueos(void);
 
+t_list* esis_bloqueados_por_clave(char* recurso);
+void mostrar_esis_consola(t_list* lista_esi);
+
 //Manejo de ESI
 void inicializar_conexiones_esi(void);
 int atender_nuevo_esi(int serv_socket);
 int recibir_mensaje_esi(t_conexion_esi esi);
 int cerrar_conexion_esi(t_conexion_esi * esi);
-int enviar_confirmacion_sentencia(t_pcb_esi * pcb_esi);
+int enviar_esi_confirmacion_sentencia(t_pcb_esi * pcb_esi);
 t_pcb_esi * crear_esi(t_conexion_esi * conexion);
 int destruir_esi(t_pcb_esi * esi);
 void mostrar_esi(t_pcb_esi * esi);
@@ -216,16 +249,22 @@ t_pcb_esi * sacar_esi_de_lista_pid(t_list *lista,int pid);
 t_pcb_esi * buscar_esi_bloqueado_por_clave(char* clave);
 t_pcb_esi * sacar_esi_bloqueado_por_clave(char* clave);
 void ordenar_lista_estimacion(t_list * lista);
+void ordenar_lista_response_ratio(t_list * lista);
 int estimar_esi(t_pcb_esi * esi);
+void aumentar_tiempo_espera_ready(void);
+void calcular_response_ratio(t_pcb_esi* esi);
 int confirmar_bloqueo_ejecucion(void);
 int confirmar_desalojo_ejecucion(void);
 int confirmar_pausa_por_consola(void);
+int confirmar_kill_ejecucion(void);
+void enviar_esi_confirmacion_kill(int pid);
 int finalizar_esi(int pid_esi);
 
 //Manejo de Coordinador
 int recibir_mensaje_coordinador(int coord_socket);
 int cerrar_conexion_coord(int coord_socket);
-int enviar_resultado_consulta(int socket, int resultado);
+int enviar_coordinador_resultado_consulta(int socket, int resultado);
+int enviar_coordinador_clave_status(char* clave_nombre);
 
 //Manejo de claves
 int bloquear_clave(char* clave , int pid);
@@ -235,8 +274,5 @@ int destruir_clave_bloqueada(t_claves_bloqueadas * clave_bloqueada);
 t_claves_bloqueadas * buscar_clave_bloqueada(char* clave); //, int pid);
 
 void desbloquear_claves_bloqueadas_pid(int pid);
-void confirmar_bloqueo_por_set(void);
+void confirmar_bloqueo_por_get(void);
 void confirmar_desbloqueo_por_store(void);
-
-// TODO Eliminar esta función
-void crear_claves_bloqueadas_dummy();
