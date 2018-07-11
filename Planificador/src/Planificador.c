@@ -32,7 +32,10 @@ int main(int argc, char **argv) {
 	int serv_socket = iniciar_servidor(config.puerto_escucha);
 
 	//Crea el socket cliente para conectarse al coordinador
-	int coord_socket = conectar_coordinador(config.ip_coordinador, config.puerto_coordinador);
+	int coord_socket = conectar_coordinador(config.ip_coordinador, config.puerto_coordinador,handshake);
+
+	//Crea el socket para atender el comando status
+	coord_status_socket = conectar_coordinador(config.ip_coordinador,PUERTO_STATUS,no_handshake);
 
 	while(TRUE){
 		//Inicializa los file descriptor
@@ -50,6 +53,10 @@ int main(int argc, char **argv) {
 		//Agrega el fd del socket coordinador al set de lectura
 		FD_SET(coord_socket, &readset);
 		FD_SET(coord_socket, &exepset);
+
+		//Agrega el fd del socket cmd status
+		FD_SET(coord_status_socket, &readset);
+		FD_SET(coord_status_socket, &exepset);
 
 		//Agrega el stdin para leer la consola
 		FD_SET(STDIN_FILENO, &readset);
@@ -75,6 +82,10 @@ int main(int argc, char **argv) {
 			max_fd = coord_socket;
 		}
 
+
+		if(max_fd < coord_status_socket){
+			max_fd = coord_status_socket;
+		}
 
 		int result = select(max_fd+1, &readset, &writeset, &exepset, &tv);
 		//log_info(logger,"Resultado del select: %d\n",result); //Revisar rendimiento del CPU cuando select da > 1
@@ -115,6 +126,28 @@ int main(int argc, char **argv) {
 				if(recibir_mensaje_coordinador(coord_socket) == 0)
 				{
 					cerrar_conexion_coord(coord_socket);
+					terminar_planificador();
+					break;
+				}
+			}
+
+			//Comando status
+			if(FD_ISSET(coord_status_socket, &readset))
+			{
+				if(recibir_mensaje_coordinador(coord_status_socket) == 0)
+				{
+					cerrar_conexion_coord(coord_status_socket);
+					terminar_planificador();
+					break;
+				}
+			}
+
+
+			if(FD_ISSET(coord_status_socket, &exepset))
+			{
+				if(recibir_mensaje_coordinador(coord_status_socket) == 0)
+				{
+					cerrar_conexion_coord(coord_status_socket);
 					terminar_planificador();
 					break;
 				}
@@ -168,7 +201,7 @@ int main(int argc, char **argv) {
 //FUNCIONES DE COMUNICACION//
 //*************************//
 
-int conectar_coordinador(char * ip, char * port) {
+int conectar_coordinador(char * ip, char * port, int handshake) {
 
 	int coord_socket = conectar_a_server(ip, port);
 	if (coord_socket < 0)
@@ -181,23 +214,26 @@ int conectar_coordinador(char * ip, char * port) {
 		log_trace(logger,"Conectado con el coordinador! (%d)",coord_socket);
 	}
 
-	/* Handshake necesario para que el coordinador identifique que la
-	 * conexion recibida fue del planificador. Solo se envia el header con la operacion
-	 */
-	t_content_header * header = crear_cabecera_mensaje(planificador,coordinador,OPERACION_HANDSHAKE_COORD,sizeof(int));
+	if(handshake){
 
-	int res_send = send(coord_socket, header, sizeof(t_content_header), 0);
-	if(res_send < 0)
-	{
-		log_error(logger,"Error send header handshake con el Coordinador :( \n");
-		terminar_planificador();
-		exit(EXIT_FAILURE);
-	}
-	else{
-		log_trace(logger,"Handshake con Coordinador enviado correctamente");
-	}
+		/* Handshake necesario para que el coordinador identifique que la
+		 * conexion recibida fue del planificador. Solo se envia el header con la operacion
+		 */
+		t_content_header * header = crear_cabecera_mensaje(planificador,coordinador,OPERACION_HANDSHAKE_COORD,sizeof(int));
 
-	destruir_cabecera_mensaje(header);
+		int res_send = send(coord_socket, header, sizeof(t_content_header), 0);
+		if(res_send < 0)
+		{
+			log_error(logger,"Error send header handshake con el Coordinador :( \n");
+			terminar_planificador();
+			exit(EXIT_FAILURE);
+		}
+		else{
+			log_trace(logger,"Handshake con Coordinador enviado correctamente");
+		}
+
+		destruir_cabecera_mensaje(header);
+	}
 
 	return coord_socket;
 }
@@ -400,7 +436,7 @@ int recibir_mensaje_coordinador(int coord_socket)
 			status_clave(st_clave);
 		}
 
-		//TODO free(st_clave); ??
+		free(st_clave);
 	}
 
 	destruir_cabecera_mensaje(content_header);
@@ -1307,31 +1343,28 @@ int enviar_coordinador_resultado_consulta(int socket, int resultado)
 
 int enviar_coordinador_clave_status(char* clave_nombre){
 
-	//TODO Ver qué sizeof mandar.
-	t_content_header *header = crear_cabecera_mensaje(planificador, coordinador, PLANIFICADOR_COORDINADOR_CMD_STATUS, sizeof(char)*50);
+	t_content_header *header = crear_cabecera_mensaje(planificador, coordinador, PLANIFICADOR_COORDINADOR_CMD_STATUS, strlen(clave_nombre));
 
-	t_status_clave *st_clave = malloc(sizeof(t_status_clave));
-	st_clave->nombre = strdup(clave_nombre);
+	//t_status_clave *st_clave = malloc(sizeof(t_status_clave));
+	//st_clave->nombre = strdup(clave_nombre);
 
-	logger_planificador(loguear, l_info, "Envío consulta de status por clave %s.", st_clave->nombre);
+	logger_planificador(loguear, l_info, "Envío consulta de status por clave %s.", clave_nombre);
 
-	//TODO Recuperar socket del coordinador
-	int socket_coordinador = NULL;
 
 	//Envía Header al Coordinador
-	int res_send = send(socket_coordinador, header, sizeof(t_content_header), 0);
+	int res_send = send(coord_status_socket, header, sizeof(t_content_header), 0);
 	if(res_send < 0){
 		log_error(logger, "Error al enviar header al Coordinador.");
 	}
 
 	//Envía Body al Coordinador
-	res_send = send(socket_coordinador, st_clave->nombre, sizeof(char)*50, 0);
+	res_send = send(coord_status_socket , clave_nombre, strlen(clave_nombre), 0);
 	if(res_send < 0){
 		log_error(logger, "Error en send body al Coordinador.");
 	}
 
-	free(st_clave->nombre);
-	free(st_clave);
+	//free(st_clave->nombre);
+	//free(st_clave);
 	destruir_cabecera_mensaje(header);
 	return res_send;
 }
