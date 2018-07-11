@@ -401,29 +401,26 @@ t_list * obtenerClavesDeMayorEspacioUtilizado() {
 		strcpy(claveActual, entradaActual->clave);
 
 		if (strcmp(claveActual, claveAnterior) != 0) {
-			printf("\tCambio de clave...\n");
+			printf("\tCambio de clave: %s a clave: %s...\n", claveAnterior, claveActual);
 			tamanioParcial = 0;
 		}
 
 		tamanioParcial = tamanioParcial + entradaActual->tamanioValor;
-		printf("Tamanio parcial: %d. Mayor tamanio: %d\n", tamanioParcial,
-				mayorTamanio);
+		printf("Tamanio parcial: %d. Mayor tamanio: %d\n", tamanioParcial, mayorTamanio);
 
 		if (tamanioParcial > mayorTamanio) {
-			if (strcmp(claveActual, claveAnterior) != 0) {
-				printf("\tNueva clave con mayor valor encontrada\n");
+				printf("\tNueva clave con mayor valor encontrada: %s\n", claveActual);
 				list_clean(clavesConMayorValor);
 				printf("\t\tClean de lista efectuado.\n");
 				list_add(clavesConMayorValor, claveActual);
-				printf("\t\tAgregando nueva clave de mayor valor.\n");
-			}
+				printf("\t\tAgregando nueva clave de mayor valor: %s\n", claveActual);
 
 			mayorTamanio = tamanioParcial;
 
 		} else {
 			if (tamanioParcial == mayorTamanio) {
 				printf(
-						"\tAgregando otra clave ya que tienen mismo tamanio maximo\n");
+						"\tAgregando otra clave ya que tienen mismo tamanio maximo: %s\n", claveActual);
 				list_add(clavesConMayorValor, claveActual);
 			}
 		}
@@ -431,7 +428,12 @@ t_list * obtenerClavesDeMayorEspacioUtilizado() {
 		strcpy(claveAnterior, claveActual);
 	}
 
-	printf("Devolviendo claves con mayor valor\n");
+	printf("Devolviendo claves con mayor valor...\n");
+
+	for(int i = 0; i < list_size(clavesConMayorValor); i++) {
+		printf("\tClave: %s\n", (char *) list_get(clavesConMayorValor, i));
+	}
+
 	return clavesConMayorValor;
 }
 
@@ -603,17 +605,23 @@ _Bool hayEntradasContiguasDisponibles(int cantRequerida) {
 			if (i == (configTablaEntradas->cantTotalEntradas - 1)) {
 				// printf("\t\tUltima entrada...\n");
 				mayorCantDeEntradasContiguasDisp = contAux;
+				nroEntradaBaseAux = i + 1;
 			}
 		} else {
 			contAux = 0;
 			if (contAux > mayorCantDeEntradasContiguasDisp) {
 				mayorCantDeEntradasContiguasDisp = contAux;
+				nroEntradaBaseAux = i + 1;
 			}
 		}
+
 	}
 
-	//printf("Retornando siempre FALSE.\n");
-	// return false;
+	nroEntradaBaseAux = nroEntradaBaseAux - mayorCantDeEntradasContiguasDisp;
+
+	printf(
+			"Numero de entrada donde se debe guardar el proximo indice NO atomico: %d\n",
+			nroEntradaBaseAux);
 
 	printf("\tMayor cantidad de entradas contiguas disponibles: %d\n",
 			mayorCantDeEntradasContiguasDisp);
@@ -664,7 +672,14 @@ void guardarClaveValor(char clave[40], char * valor) {
 
 					printf("No es necesario compactar tabla de entradas...\n");
 
-					// TODO: Buscar donde se encuentra el PRIMER indiceBase para guardar la clave
+					if (numeroEntrada
+							>= configTablaEntradas->cantTotalEntradas) {
+
+						// TODO: Buscar donde se encuentra el PRIMER indiceBase para guardar la clave
+						numeroEntrada = nroEntradaBaseAux;
+						printf("Valor de numeroEntrada: %d. El aux: %d\n",
+								numeroEntrada, nroEntradaBaseAux);
+					}
 
 					t_indice_entrada * indiceBase =
 							guardarIndiceNoAtomicoEnTabla(clave, valor,
@@ -876,26 +891,53 @@ void grabarArchivo(char clave[40]) {
 	}
 }
 
-void compactar() {
+void ordenarAscPorNroDeEntrada(t_list * lista) {
+
+	printf(
+			"Ordenando tabla de entradas por numero de operacion ascendentemente...\n");
+
+	_Bool menorNroDeEntrada(t_indice_entrada * entrada1,
+			t_indice_entrada * entrada2) {
+		return entrada1->numeroEntrada < entrada2->numeroEntrada;
+	}
+
+	list_sort(lista, (void *) menorNroDeEntrada);
+}
+
+void compactarEntradas() {
 
 	int cantEntradasExistentes = list_size(l_indice_entradas);
-	// TODO: Ordenar ascendentemente pro nroDeOperacion
+
+	printf("Las tabla de entradas contiene %d indices...\n",
+			cantEntradasExistentes);
+
+	ordenarAscPorNroDeEntrada(l_indice_entradas);
 
 	t_list * listaAuxiliar = list_create();
+	printf("Lista auxiliar creada...\n");
 
-	for (int i = 0; i < cantEntradasExistentes, i++) {
+	for (int i = 0; i < cantEntradasExistentes; i++) {
 		t_indice_entrada * entrada = list_get(l_indice_entradas, i);
 		t_indice_entrada * entradaAux;
 
 		entradaAux->numeroEntrada = i;
 		strcpy(entradaAux->clave, entrada->clave);
-		entradaAux-> tamanioValor = entrada->tamanioValor;
+		entradaAux->tamanioValor = entrada->tamanioValor;
 		entradaAux->esAtomica = entrada->esAtomica;
 		entradaAux->nroDeOperacion = entrada->nroDeOperacion;
-		entradaAux->puntero = tablaEntradas + (i * configTablaEntradas->tamanioEntradas);
+		entradaAux->puntero = tablaEntradas
+				+ (i * configTablaEntradas->tamanioEntradas);
 
 		list_add(listaAuxiliar, entradaAux);
 	}
+
+	list_clean(l_indice_entradas);
+	printf("Clean efectuado correctamente sobre la tabla de entradas...\n");
+
+	printf("Asignando lista auxiliar a la tabla de entradas...\n");
+	list_add_all(l_indice_entradas, listaAuxiliar);
+
+	list_destroy(listaAuxiliar);
 }
 
 void interpretarOperacionCoordinador(t_content_header * header,
@@ -960,13 +1002,15 @@ void interpretarOperacionCoordinador(t_content_header * header,
 		printf("Iniciando proceso de Compactacion...\n");
 		printf("TODO: compactar()\n");
 
-
 		// Esta linea se debe eliminar luego de implementar compactar()
-		respuestaParaCoordinador = EXITO_I;
+		// respuestaParaCoordinador = EXITO_I;
 
-		// compactar();
+		compactarEntradas();
 
-		enviarResultadoSentencia(socketCoordinador, COORDINADOR_INSTANCIA_COMPACTAR);
+		imprimirTablaEntradas();
+
+		enviarResultadoSentencia(socketCoordinador,
+		COORDINADOR_INSTANCIA_COMPACTAR);
 
 	}
 }

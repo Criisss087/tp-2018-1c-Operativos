@@ -73,6 +73,7 @@ pthread_t threadId[2];
 
 int numeroEntrada = 0;
 int contadorOperacion = 0;
+int nroEntradaBaseAux = 0;
 
 int respuestaParaCoordinador;
 
