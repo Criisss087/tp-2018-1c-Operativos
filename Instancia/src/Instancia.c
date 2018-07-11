@@ -84,8 +84,6 @@ void enviarResultadoSentencia(int socketCoordinador, int keyword) {
 
 		printf("Enviando Respuesta de sentencia STORE...\n");
 
-		resultadoEjecucion = EXITO_I;
-
 		resultadoAEnviar = armarRespuestaParaCoordinador(resultadoEjecucion);
 
 		resultado = send(socketCoordinador, resultadoAEnviar,
@@ -800,68 +798,77 @@ void realizarStoreDeClave(char clave[40]) {
 
 	t_list * indices = obtenerIndicesDeClave(clave);
 
-	if (pthread_self() == threadId[0]) {
-		// En caso de ser el hilo DUMP, no quiero actualizar operacion
-		actualizarNroDeOperacion(indices);
+	if (list_size(indices) > 0) {
+		if (pthread_self() == threadId[0]) {
+			// En caso de ser el hilo DUMP, no quiero actualizar operacion
+			actualizarNroDeOperacion(indices);
 
-		imprimirTablaEntradas();
-	}
-
-	t_indice_entrada * primerEntrada = list_get(indices, 0);
-
-	int tamanioValorCompleto = obtenerTamanioTotalDeValorGuardado(indices);
-	printf("Tamaño del valor guardado: %d\n", tamanioValorCompleto);
-
-	char * valorCompleto = obtenerValorCompleto(primerEntrada->puntero,
-			tamanioValorCompleto);
-	printf("El valor completo es: %s\n", valorCompleto);
-
-	grabarArchivoPorPrimeraVez(fileDescriptor, valorCompleto,
-			tamanioValorCompleto);
-
-	char * punteroDeArchivo;
-
-//  ACA APLICAR EL APPEND PARA MANEJAR LA VARIACION DEL TAMAÑO DEL FD
-	if ((punteroDeArchivo = mmap(0, tamanioValorCompleto, permisos,
-	MAP_SHARED, fileDescriptor, 0)) == (caddr_t) -1) {
-		printf("mmap error for output\n");
-	}
-
-//	punteroDeArchivo = append(fileDescriptor, valor, tamanioDelValor, void *map, size_t len);
-
-	if (punteroDeArchivo != MAP_FAILED) {
-		printf("El Mapeo se efectuo correctamente\n\n");
-		// printf("\tPuntero de archivo: %p\n", punteroDeArchivo);
-	} else {
-		printf("Error en el Mapeo de archivo\n");
-		switch (errno) {
-		case EINVAL:
-			printf(
-					"\tEither address was unusable, or inconsistent flags were given.\n");
-			break;
-		case EACCES:
-			printf(
-					"\tfiledes was not open for the type of access specified in protect.\n");
-			break;
-		case ENOMEM:
-			printf(
-					"\tEither there is not enough memory for the operation, or the process is out of address space.\n");
-			break;
-		case ENODEV:
-			printf("\tThis file is of a type that doesn't support mapping.\n");
-			break;
-		case ENOEXEC:
-			printf(
-					"\tThe file is on a filesystem that doesn't support mapping.\n");
-			break;
+			imprimirTablaEntradas();
 		}
+
+		t_indice_entrada * primerEntrada = list_get(indices, 0);
+
+		int tamanioValorCompleto = obtenerTamanioTotalDeValorGuardado(indices);
+		printf("Tamaño del valor guardado: %d\n", tamanioValorCompleto);
+
+		char * valorCompleto = obtenerValorCompleto(primerEntrada->puntero,
+				tamanioValorCompleto);
+		printf("El valor completo es: %s\n", valorCompleto);
+
+		grabarArchivoPorPrimeraVez(fileDescriptor, valorCompleto,
+				tamanioValorCompleto);
+
+		char * punteroDeArchivo;
+
+	//  ACA APLICAR EL APPEND PARA MANEJAR LA VARIACION DEL TAMAÑO DEL FD
+		if ((punteroDeArchivo = mmap(0, tamanioValorCompleto, permisos,
+		MAP_SHARED, fileDescriptor, 0)) == (caddr_t) -1) {
+			printf("mmap error for output\n");
+		}
+
+	//	punteroDeArchivo = append(fileDescriptor, valor, tamanioDelValor, void *map, size_t len);
+
+		if (punteroDeArchivo != MAP_FAILED) {
+			printf("El Mapeo se efectuo correctamente\n\n");
+			// printf("\tPuntero de archivo: %p\n", punteroDeArchivo);
+		} else {
+			printf("Error en el Mapeo de archivo\n");
+			switch (errno) {
+			case EINVAL:
+				printf(
+						"\tEither address was unusable, or inconsistent flags were given.\n");
+				break;
+			case EACCES:
+				printf(
+						"\tfiledes was not open for the type of access specified in protect.\n");
+				break;
+			case ENOMEM:
+				printf(
+						"\tEither there is not enough memory for the operation, or the process is out of address space.\n");
+				break;
+			case ENODEV:
+				printf("\tThis file is of a type that doesn't support mapping.\n");
+				break;
+			case ENOEXEC:
+				printf(
+						"\tThe file is on a filesystem that doesn't support mapping.\n");
+				break;
+			}
+		}
+
+		if (close(fileDescriptor) == 0) {
+			printf("\tArchivo cerrado correctamente.\n");
+		} else {
+			printf("\tError en el cerrado del archivo.\n");
+		}
+
+		resultadoEjecucion = EXITO_I;
+
+	} else {
+		resultadoEjecucion = ERROR_I;
+		printf("La clave %s no se encuentra en la tabla de entradas...\n", clave);
 	}
 
-	if (close(fileDescriptor) == 0) {
-		printf("\tArchivo cerrado correctamente.\n");
-	} else {
-		printf("\tError en el cerrado del archivo.\n");
-	}
 }
 
 void grabarArchivo(char clave[40]) {
