@@ -70,6 +70,7 @@ rta_envio enviarSentenciaInstancia(t_sentencia * sentencia){
 	rta.instancia->id = proxima->id;
 	rta.instancia->nombre = strdup(proxima->nombre);
 	rta.instancia->socket = proxima->socket;
+	log_warning(logger,"codigos enviados en header a instancia: %d %d %d %d",coordinador,instancia,COORDINADOR_INSTANCIA_SENTENCIA, sizeof(t_content_header) );
 	t_content_header * header = crear_cabecera_mensaje(coordinador,instancia,COORDINADOR_INSTANCIA_SENTENCIA, sizeof(t_content_header));
 	t_esi_operacion_sin_puntero * s_sin_p = armar_esi_operacion_sin_puntero(sentencia);
 
@@ -212,13 +213,13 @@ t_clave * guardarClaveInternamente(char clave[40], int keyword){
 
 }
 
-int chequearConectividadProceso(t_instancia * instancia){
+int chequearConectividadProceso(t_instancia * inst){
 	t_content_header * st_connect = crear_cabecera_mensaje(coordinador,instancia,COORDINADOR_INSTANCIA_CHEQUEO_CONEXION,0);
-	int status_connect = send(instancia->socket,st_connect,sizeof(t_content_header),0);
-	int status_recv = recv(instancia->socket,st_connect,sizeof(t_content_header),0);
+	int status_connect = send(inst->socket,st_connect,sizeof(t_content_header),0);
+	int status_recv = recv(inst->socket,st_connect,sizeof(t_content_header),0);
 	free(st_connect);
 	log_error(logger, "cheqconectproce status_recv %d", status_recv);
-	if (status_recv ==-1 || status_recv == 0){instancia->flag_thread = 0; return DESCONECTADO;}
+	if (status_recv ==-1 || status_recv == 0){inst->flag_thread = 0; return DESCONECTADO;}
 	else return CONECTADO;
 }
 
