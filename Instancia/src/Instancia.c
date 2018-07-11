@@ -399,27 +399,43 @@ t_list * obtenerClavesDeMayorEspacioUtilizado() {
 		strcpy(claveActual, entradaActual->clave);
 
 		if (strcmp(claveActual, claveAnterior) != 0) {
-			printf("\tCambio de clave: %s a clave: %s...\n", claveAnterior, claveActual);
+			printf("\tCambio de clave: %s a clave: %s...\n", claveAnterior,
+					claveActual);
 			tamanioParcial = 0;
 		}
 
 		tamanioParcial = tamanioParcial + entradaActual->tamanioValor;
-		printf("Tamanio parcial: %d. Mayor tamanio: %d\n", tamanioParcial, mayorTamanio);
+		printf("Tamanio parcial: %d. Mayor tamanio: %d\n", tamanioParcial,
+				mayorTamanio);
 
 		if (tamanioParcial > mayorTamanio) {
-				printf("\tNueva clave con mayor valor encontrada: %s\n", claveActual);
-				list_clean(clavesConMayorValor);
-				printf("\t\tClean de lista efectuado.\n");
-				list_add(clavesConMayorValor, claveActual);
-				printf("\t\tAgregando nueva clave de mayor valor: %s\n", claveActual);
+			printf("\tNueva clave con mayor valor encontrada: %s\n",
+					claveActual);
+			list_clean(clavesConMayorValor);
+			printf("\t\tClean de lista efectuado.\n");
+
+			char * item = malloc(strlen(claveActual));
+			strcpy(item, claveActual);
+
+			printf("\t\tAgregando nueva clave de mayor valor: %s\n", item);
+			list_add(clavesConMayorValor, item);
+
+			free(item);
 
 			mayorTamanio = tamanioParcial;
 
 		} else {
 			if (tamanioParcial == mayorTamanio) {
+				char * item = malloc(strlen(claveActual));
+				strcpy(item, claveActual);
 				printf(
-						"\tAgregando otra clave ya que tienen mismo tamanio maximo: %s\n", claveActual);
-				list_add(clavesConMayorValor, claveActual);
+						"\tAgregando otra clave ya que tienen mismo tamanio maximo: %s\n",
+						item);
+
+				list_add(clavesConMayorValor, item);
+
+				free(item);
+
 			}
 		}
 
@@ -428,7 +444,7 @@ t_list * obtenerClavesDeMayorEspacioUtilizado() {
 
 	printf("Devolviendo claves con mayor valor...\n");
 
-	for(int i = 0; i < list_size(clavesConMayorValor); i++) {
+	for (int i = 0; i < list_size(clavesConMayorValor); i++) {
 		printf("\tClave: %s\n", (char *) list_get(clavesConMayorValor, i));
 	}
 
@@ -493,7 +509,7 @@ t_indice_entrada * aplicarAlgoritmoDeReemplazo(char clave[40], char * valor) {
 		} else {
 			// TODO: Modularizar el algoritmo circular
 			printf(
-					"Hay empate con el algoritmo BSU. Ejecutando algoritmo desempatador...\n");
+					"Hay empate con el algoritmo BSU. Ejecutando algoritmo desempatador (CIRC)...\n");
 
 			numeroEntrada = 0;
 			printf("El puntero fue posicionado en la entrada: %d\n",
@@ -820,13 +836,13 @@ void realizarStoreDeClave(char clave[40]) {
 
 		char * punteroDeArchivo;
 
-	//  ACA APLICAR EL APPEND PARA MANEJAR LA VARIACION DEL TAMAÑO DEL FD
+		//  ACA APLICAR EL APPEND PARA MANEJAR LA VARIACION DEL TAMAÑO DEL FD
 		if ((punteroDeArchivo = mmap(0, tamanioValorCompleto, permisos,
 		MAP_SHARED, fileDescriptor, 0)) == (caddr_t) -1) {
 			printf("mmap error for output\n");
 		}
 
-	//	punteroDeArchivo = append(fileDescriptor, valor, tamanioDelValor, void *map, size_t len);
+		//	punteroDeArchivo = append(fileDescriptor, valor, tamanioDelValor, void *map, size_t len);
 
 		if (punteroDeArchivo != MAP_FAILED) {
 			printf("El Mapeo se efectuo correctamente\n\n");
@@ -847,7 +863,8 @@ void realizarStoreDeClave(char clave[40]) {
 						"\tEither there is not enough memory for the operation, or the process is out of address space.\n");
 				break;
 			case ENODEV:
-				printf("\tThis file is of a type that doesn't support mapping.\n");
+				printf(
+						"\tThis file is of a type that doesn't support mapping.\n");
 				break;
 			case ENOEXEC:
 				printf(
@@ -862,11 +879,12 @@ void realizarStoreDeClave(char clave[40]) {
 			printf("\tError en el cerrado del archivo.\n");
 		}
 
-		resultadoEjecucion = EXITO_I;
+		respuestaParaCoordinador = EXITO_I;
 
 	} else {
-		resultadoEjecucion = ERROR_I;
-		printf("La clave %s no se encuentra en la tabla de entradas...\n", clave);
+		respuestaParaCoordinador = ERROR_I;
+		printf("La clave %s no se encuentra en la tabla de entradas...\n",
+				clave);
 	}
 
 }
@@ -915,17 +933,19 @@ void compactarEntradas() {
 
 	int cantEntradasExistentes = list_size(l_indice_entradas);
 
-	printf("Las tabla de entradas contiene %d indices...\n",
+	printf("La tabla de entradas contiene %d indices...\n",
 			cantEntradasExistentes);
 
 	ordenarAscPorNroDeEntrada(l_indice_entradas);
+
+	imprimirTablaEntradas();
 
 	t_list * listaAuxiliar = list_create();
 	printf("Lista auxiliar creada...\n");
 
 	for (int i = 0; i < cantEntradasExistentes; i++) {
 		t_indice_entrada * entrada = list_get(l_indice_entradas, i);
-		t_indice_entrada * entradaAux;
+		t_indice_entrada * entradaAux = malloc(sizeof(t_indice_entrada));
 
 		entradaAux->numeroEntrada = i;
 		strcpy(entradaAux->clave, entrada->clave);
@@ -936,6 +956,7 @@ void compactarEntradas() {
 				+ (i * configTablaEntradas->tamanioEntradas);
 
 		list_add(listaAuxiliar, entradaAux);
+
 	}
 
 	list_clean(l_indice_entradas);
@@ -944,7 +965,7 @@ void compactarEntradas() {
 	printf("Asignando lista auxiliar a la tabla de entradas...\n");
 	list_add_all(l_indice_entradas, listaAuxiliar);
 
-	list_destroy(listaAuxiliar);
+	list_destroy_and_destroy_elements(listaAuxiliar, (void*) free);
 }
 
 void interpretarOperacionCoordinador(t_content_header * header,
@@ -1007,7 +1028,6 @@ void interpretarOperacionCoordinador(t_content_header * header,
 
 	case COORDINADOR_INSTANCIA_COMPACTAR:
 		printf("Iniciando proceso de Compactacion...\n");
-		printf("TODO: compactar()\n");
 
 		// Esta linea se debe eliminar luego de implementar compactar()
 		// respuestaParaCoordinador = EXITO_I;
