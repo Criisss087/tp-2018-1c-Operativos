@@ -36,6 +36,7 @@
 #define INSTANCIA_COORDINADOR_RESPUESTA_SENTENCIA 4
 #define COORDINADOR_INSTANCIA_RECONEXION 5
 #define COORDINADOR_INSTANCIA_RECUPERAR_CLAVES 5
+#define COORDINADOR_INSTANCIA_COMPACTAR 6
 
 #define COORDINADOR_INSTANCIA_COMPROBAR_CONEXION -1
 #define INSTANCIA_COORDINADOR_CONFIRMA_CONEXION_ACTIVA -1
@@ -72,9 +73,14 @@ pthread_t threadId[2];
 
 int numeroEntrada = 0;
 int contadorOperacion = 0;
+int nroEntradaBaseAux = 0;
 
 int respuestaParaCoordinador;
 
 char * tablaEntradas;
+
+// Funciones utilizadas
+
+void guardarClaveValor(char clave[40], char * valor);
 
 #endif /* SRC_UTILIDADES_H_ */
