@@ -151,7 +151,10 @@ int existe(char *nombre){
 
 t_list * getClavesAsignadas(char *nombre){
 	int asignada(t_clave * clave){
-		return string_equals_ignore_case(clave->instancia->nombre,nombre);
+		if (clave->instancia!=NULL){
+			return string_equals_ignore_case(clave->instancia->nombre,nombre);
+		}
+		return 0;
 	}
 	return list_filter(lista_claves,*asignada);
 }
@@ -160,17 +163,22 @@ void guardarEnListaDeInstancias(int socketInstancia, char *nombre){
 	if (existe(nombre)){
 		log_info(logger,"existia instancia");
 		actualizarSocketInstancia(nombre,socketInstancia);
+		log_error(logger,"prueba reincorporar isntancia con clave1");
 		//Enviar lista de claves asignadas a la instancia
 		t_list * claves_asignadas =  getClavesAsignadas(nombre);
+		log_error(logger,"prueba reincorporar isntancia con clave2");
 		t_content_header * header = crear_cabecera_mensaje(coordinador,instancia,COORDINADOR_INSTANCIA_CLAVES, list_size(claves_asignadas));
 		//char array_claves[list_size(claves_asignadas)][40] = calloc(list_size(claves_asignadas),40);
 		char array_claves[list_size(claves_asignadas)][40];
+		log_error(logger,"prueba reincorporar isntancia con clave3");
 		//for (int i=0;list_size(claves_asignadas)>i; i++){array_claves[i] = NULL;}
 		int contador = 0;
+		log_error(logger,"prueba reincorporar isntancia con clave4");
 		void addToArray(t_clave * clave){
 			strncpy(array_claves[contador],clave->clave,40);
 			contador++;
 		}
+		log_error(logger,"prueba reincorporar isntancia con clave5");
 		list_iterate(claves_asignadas, *addToArray);
 		log_info(logger,"despues de armar array claves--");
 		for(int i = 0; list_size(claves_asignadas)> i;i++){log_warning(logger,"claves de antes en instancia: %s",array_claves[i]);}
@@ -219,38 +227,30 @@ void guardarEnListaDeInstancias(int socketInstancia, char *nombre){
 		nueva->socket = socketInstancia;
 		nueva->nombre = strdup(nombre);
 		nueva->entradas_libres = CANT_MAX_ENTRADAS;
+		nueva->flag_thread = 0;
 		list_add(lista_instancias, nueva);
 		log_info(logger,"Guardada Instancia: %s", nombre);
 	}
 
 }
 
-t_instancia * siguienteEqLoad(simulacion){
+t_instancia * siguienteEqLoad(int cod){
 	//Quizá convenga hacer que recorra la lista de atrás para adelante,
 	//para no estar siempre con las nuevas dejando las viejas para lo último.
 	//Como no va a haber la misma cantidad de conexiones con instancias como con esis por ejemplo, no creo que sea tan necesario.
-	int cant = list_size(lista_instancias);
-	int indice_actual_de_mentira = indice_actual_lista;
-
-	if(simulacion == false){
+	if (cod == ASIGNAR){
+		int cant = list_size(lista_instancias);
 		indice_actual_lista++;
-
-		if (indice_actual_lista > cant){
-			indice_actual_lista = indice_actual_lista - cant;
-		}
-
+		if (indice_actual_lista>cant){indice_actual_lista = indice_actual_lista - cant;}
 		int siguiente = indice_actual_lista % cant;
-
 		return list_get(lista_instancias, siguiente);
-	}else{
-		indice_actual_de_mentira++;
-
-		if (indice_actual_de_mentira > cant){
-			indice_actual_de_mentira = indice_actual_de_mentira - cant;
-		}
-
-		int siguiente = indice_actual_de_mentira % cant;
-
+	}
+	else{
+		int cant = list_size(lista_instancias);
+		int indice_actual_lista_aux = indice_actual_lista;
+		indice_actual_lista_aux++;
+		if (indice_actual_lista_aux>cant){indice_actual_lista_aux = indice_actual_lista_aux - cant;}
+		int siguiente = indice_actual_lista_aux % cant;
 		return list_get(lista_instancias, siguiente);
 	}
 }
@@ -306,49 +306,55 @@ t_instancia * siguienteKeyExplicit(char clave[40]){
 	}
 }
 
-t_instancia * siguienteInstanciaSegunAlgoritmo(char clave[40], bool simulacion){
-
-	//TODO usar la funcion list_size para ver si mostrar o no el error
+t_instancia * siguienteInstanciaSegunAlgoritmo(char clave[40], int cod){
 	if(	list_size(lista_instancias)==0){
-		log_error(logger,"No hay Instancias conectadas");
-		t_instancia * instancia_error = malloc(sizeof(t_instancia));
-		strncpy(instancia_error->nombre,"ERROR",5);
-		return instancia_error;
+			log_error(logger,"No hay Instancias conectadas");
+			t_instancia * instancia_error = malloc(sizeof(t_instancia));
+			strncpy(instancia_error->nombre,"ERROR",5);
+			return instancia_error;
 	}
 
 	switch(ALGORITMO_DISTRIBUCION){
 		case EQUITATIVE_LOAD:
-			return siguienteEqLoad();
+			return siguienteEqLoad(cod);
 			break;
 		case LEAST_SPACE_USED:
 			return siguienteLSU();
 			break;
 		case KEY_EXPLICIT:
 			return siguienteKeyExplicit(clave);
-		break;
+			break;
 		default:
-		return siguienteEqLoad(simulacion);
-	}
+			return siguienteEqLoad(cod);
+		}
 }
 
-void loopInstancia(int socketInstancia, char * nombre){
+void loopInstancia(t_instancia * inst, char * nombre){
 	//Para que quede el hilo esperando para compactar
 	//wait instancia semaforo
+	inst->flag_thread = 1;
 	int status = 1;
 	while (status){
 		sem_wait(&semInstancias);
 		//enviar orden de compactación
-		t_content_header * header = crear_cabecera_mensaje(coordinador, instancia, COORDINADOR_INSTANCIA_COMPACTACION,0);
-		int status_head = send(socketInstancia,header,sizeof(t_content_header),0);
+		if (chequearConectividadProceso(inst) == CONECTADO){
+			t_content_header * header = crear_cabecera_mensaje(coordinador, instancia, COORDINADOR_INSTANCIA_COMPACTACION,0);
+			int status_head = send(inst->socket,header,sizeof(t_content_header),0);
 
-		int header_rta_instancia = recv(socketInstancia,header,sizeof(t_content_header), 0);
-		t_respuesta_instancia * rta = malloc(sizeof(t_respuesta_instancia));
-		int status_rta_instancia = recv(socketInstancia, rta, sizeof(t_respuesta_instancia), 0);
-		if (status_head == -1 || header_rta_instancia == -1 || status_rta_instancia == -1){status = -1;}
-		else{log_info(logger, "instancia %s rdo compactacion: %d", nombre, rta->rdo_operacion);}
+			int header_rta_instancia = recv(inst->socket,header,sizeof(t_content_header), 0);
+			t_respuesta_instancia * rta = malloc(sizeof(t_respuesta_instancia));
+			int status_rta_instancia = recv(inst->socket, rta, sizeof(t_respuesta_instancia), 0);
+			if (status_head == -1 || header_rta_instancia == -1 || status_rta_instancia == -1 || status_head == 0 || header_rta_instancia == 0 || status_rta_instancia == 0){status = -1;}
+			else{log_info(logger, "instancia %s rdo compactacion: %d", nombre, rta->rdo_operacion);}
 
-		//sem_post(&semInstanciasFin);
-		//sem_wait(&semInstanciasTodasFin);
-		//signal instancia semaforo
+			sem_post(&semInstanciasFin);
+			//sem_wait(&semInstanciasTodasFin);
+			//signal instancia semaforo
+		}
+		else {
+			status = 0;
+			sem_post(&semInstanciasFin);
+		}
 	}
+	inst->flag_thread = 0;
 }

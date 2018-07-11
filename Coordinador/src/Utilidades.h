@@ -23,6 +23,7 @@
 #include <commons/collections/list.h>
 #include <commons/config.h>
 #include <semaphore.h>
+#include <signal.h>			// Señales
 
 #define IP "0.0.0.0"
 
@@ -40,7 +41,7 @@
 #define INSTANCIA_COORDINADOR_RTA 4
 #define COORDINADOR_INSTANCIA_CLAVES 5
 #define COORDINADOR_INSTANCIA_COMPACTACION 6
-#define COORDINADOR_INSTANCIA_CLAVE_PARTICULAR 7
+#define COORDINADOR_INSTANCIA_CHEQUEO_CONEXION -1
 
 #define PLANIFICADOR_COORDINADOR_HEADER_IDENTIFICACION 1
 #define COORD_PLANIFICADOR_OPERACION_CONSULTA_CLAVE_COORD 2
@@ -70,8 +71,9 @@ struct status_clave{
 };
 //0 = coord no tiene la clave, 1=inst caida, 2= inst simulada, 3=	correcto, 4= instancia no tiene la clave
 //Devolver -1 en tamanio_valor cuando no tiene asociada una instancia la clave
-
 typedef struct status_clave t_status_clave;
+//TODO: pasar a redis_lib
+enum {COORDINADOR_SIN_CLAVE, INSTANCIA_CAIDA, INSTANCIA_SIMULADA, CORRECTO_CONSULTA_VALOR, INSTANCIA_SIN_CLAVE};
 
 typedef struct {
 	char * valor;
@@ -86,6 +88,7 @@ typedef struct{
 	int id;
 	char * nombre;
 	int entradas_libres;
+	int flag_thread;
 } t_instancia;
 
 typedef struct{
@@ -104,7 +107,7 @@ typedef struct {
 	int cod;
 	t_instancia * instancia;
 	char * valor;
-} rta_envio;
+} rta_envio; //Struct para uso interno del coordinador, no se envia ni se recibe de ningun proceso ajeno
 
 typedef struct{
 	int resultado_del_parseado;
@@ -136,6 +139,9 @@ t_sentencia * sentencia_global;
 #define EQUITATIVE_LOAD 1
 #define KEY_EXPLICIT 2
 
+//TODO cmabiar todos los llamados a siguienteINstanciaSegunAlgoritmo para que se mande un segundo parametro:
+enum {SIMULAR, ASIGNAR};
+enum {CONECTADO, DESCONECTADO};
 //CONFIG
 
 int ALGORITMO_DISTRIBUCION = EQUITATIVE_LOAD;
@@ -143,7 +149,7 @@ char * PUERTO = "8888";
 int TAMANIO_ENTRADAS = 300;
 int CANT_MAX_ENTRADAS = 50;
 int RETARDO = 0; //ms
-
+char * PUERTO_ESCUCHA_PETICION_STATUS = "42578";
 
 t_log * logger;
 t_log * logger_operaciones;

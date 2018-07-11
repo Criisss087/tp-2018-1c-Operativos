@@ -9,7 +9,6 @@
 #include "Utilidades.h"
 #include "FuncionesCoordinador.c"
 
-
 rta_envio enviarSentenciaInstancia(t_sentencia * sentencia){
 
 	rta_envio rta;
@@ -29,28 +28,34 @@ rta_envio enviarSentenciaInstancia(t_sentencia * sentencia){
 	}*/
 
 	//**
+	log_warning(logger,"prueba matando instancia");
 	int tiene_clave(t_clave * clObj){
-		return (strcmp(sentencia->clave, clObj->clave)==0);
-	}
+					return (strcmp(sentencia->clave, clObj->clave)==0);
+				}
 
-	t_clave * instancias_con_clave = list_filter(lista_claves,(void*)tiene_clave);
-
-	if (list_size(instancias_con_clave)>1){log_error(logger,"Más de una instancia tiene asignada la clave %s",sentencia->clave);}
-
-	else{
-
-		if (list_size(instancias_con_clave )== 1){
-			//existe
-			t_clave * instanciaDuena = list_get(instancias_con_clave ,0);
-			proxima =  instanciaDuena->instancia;
-		}
+		t_clave * instancias_con_clave = list_filter(lista_claves,(void*)tiene_clave);
+		if (list_size(instancias_con_clave)>1){log_error(logger,"Más de una instancia tiene asignada la clave %s",sentencia->clave);log_warning(logger,"prueba matando instancia2");}
 		else{
-			proxima = siguienteInstanciaSegunAlgoritmo(sentencia->clave, false);
-			t_clave * instanciaDuena = list_get(instancias_con_clave ,0);
-			instanciaDuena->instancia = proxima;
+			if (list_size(instancias_con_clave )== 1){
+				log_warning(logger,"prueba matando instancia3");
+				//existe
+				t_clave * instanciaDuena = list_get(instancias_con_clave ,0);
+				proxima =  instanciaDuena->instancia;
+				log_warning(logger,"prueba matando instancia3.1 instDuena clave %s - instancia null: %d ", instanciaDuena->clave, instanciaDuena->instancia == NULL);
+			}
+			else{
+				log_warning(logger,"prueba matando instancia4");
+				proxima = siguienteInstanciaSegunAlgoritmo(sentencia->clave, ASIGNAR);
+				t_clave * instanciaDuena = list_get(instancias_con_clave ,0);
+				instanciaDuena->instancia = proxima;
+
+			}
 		}
-	}
 	//**
+	log_warning(logger,"prueba matando instancia5");
+	log_warning(logger,"prueba matando instancia6 prox nomb %s", proxima->nombre);
+	log_warning(logger,"prueba matando instancia6 sent  clave %s", sentencia->clave);
+	log_warning(logger,"prueba matando instancia6 sent valor %s", sentencia->valor);
 	log_info(logger,"Enviando a instancia: %s %s %s",proxima->nombre,sentencia->clave, sentencia->valor);
 
 //TODO Que siguienteInstanciaSegunAlgortimo devuelva null en vez de esto
@@ -65,57 +70,65 @@ rta_envio enviarSentenciaInstancia(t_sentencia * sentencia){
 	rta.instancia->id = proxima->id;
 	rta.instancia->nombre = strdup(proxima->nombre);
 	rta.instancia->socket = proxima->socket;
-
+	log_warning(logger,"codigos enviados en header a instancia: %d %d %d %d",coordinador,instancia,COORDINADOR_INSTANCIA_SENTENCIA, sizeof(t_content_header) );
 	t_content_header * header = crear_cabecera_mensaje(coordinador,instancia,COORDINADOR_INSTANCIA_SENTENCIA, sizeof(t_content_header));
 	t_esi_operacion_sin_puntero * s_sin_p = armar_esi_operacion_sin_puntero(sentencia);
 
-	int header_envio = send(proxima->socket,header,sizeof(t_content_header),0);
+	int instancia_conectada = chequearConectividadProceso(proxima);
+	log_error(logger,"instancia conectada: %d", instancia_conectada == CONECTADO);
+	if (instancia_conectada==DESCONECTADO){
+		rta.cod = ERROR_I;
+		rta.instancia = NULL;
+		rta.valor = NULL;
+		return rta;
+		}
+	else{
+		int header_envio = send(proxima->socket,header,sizeof(t_content_header),0);
+		int sentencia_envio = send(proxima->socket, s_sin_p, sizeof(t_esi_operacion_sin_puntero),0);
+		if (sentencia->keyword == SET_){
+			int valor_envio = send(proxima->socket,sentencia->valor,strlen(sentencia->valor),0);
+		}
 
-	int sentencia_envio = send(proxima->socket, s_sin_p, sizeof(t_esi_operacion_sin_puntero),0);
+		log_info(logger,"Enviada sentencia a instancia");
+		log_info(logger, "Esperando rta de Instancia");
+	//Espero rta de Instancia
 
-	if (sentencia->keyword == SET_){
-		int valor_envio = send(proxima->socket,sentencia->valor,strlen(sentencia->valor),0);
+	//	sem_wait(&semInstancias);
+		int header_rta_instancia = recv(proxima->socket,header,sizeof(t_content_header), 0);
+	//	sem_post(&semInstancias);
+
+		log_info(logger, "Rta Instancia Header: - Origen: %d, Receptor: %d, Operación: %d, Cantidad: %d",header->proceso_origen,header->proceso_receptor,header->operacion,header->cantidad_a_leer);
+
+		//int * cod_rta = malloc(sizeof(int));
+		t_respuesta_instancia * rta_instancia = malloc(sizeof(t_respuesta_instancia));
+
+	//	sem_wait(&semInstancias);
+		//header_rta_instancia = recv(proxima->socket,cod_rta,sizeof(int), 0);
+		header_rta_instancia = recv(proxima->socket,rta_instancia,sizeof(t_respuesta_instancia), 0);
+
+		actualizarEntradasLibres(proxima->nombre,rta_instancia->entradas_libres);//TODO debería ser lo mismo actualizar el campo de "proxima"
+
+		//sem_post(&semInstancias);
+		rta.cod= rta_instancia->rdo_operacion;
+		log_info(logger, "Rta Instancia %srespuesta: - %d - %d - entradas libres: %d",proxima->nombre,rta.cod,rta_instancia->rdo_operacion,rta_instancia->entradas_libres);
+		//Si estoy pidiendo el valor de la clave, recibo la clave:
+		//GET - Sé que no tiene que ir a la instancia. Voy a usar este código cuando necesite sabes el valor de la clave
+		if (sentencia->keyword == OBTENER_VALOR){
+			char * valor = malloc(header->cantidad_a_leer);
+			header_rta_instancia = recv(proxima->socket,valor,header->cantidad_a_leer, 0);
+			rta.valor = strdup(valor);
+		}
+
+		log_info(logger,"Recibido valor de instancia %s: Clave %s - Valor %s",rta.instancia->nombre,sentencia->clave,sentencia->valor);
+
+		//free(proxima->nombre);
+		//free(proxima);
+		//NO libero la instancia "proxima" porque apunnta a la lista de instancias. si la libero al estoy borrando de la lista.
+		free(header);
+		free(s_sin_p);
+
+		return rta;
 	}
-
-	log_info(logger,"Enviada sentencia a instancia");
-	log_info(logger, "Esperando rta de Instancia");
-//Espero rta de Instancia
-
-//	sem_wait(&semInstancias);
-	int header_rta_instancia = recv(proxima->socket,header,sizeof(t_content_header), 0);
-//	sem_post(&semInstancias);
-
-	log_info(logger, "Rta Instancia Header: - Origen: %d, Receptor: %d, Operación: %d, Cantidad: %d",header->proceso_origen,header->proceso_receptor,header->operacion,header->cantidad_a_leer);
-
-	//int * cod_rta = malloc(sizeof(int));
-	t_respuesta_instancia * rta_instancia = malloc(sizeof(t_respuesta_instancia));
-
-//	sem_wait(&semInstancias);
-	//header_rta_instancia = recv(proxima->socket,cod_rta,sizeof(int), 0);
-	header_rta_instancia = recv(proxima->socket,rta_instancia,sizeof(t_respuesta_instancia), 0);
-
-	actualizarEntradasLibres(proxima->nombre,rta_instancia->entradas_libres);//TODO debería ser lo mismo actualizar el campo de "proxima"
-
-	//sem_post(&semInstancias);
-	rta.cod= rta_instancia->rdo_operacion;
-	log_info(logger, "Rta Instancia %srespuesta: - %d - %d - entradas libres: %d",proxima->nombre,rta.cod,rta_instancia->rdo_operacion,rta_instancia->entradas_libres);
-	//Si estoy pidiendo el valor de la clave, recibo la clave:
-	//GET - Sé que no tiene que ir a la instancia. Voy a usar este código cuando necesite sabes el valor de la clave
-	if (sentencia->keyword == OBTENER_VALOR){
-		char * valor = malloc(header->cantidad_a_leer);
-		header_rta_instancia = recv(proxima->socket,valor,header->cantidad_a_leer, 0);
-		rta.valor = strdup(valor);
-	}
-
-	log_info(logger,"Recibido valor de instancia %s: Clave %s - Valor %s",rta.instancia->nombre,sentencia->clave,sentencia->valor);
-
-	//free(proxima->nombre);
-	//free(proxima);
-	//NO libero la instancia "proxima" porque apunnta a la lista de instancias. si la libero al estoy borrando de la lista.
-	free(header);
-	free(s_sin_p);
-
-	return rta;
 }
 
 void interpretarOperacionInstancia(t_content_header * hd, int socketInstancia){
@@ -128,8 +141,11 @@ void interpretarOperacionInstancia(t_content_header * hd, int socketInstancia){
 			//log_info(logger,"Tamaño nombre: %d - Nombre: %s",strlen(nombre),nombre);
 			enviarConfiguracionInicial(socketInstancia);
 			guardarEnListaDeInstancias(socketInstancia, nombre);
+			t_instancia * inst_guardada = getInstanciaByName(nombre);
+			if (inst_guardada->flag_thread != 1){
+				loopInstancia(inst_guardada, nombre);
+			}
 
-			loopInstancia(socketInstancia, nombre);
 			free(nombre);
 			break;
 
@@ -138,56 +154,20 @@ void interpretarOperacionInstancia(t_content_header * hd, int socketInstancia){
 	}
 }
 
-
-char * devolver_valor_clave(char * nombre_clave){
-	t_content_header * header = crear_cabecera_mensaje(coordinador, instancia, COORDINADOR_INSTANCIA_CLAVE_PARTICULAR, 0);
-	int consulta = send(instancia, nombre_clave, sizeof(char[40]),0);
-
-	rta_envio * valor_rta;
-
-	int rta = recv(instancia, valor_rta, sizeof(valor_rta), 0);
-
-	destruir_cabecera_mensaje(header);
-	return (valor_rta->valor);
-}
-
-char * devolver_nombre_instancia_actual(char * nombre_clave){
-	t_sentencia * clave_particular;
-	t_instancia * cual;
-
-	int tiene_clave_especificada(nombre_clavej){
-		return (strcmp(clave_particular->clave, nombre_clave) == 0);
-	}
-
-	t_clave * instancias_con_clave = list_filter(lista_claves,(void*)tiene_clave_especificada);
-
-	if(list_size(instancias_con_clave) == 1){
-		t_clave * instancia_con_clave_particular = list_get(instancias_con_clave ,0);
-		cual =  instancia_con_clave_particular->instancia;
-	}
-
-	return (cual->nombre);
-}
-
 void interpretarOperacionPlanificador(t_content_header * hd, int socketCliente){
-	//log_info(logger,"Interpretando operación planificador");
-
+	//log_info(logger,"Interpetando operación planificador");
 	switch(hd->operacion){
 	case PLANIFICADOR_COORDINADOR_HEADER_IDENTIFICACION:
 		PROCESO_PLANIFICADOR.id = nuevoIDInstancia();
 		PROCESO_PLANIFICADOR.socket = socketCliente;
-		break;
-	default:
-		//TODO
-		;
 	}
 }
 
-t_clave * guardarClaveInternamente(char clave[40]){
+t_clave * guardarClaveInternamente(char clave[40], int keyword){
 
 	int tiene_clave(t_clave * clObj){
-		return (strcmp(clave, clObj->clave)==0);
-	}
+				return (strcmp(clave, clObj->clave)==0);
+			}
 	//log_info(logger,"guardando clave - sin instancia");
 	t_clave * instancias_con_clave = list_filter(lista_claves,(void*)tiene_clave);
 	if (list_size(instancias_con_clave )>1){log_error(logger,"Más de una instancia tiene asignada la clave %s",clave);}
@@ -196,15 +176,30 @@ t_clave * guardarClaveInternamente(char clave[40]){
 			//existe
 			//log_warning(logger,"existía la clavee");
 			t_clave * instanciaDuena = list_get(instancias_con_clave ,0);
+			if (keyword != GET && instanciaDuena->instancia == NULL){
+				//SET INSTANCIA
+				t_clave * getClaveByName(char * nombre){
+					int mismoNombre(t_clave * clave){return string_equals_ignore_case(clave->clave, nombre);}
+					return list_find(lista_claves,*mismoNombre);
+				}
+				instanciaDuena = getClaveByName(clave);
+				instanciaDuena->instancia = siguienteInstanciaSegunAlgoritmo(clave,ASIGNAR);
+			}
 			return instanciaDuena;
 		}
 		else{
 			//no existe
-			//log_warning(logger,"no existía la clave");
+			log_warning(logger,"no existía la clave");
 			t_clave * claveObjeto = malloc(sizeof(t_clave));
 			//asigno la instancia la primera vez que envio a una
-			claveObjeto->instancia = siguienteInstanciaSegunAlgoritmo(clave, false);
-			strncpy(claveObjeto,clave,40);
+			log_warning(logger,"keyword: %d", keyword);
+			log_warning(logger,"GET: %d", GET);
+			log_warning(logger,"OBTENER_VALOR: %d", OBTENER_VALOR);
+			if (keyword != GET){
+				log_warning(logger,"set o store - asigno instancia");
+				claveObjeto->instancia = siguienteInstanciaSegunAlgoritmo(clave,  ASIGNAR);
+			}else claveObjeto->instancia = NULL;
+			strncpy(claveObjeto->clave,clave,40);
 
 			list_add(lista_claves,claveObjeto);
 
@@ -218,9 +213,14 @@ t_clave * guardarClaveInternamente(char clave[40]){
 
 }
 
-int chequearConectividadProceso(t_instancia * instancia){
-	//TODO
-	return 1;
+int chequearConectividadProceso(t_instancia * inst){
+	t_content_header * st_connect = crear_cabecera_mensaje(coordinador,instancia,COORDINADOR_INSTANCIA_CHEQUEO_CONEXION,0);
+	int status_connect = send(inst->socket,st_connect,sizeof(t_content_header),0);
+	int status_recv = recv(inst->socket,st_connect,sizeof(t_content_header),0);
+	free(st_connect);
+	log_error(logger, "cheqconectproce status_recv %d", status_recv);
+	if (status_recv ==-1 || status_recv == 0){inst->flag_thread = 0; return DESCONECTADO;}
+	else return CONECTADO;
 }
 
 void loopPlanificadorConsulta(){
@@ -263,22 +263,19 @@ int puedoEjecutarSentencia(t_sentencia * sentencia){
 	log_info(logger,"Chequeando si puedo ejecutar la sentencia...");
 	if(	list_size(lista_instancias)==0){return ABORTAR;}
 
-	t_clave * clave_obj = guardarClaveInternamente(sentencia->clave);
+	//TODO: que guardarclave... setee como null la instancia si la sentencia es get
+	t_clave * clave_obj = guardarClaveInternamente(sentencia->clave,sentencia->keyword);
 
 	if (sentencia->keyword == SET_){
 		log_info(logger,"aca no rompe");
 		if (clave_obj->instancia != NULL){
-			log_info(logger,"aca si");
-			if (chequearConectividadProceso(clave_obj->instancia)==0){
+			if (chequearConectividadProceso(clave_obj->instancia)==DESCONECTADO){
+				log_error(logger, "chequCOnectProc 0");
 				return ABORTAR;
 			}
+			else return CORRECTO;
 		}
-		else {
-			log_info(logger,"abort");
-			//clave_obj->instancia = siguienteInstanciaSegunAlgoritmo();
-			//return CORRECTO;
-			return ABORTAR;
-		}
+		else return CORRECTO;
 	}
 
 	pthread_mutex_lock(&lock_sentencia_global);
@@ -346,22 +343,25 @@ void devolverCodigoResultadoAESI(int socketCliente, int cod, int idEsi, int proc
 void indicarCompactacionATodasLasInstancias(){
 	//Uso varios para que un hilo instancia no entre dos veces y otro se quede sin compactar
 	log_warning(logger,"Indicando a las instancias que compacten");
-	for (int i = 0; list_size(lista_instancias) >i; i++){
+	int tieneHiloActivo(t_instancia * i){return (i->flag_thread == 1);};
+	int total = list_size(list_filter(lista_instancias, *tieneHiloActivo));
+	for (int i = 0; total >i; i++){
 		sem_post(&semInstancias);
 	}
-	for (int i = 0; list_size(lista_instancias) >i; i++){
+	for (int i = 0; total >i; i++){
 		sem_wait(&semInstanciasFin);
 	}
+	/*
 	for (int i = 0; list_size(lista_instancias) >i; i++){
-		sem_post(&semInstanciasTodasFin);
-	}
+		sem_wait(&semInstanciasTodasFin);
+	}*/
 
 }
 
 void proseguirOperacionNormal(int socketCliente, t_sentencia * sentencia_con_punteros){
 	//printf("adsf");
 	switch(sentencia_con_punteros->keyword){
-	case OBTENER_VALOR:
+	case OBTENER_VALOR://get
 		//guardarClaveInternamente(sentencia_con_punteros->clave); ya guardé cuando chequeé si podia ejecutar
 		devolverCodigoResultadoAESI(socketCliente, CORRECTO, sentencia_con_punteros->pid , esi);
 		//Ya pregunté anteriormente al planificador, y ya la bloqueó
@@ -553,7 +553,6 @@ int main(int argc, char **argv){
 //	pthread_mutex_unlock(&bloqueo_de_Instancias;
 	//sem_wait(&semInstancias);
 //	sem_post(&semInstancias);
-
 
 	armar_hilo_planificador_status();
 
