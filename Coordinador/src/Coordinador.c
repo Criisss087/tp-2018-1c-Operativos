@@ -343,10 +343,12 @@ void devolverCodigoResultadoAESI(int socketCliente, int cod, int idEsi, int proc
 void indicarCompactacionATodasLasInstancias(){
 	//Uso varios para que un hilo instancia no entre dos veces y otro se quede sin compactar
 	log_warning(logger,"Indicando a las instancias que compacten");
-	for (int i = 0; list_size(lista_instancias) >i; i++){
+	int tieneHiloActivo(t_instancia * i){return (i->flag_thread == 1);};
+	int total = list_size(list_filter(lista_instancias, *tieneHiloActivo));
+	for (int i = 0; total >i; i++){
 		sem_post(&semInstancias);
 	}
-	for (int i = 0; list_size(lista_instancias) >i; i++){
+	for (int i = 0; total >i; i++){
 		sem_wait(&semInstanciasFin);
 	}
 	/*
