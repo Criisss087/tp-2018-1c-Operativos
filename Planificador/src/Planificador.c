@@ -1632,9 +1632,9 @@ t_pcb_esi * crear_esi(t_conexion_esi * conexion)
 	conexion->pid = esi->pid;
 	esi->conexion = conexion;
 	esi->estado = listo;
-	esi->estimacion_real = ESTIMACION_INICIAL;
-	esi->estimacion_actual = ESTIMACION_INICIAL;
-	esi->estimacion_anterior = ESTIMACION_INICIAL;
+	esi->estimacion_real = config.estimacion_inicial;
+	esi->estimacion_actual = config.estimacion_inicial;
+	esi->estimacion_anterior = config.estimacion_inicial;
 	esi->instruccion_actual = 0;
 	esi->tiempo_espera = 0;
 	esi->ejec_anterior = 0;
@@ -1652,7 +1652,9 @@ void mostrar_esi(t_pcb_esi * esi)
 	printf("Estimacion faltante: %f\n", esi->estimacion_actual);
 	printf("Estimacion Real: %f\n", esi->estimacion_real);
 	printf("Estimacion anterior: %f\n", esi->estimacion_anterior);
-	printf("Response Ratio: %f\n", esi->response_ratio);
+
+	if(!strcmp(config.algoritmo, "HRRN"))
+		printf("Response Ratio: %f\n", esi->response_ratio);
 
 	if(esi->clave_bloqueo!=NULL)
 		printf("Clave que lo bloqueó: %s\n", esi->clave_bloqueo);
@@ -2209,7 +2211,7 @@ void leer_configuracion_desde_archivo(char* path_archivo){
 	//CLAVES_BLOQUEADAS
 	atributo = strdup("CLAVES_BLOQUEADAS");
 	claves_bloqueadas_config = config_get_array_value(arch_config, atributo);
-	logger_planificador(escribir_loguear,l_info,"Bloqueando claves por archivo de config...", config.estimacion_inicial);
+	logger_planificador(escribir_loguear,l_info,"Bloqueando claves por archivo de config...");
 	int i=0;
 
 	while(claves_bloqueadas_config[i]!=NULL)
