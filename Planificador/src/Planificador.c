@@ -36,7 +36,10 @@ int main(int argc, char **argv) {
 	int serv_socket = iniciar_servidor(config.puerto_escucha);
 
 	//Crea el socket cliente para conectarse al coordinador
-	int coord_socket = conectar_coordinador(config.ip_coordinador, config.puerto_coordinador);
+	int coord_socket = conectar_coordinador(config.ip_coordinador, config.puerto_coordinador,handshake);
+
+	//Crea el socket para atender el comando status
+	coord_status_socket = conectar_coordinador(config.ip_coordinador,PUERTO_STATUS,no_handshake);
 
 	while(TRUE){
 		//Inicializa los file descriptor
@@ -54,6 +57,10 @@ int main(int argc, char **argv) {
 		//Agrega el fd del socket coordinador al set de lectura
 		FD_SET(coord_socket, &readset);
 		FD_SET(coord_socket, &exepset);
+
+		//Agrega el fd del socket cmd status
+		FD_SET(coord_status_socket, &readset);
+		FD_SET(coord_status_socket, &exepset);
 
 		//Agrega el stdin para leer la consola
 		FD_SET(STDIN_FILENO, &readset);
@@ -79,6 +86,10 @@ int main(int argc, char **argv) {
 			max_fd = coord_socket;
 		}
 
+
+		if(max_fd < coord_status_socket){
+			max_fd = coord_status_socket;
+		}
 
 		int result = select(max_fd+1, &readset, &writeset, &exepset, &tv);
 		logger_planificador(loguear, l_debug,"Resultado del select: %d\n",result); //Revisar rendimiento del CPU cuando select da > 1
@@ -119,6 +130,28 @@ int main(int argc, char **argv) {
 				if(recibir_mensaje_coordinador(coord_socket) == 0)
 				{
 					cerrar_conexion_coord(coord_socket);
+					terminar_planificador();
+					break;
+				}
+			}
+
+			//Comando status
+			if(FD_ISSET(coord_status_socket, &readset))
+			{
+				if(recibir_mensaje_coordinador(coord_status_socket) == 0)
+				{
+					cerrar_conexion_coord(coord_status_socket);
+					terminar_planificador();
+					break;
+				}
+			}
+
+
+			if(FD_ISSET(coord_status_socket, &exepset))
+			{
+				if(recibir_mensaje_coordinador(coord_status_socket) == 0)
+				{
+					cerrar_conexion_coord(coord_status_socket);
 					terminar_planificador();
 					break;
 				}
@@ -172,7 +205,7 @@ int main(int argc, char **argv) {
 //FUNCIONES DE COMUNICACION//
 //*************************//
 
-int conectar_coordinador(char * ip, char * port) {
+int conectar_coordinador(char * ip, char * port, int handshake) {
 
 	int coord_socket = conectar_a_server(ip, port);
 	if (coord_socket < 0)
@@ -185,23 +218,25 @@ int conectar_coordinador(char * ip, char * port) {
 		logger_planificador(escribir_loguear,l_trace,"Conectado con el coordinador! (%d)",coord_socket);
 	}
 
-	/* Handshake necesario para que el coordinador identifique que la
-	 * conexion recibida fue del planificador. Solo se envia el header con la operacion
-	 */
-	t_content_header * header = crear_cabecera_mensaje(planificador,coordinador,OPERACION_HANDSHAKE_COORD,sizeof(int));
+	if(handshake){
+		/* Handshake necesario para que el coordinador identifique que la
+		 * conexion recibida fue del planificador. Solo se envia el header con la operacion
+		 */
+		t_content_header * header = crear_cabecera_mensaje(planificador,coordinador,OPERACION_HANDSHAKE_COORD,sizeof(int));
 
-	int res_send = send(coord_socket, header, sizeof(t_content_header), 0);
-	if(res_send < 0)
-	{
-		logger_planificador(escribir_loguear,l_error,"Error send header handshake con el Coordinador :( \n");
-		terminar_planificador();
-		exit(EXIT_FAILURE);
-	}
-	else{
-		logger_planificador(escribir_loguear,l_trace,"Handshake con Coordinador enviado correctamente");
-	}
+		int res_send = send(coord_socket, header, sizeof(t_content_header), 0);
+		if(res_send < 0)
+		{
+			logger_planificador(escribir_loguear,l_error,"Error send header handshake con el Coordinador :( \n");
+			terminar_planificador();
+			exit(EXIT_FAILURE);
+		}
+		else{
+			logger_planificador(escribir_loguear,l_trace,"Handshake con Coordinador enviado correctamente");
+		}
 
-	destruir_cabecera_mensaje(header);
+		destruir_cabecera_mensaje(header);
+	}
 
 	return coord_socket;
 }
@@ -254,7 +289,6 @@ int atender_nuevo_esi(int serv_socket)
 
 	        return 0;
 	    }
-
 	 }
 
 	logger_planificador(escribir_loguear,l_error,"Demasiadas conexiones. Cerrando nueva conexion\n");
@@ -384,12 +418,33 @@ int recibir_mensaje_coordinador(int coord_socket)
 					resultado_consulta = ABORTAR;
 
 				break;
-
 		}
 
-		enviar_resultado_consulta(coord_socket, resultado_consulta);
+		enviar_coordinador_resultado_consulta(coord_socket, resultado_consulta);
 
 		free(consulta_bloqueo);
+	}
+
+	// RECIBE STATUS DE CLAVE
+	if(content_header->operacion == PLANIFICADOR_COORDINADOR_CMD_STATUS){
+
+		t_status_clave *st_clave = malloc(sizeof(t_status_clave));
+
+		read_size = recv(coord_socket, st_clave, sizeof(t_status_clave), 0);
+		if(read_size < 0)
+		{
+			logger_planificador(escribir_loguear, l_error, "Error al recibir el status de la clave desde el Coordinador");
+
+			//TODO Evaluar qué hacer
+			//terminar_planificador();
+			//exit(EXIT_FAILURE);
+		}
+		else{
+			status_clave(st_clave,clave_status);
+			free(clave_status);
+		}
+
+		free(st_clave);
 	}
 
 	destruir_cabecera_mensaje(content_header);
@@ -478,7 +533,7 @@ int recibir_mensaje_esi(t_conexion_esi conexion_esi)
 			// Ordenar ejecutar siguiente sentencia del ESI
 			if(esi_en_ejecucion!=NULL)
 			{
-				enviar_confirmacion_sentencia(esi_en_ejecucion);
+				enviar_esi_confirmacion_sentencia(esi_en_ejecucion);
 			}
 
 		}
@@ -852,8 +907,9 @@ void consola_bloquear_clave(char* clave , char* id){
 		logger_planificador(escribir_loguear,l_info,"CONSOLA> COMANDO: Bloquear clave: %s id: %d",clave, pid);
 
 		//Si al intentar bloquear la clave falla, bloqueo el esi
-		if(bloquear_clave(clave, pid))
+		if(bloquear_clave(clave, pid)){
 			bloquear_esi_pid(clave,pid);
+		}
 	}
 
 	return;
@@ -881,6 +937,7 @@ void consola_desbloquear_clave(char* clave){
 
 void consola_listar_recurso(char* recurso)
 {
+
 	/* listar recurso: Lista los procesos encolados esperando al recurso.
 	 *
 	 * 	Entiendo que un recurso es una clave, osea que deberiamos tener un control en alguna
@@ -889,7 +946,7 @@ void consola_listar_recurso(char* recurso)
 	 * 	agregar un campo clave_block con la clave que lo llevó a estar bloqueado
 	 *
 	 */
-
+	/*
 	if(recurso == NULL){
 		logger_planificador(escribir_loguear,l_warning,"CONSOLA> Parametros incorrectos (listar <recurso>)");
 	}
@@ -915,8 +972,21 @@ void consola_listar_recurso(char* recurso)
 		else{
 			logger_planificador(escribir_loguear,l_info,"NO se encontraron procesos ESI bloqueados por el recurso %s.", recurso);
 		}
+	 */
 
-		list_destroy(lista_recursos);
+	if(recurso == NULL){
+		log_warning(logger,"CONSOLA> Parametros incorrectos (listar <recurso>)");
+	}
+	else{
+		log_info(logger, "CONSOLA> COMANDO: Listar recurso encolados: %s",recurso);
+
+		t_list* lista_esis_bloqueados;
+
+		lista_esis_bloqueados = esis_bloqueados_por_clave(recurso);
+		mostrar_esis_consola(lista_esis_bloqueados);
+
+
+		list_destroy(lista_esis_bloqueados);
 	}
 
 	return;
@@ -967,29 +1037,134 @@ void consola_matar_proceso(char* id)
 	return;
 }
 
-void consola_consultar_status_clave(char* clave)
+void consola_consultar_status_clave(char* clave_nombre)
 {
+	if(clave_nombre == NULL){
+		log_warning(logger,"CONSOLA> Parametros incorrectos (status <clave>)");
+	}
+	else{
+		log_info(logger,"CONSOLA> COMANDO Status para clave: %s.", clave_nombre);
 
-	/* status clave: Con el objetivo de conocer el estado de una clave y de probar la
-	 * correcta distribución de las mismas se deberan obtener los siguientes valores:
-	 * (Este comando se utilizara para probar el sistema)
+		clave_status = strdup(clave_nombre);
 
-    -Valor, en caso de no poseer valor un mensaje que lo indique.
-    -Instancia actual en la cual se encuentra la clave. (En caso de que la clave no exista,
-    	la Instancia actual debería )
-    -Instancia en la cual se guardaría actualmente la clave (Calcular este valor mediante
-    	el algoritmo de distribución(^4), pero sin afectar la distribución actual de las claves).
-    -ESIs bloqueados a la espera de dicha clave.
+		if(enviar_coordinador_clave_status(clave_nombre) < 0){
+			logger_planificador(loguear, l_error, "ERROR al consultar status clave al Coordinador.");
+		}
+	}
 
-	 *
-	 * ^4: Estos algoritmos se detallarán más adelante.
+	return;
+}
+
+void status_clave(t_status_clave* clave_st, char * clave)
+{
+	/*
+	 status	clave: Con el objetivo de conoce el estado de una clave y de probar la correcta distribución de las mismas se deberan obtener los siguiente valores: (Este comando se utilizara para probar el sistema)
+	-Valor, en caso de no poseer valor un mensaje quec lo indique.
+	-Instancia actual en la cual se encuentra la clave. (En	caso de	que	la clave no	se encuentre en una instancia, no se debe mostrar este valor)
+	-Instancia en la cual se guardaría actualmente la clave (Calcular este valor mediante el algoritmo de distribución(^4), pero sin afectar la distribución actual de las claves).
+	-ESIs bloqueados a la espera de dicha clave.
 	 */
+
+	int res;
+	char * nombre_instancia=NULL;
+	char * valor=NULL;
 
 	if(clave == NULL){
 		logger_planificador(escribir_loguear,l_warning,"CONSOLA> Parametros incorrectos (status <clave>)");
 	}
-	else{
+	else
+	{
 		logger_planificador(escribir_loguear,l_info,"CONSOLA> COMANDO: status clave: %s ",clave);
+
+
+		if(clave_st->tamanio_instancia_nombre != -1){
+
+			nombre_instancia = malloc(clave_st->tamanio_instancia_nombre);
+
+			res = recv(coord_status_socket, nombre_instancia, clave_st->tamanio_instancia_nombre, 0);
+			if(res < 0)
+			{
+				logger_planificador(escribir_loguear, l_error, "Error al recibir nombre instancia");
+
+				//TODO Evaluar qué hacer
+				//terminar_planificador();
+				//exit(EXIT_FAILURE);
+			}
+
+		}
+
+		//Valor de la clave
+		if(clave_st->tamanio_valor != -1){
+
+			valor = malloc(clave_st->tamanio_valor);
+
+			res = recv(coord_status_socket, valor, clave_st->tamanio_valor, 0);
+			if(res < 0)
+			{
+				logger_planificador(escribir_loguear, l_error, "Error al recibir el valor de la clave");
+
+				//TODO Evaluar qué hacer
+				//terminar_planificador();
+				//exit(EXIT_FAILURE);
+			}
+
+		}
+
+		switch(clave_st->cod)
+		{
+			//Buscar clave en lista interna de claves
+				//1-Si no existe, devolver cod = 0
+				//2-Si existe, mirar si tiene asociada una instancia
+					//3-Si no tiene asociada instancia, simular, y devolver (no va a devolver valor)( cod =2)
+					//4-Si tiene asociada instancia, consultarle a la misma
+						//5-Si la inst esta caida, devolver 1 en cod
+						//6-Si la inst no esta caida:
+							//7-tiene valor: lo devuelve, devolver cod= 3
+							//8-No tiene valor: devolver cod= 4
+
+			case COORDINADOR_SIN_CLAVE:
+				logger_planificador(escribir_loguear, l_info,"La clave %s no existe en el coordinador", clave);
+				break;
+
+			case INSTANCIA_CAIDA:
+				logger_planificador(escribir_loguear, l_info,"La instancia donde se encotraba la clave %s era %s, está caida",clave,nombre_instancia);
+				break;
+
+			case INSTANCIA_SIMULADA:
+				logger_planificador(escribir_loguear, l_info,"La instancia donde se encuentra la clave es %s, fue simulada",nombre_instancia);
+				break;
+
+			case CORRECTO_CONSULTA_VALOR:
+				logger_planificador(escribir_loguear, l_info,"La instancia donde se encuentra la clave es %s",nombre_instancia);
+				logger_planificador(escribir_loguear, l_info,"El valor de la clave es %s",valor);
+				break;
+
+			case INSTANCIA_SIN_CLAVE:
+				logger_planificador(escribir_loguear, l_info,"La instancia donde se encuentra la clave es %s",nombre_instancia);
+				logger_planificador(escribir_loguear, l_info,"El clave no tiene valor");
+				break;
+
+		}
+
+		//ESIs bloqueados por la clave
+		t_list* lista_esis_bloq_por_clave;
+
+		lista_esis_bloq_por_clave = esis_bloqueados_por_clave(clave);
+
+		logger_planificador(escribir_loguear, l_info,"Listado de ESIs bloqueados por clave %s: \n\n", clave);
+		mostrar_esis_consola(lista_esis_bloq_por_clave);
+
+		list_destroy(lista_esis_bloq_por_clave);
+
+		if(valor!=NULL){
+			free(valor);
+		}
+
+		if(nombre_instancia!=NULL){
+			free(nombre_instancia);
+
+		}
+
 	}
 
 	return;
@@ -1448,7 +1623,9 @@ void obtener_proximo_ejecucion(void)
 	//Si hubo un cambio en el esi en ejecucion, debo avisarle al nuevo esi en ejecucion que es su turno
 	if((esi_en_ejecucion != NULL) && (ejec_ant != esi_en_ejecucion))
 	{
-		int res = enviar_confirmacion_sentencia(esi_en_ejecucion);
+
+		//log_info(logger,"Aca le debo avisar al esi %d que es su turno\n", esi_en_ejecucion->pid);
+		int res = enviar_esi_confirmacion_sentencia(esi_en_ejecucion);
 		if(!res)
 		{
 			//Validar resultado del envio
@@ -1458,7 +1635,7 @@ void obtener_proximo_ejecucion(void)
 	return;
 }
 
-int enviar_confirmacion_sentencia(t_pcb_esi * pcb_esi)
+int enviar_esi_confirmacion_sentencia(t_pcb_esi * pcb_esi)
 {
 
 	t_content_header * header = crear_cabecera_mensaje(planificador,esi,OPERACION_CONF_SENTENCIA,sizeof(t_confirmacion_sentencia));
@@ -1490,7 +1667,7 @@ int enviar_confirmacion_sentencia(t_pcb_esi * pcb_esi)
 	return res_send;
 }
 
-void enviar_confirmacion_kill(int pid)
+void enviar_esi_confirmacion_kill(int pid)
 {
 
 	t_pcb_esi * esi_aux= NULL;
@@ -1528,7 +1705,7 @@ void enviar_confirmacion_kill(int pid)
 	return;
 }
 
-int enviar_resultado_consulta(int socket, int resultado)
+int enviar_coordinador_resultado_consulta(int socket, int resultado)
 {
 	t_content_header * header = crear_cabecera_mensaje(planificador,coordinador,OPERACION_RES_CLAVE_COORD,sizeof(int));
 
@@ -1553,6 +1730,28 @@ int enviar_resultado_consulta(int socket, int resultado)
 	}
 
 	free(res);
+	destruir_cabecera_mensaje(header);
+	return res_send;
+}
+
+int enviar_coordinador_clave_status(char* clave_nombre){
+
+	t_content_header *header = crear_cabecera_mensaje(planificador, coordinador, PLANIFICADOR_COORDINADOR_CMD_STATUS, strlen(clave_nombre));
+
+	logger_planificador(loguear, l_info, "Envío consulta de status por clave %s.", clave_nombre);
+
+	//Envía Header al Coordinador
+	int res_send = send(coord_status_socket, header, sizeof(t_content_header), 0);
+	if(res_send < 0){
+		log_error(logger, "Error al enviar header al Coordinador.");
+	}
+
+	//Envía Body al Coordinador
+	res_send = send(coord_status_socket , clave_nombre, strlen(clave_nombre), 0);
+	if(res_send < 0){
+		log_error(logger, "Error en send body al Coordinador.");
+	}
+
 	destruir_cabecera_mensaje(header);
 	return res_send;
 }
@@ -1866,7 +2065,7 @@ int finalizar_esi(int pid_esi, int liberar)
 	//Si se finaliza el esi por KILL, antes, debe mandarle el aviso al esi
 	if(kill_flag)
 	{
-		enviar_confirmacion_kill(pid_esi);
+		enviar_esi_confirmacion_kill(pid_esi);
 		kill_flag = 0;
 	}
 
@@ -2102,7 +2301,7 @@ int confirmar_pausa_por_consola(){
 
 int confirmar_kill_ejecucion(void){
 
-	enviar_confirmacion_kill(esi_en_ejecucion->pid);
+	enviar_esi_confirmacion_kill(esi_en_ejecucion->pid);
 	finalizar_esi(esi_en_ejecucion->pid,liberar);
 
 	return 0;
@@ -2271,6 +2470,31 @@ void captura_sigpipe(int signo)
     	logger_planificador(escribir,l_error,"\nSe perdió la conexión con el ESI, %d\n",esi_en_ejecucion->pid);
     }
 
+}
+
+t_list* esis_bloqueados_por_clave(char* recurso){
+
+	bool is_esi_bloqueado_por_clave(t_pcb_esi* esi){
+		return !strcmp(recurso, esi->clave_bloqueo);
+	}
+
+	return list_filter(esi_bloqueados, (void*) is_esi_bloqueado_por_clave);
+}
+
+void mostrar_esis_consola(t_list* lista_esi){
+
+	void escribir_esi_bloqueado(t_pcb_esi* esi) {
+		log_info(logger, "ESI bloqueado: %i", esi->pid);
+		return;
+	}
+
+	if (list_size(lista_esi) > 0){
+		list_iterate(lista_esi, (void*) escribir_esi_bloqueado);
+	} else {
+		log_info(logger, "NO se encontraron ESI bloqueados por la clave.");
+	}
+
+	return;
 }
 
 void logger_planificador(int tipo_esc, int tipo_log, const char* mensaje, ...){

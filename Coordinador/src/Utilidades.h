@@ -23,10 +23,13 @@
 #include <commons/collections/list.h>
 #include <commons/config.h>
 #include <semaphore.h>
+#include <signal.h>			// Señales
 
-#define IP "127.0.0.1"
+#define IP "0.0.0.0"
 
-#define BACKLOG 10			// Define cuantas conexiones vamos a mantener pendientes al mismo tiempo
+#define BACKLOG 50			// Define cuantas conexiones vamos a mantener pendientes al mismo tiempo
+
+#define CANTIDAD_LETRAS 25
 
 //***Cod ops
 #define ESI_COORDINADOR_SENTENCIA 1
@@ -36,10 +39,14 @@
 #define COORDINADOR_INSTANCIA_CONFIG_INICIAL 2
 #define COORDINADOR_INSTANCIA_SENTENCIA 3
 #define INSTANCIA_COORDINADOR_RTA 4
+#define COORDINADOR_INSTANCIA_CLAVES 5
+#define COORDINADOR_INSTANCIA_COMPACTACION 6
+#define COORDINADOR_INSTANCIA_CHEQUEO_CONEXION -1
 
 #define PLANIFICADOR_COORDINADOR_HEADER_IDENTIFICACION 1
 #define COORD_PLANIFICADOR_OPERACION_CONSULTA_CLAVE_COORD 2
 #define PLANIF_COORD_OPERACION_RES_CLAVE_COORD 3
+#define PLANIFICADOR_COORDINADOR_CMD_STATUS 4
 
 //Codigos de las operaciones de esi:
 #define ENVIA_ORDEN 1
@@ -57,11 +64,31 @@
 //***
 
 //***
+struct status_clave{
+	int tamanio_valor;
+	int tamanio_instancia_nombre;
+	int cod;
+};
+//0 = coord no tiene la clave, 1=inst caida, 2= inst simulada, 3=	correcto, 4= instancia no tiene la clave
+//Devolver -1 en tamanio_valor cuando no tiene asociada una instancia la clave
+typedef struct status_clave t_status_clave;
+//TODO: pasar a redis_lib
+enum {COORDINADOR_SIN_CLAVE, INSTANCIA_CAIDA, INSTANCIA_SIMULADA, CORRECTO_CONSULTA_VALOR, INSTANCIA_SIN_CLAVE};
+
+typedef struct {
+	char * valor;
+	char * nombre_instancia;
+	int tamanio_valor;
+	int tamanio_instancia_nombre;
+	int cod;
+} t_status_clave_interno;
 
 typedef struct{
 	int socket;
 	int id;
 	char * nombre;
+	int entradas_libres;
+	int flag_thread;
 } t_instancia;
 
 typedef struct{
@@ -80,7 +107,7 @@ typedef struct {
 	int cod;
 	t_instancia * instancia;
 	char * valor;
-} rta_envio;
+} rta_envio; //Struct para uso interno del coordinador, no se envia ni se recibe de ningun proceso ajeno
 
 typedef struct{
 	int resultado_del_parseado;
@@ -96,13 +123,25 @@ typedef struct {
 //Semaforos
 pthread_mutex_t mutexInstancias;
 sem_t semInstancias;
+sem_t semInstanciasFin;
+sem_t semInstanciasTodasFin;
 pthread_mutex_t bloqueo_de_Instancias;
+
+pthread_mutex_t consulta_planificador;
+pthread_mutex_t consulta_planificador_terminar;
+pthread_mutex_t lock_sentencia_global;
+//Inicializo la variable para encontrar el error con los semaforos
+int rdo_consulta_planificador = -1;
+t_sentencia * sentencia_global;
 
 //Algoritmos
 #define LEAST_SPACE_USED 0
 #define EQUITATIVE_LOAD 1
 #define KEY_EXPLICIT 2
 
+//TODO cmabiar todos los llamados a siguienteINstanciaSegunAlgoritmo para que se mande un segundo parametro:
+enum {SIMULAR, ASIGNAR};
+enum {CONECTADO, DESCONECTADO};
 //CONFIG
 
 int ALGORITMO_DISTRIBUCION = EQUITATIVE_LOAD;
@@ -110,6 +149,7 @@ char * PUERTO = "8888";
 int TAMANIO_ENTRADAS = 300;
 int CANT_MAX_ENTRADAS = 50;
 int RETARDO = 0; //ms
+char * PUERTO_ESCUCHA_PETICION_STATUS = "42578";
 
 t_log * logger;
 t_log * logger_operaciones;
@@ -117,7 +157,7 @@ t_list * lista_instancias;
 t_list * lista_claves;
 int id_counter = 0;
 
-signed int indice_actual_lista; //que item de la lista fue el ultimo al que se asigno trabajo
+int indice_actual_lista; //que item de la lista fue el ultimo al que se asigno trabajo
 t_instancia PROCESO_PLANIFICADOR;
 int total_hilos = 0; //borrable
 int hay_instancias = 0; //No se porque si uso lista.element_count tira segmentation fault. que mierda pasa la concha de la lora.
