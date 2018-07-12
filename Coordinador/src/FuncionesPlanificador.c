@@ -133,7 +133,7 @@ void atender_comando_status(){
 		{
 			log_error(logger,"Error al recibir el header de la consulta de status");
 		}
-
+		log_info(logger,"Cantidad a leer: %d",header_consulta_valor->cantidad_a_leer);
 		//En el campo "cantidad_a_leer" me indica la long del nombre de la clave
 		//recv del nombre de la clave
 		char * nombre_clave = malloc(header_consulta_valor->cantidad_a_leer);
@@ -143,6 +143,7 @@ void atender_comando_status(){
 		{
 			log_error(logger,"Error al recibir la clave de la consulta de status");
 		}
+
 
 		log_info(logger,"Clave recibida: %s",nombre_clave);
 
