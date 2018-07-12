@@ -51,12 +51,16 @@
 #define ALGORITMO_PLAN_SJFSD "SJF-SD"
 #define ALGORITMO_PLAN_HRRN "HRRN"
 
+//Resultados de sentencia ESI
 #define RESULTADO_ESI_OK_SIG 0
 #define RESULTADO_ESI_BLOQUEADA 1
 #define RESULTADO_ESI_ABORTADO 2
 #define RESULTADO_ESI_OK_FINAL 3
+//Operaciones ESI
 #define OPERACION_CONF_SENTENCIA 1
 #define OPERACION_RES_SENTENCIA 2
+#define OPERACION_CONF_KILL 3
+//Operaciones Coordinador
 #define OPERACION_HANDSHAKE_COORD 1
 #define OPERACION_CONSULTA_CLAVE_COORD 2
 #define OPERACION_RES_CLAVE_COORD 3
@@ -77,6 +81,13 @@ enum sentencias { GET, SET, STORE };
 //Estado de la ejecución de ESI según comando de la consola (Pausa/Continuar)
 enum estado_pausa_ejec { no_pausado, pausado };
 
+//
+enum tipo_logueo { escribir, loguear, escribir_loguear, l_trace, l_debug, l_info, l_warning, l_error};
+
+enum liberar_recursos{no_liberar,liberar};
+
+char* sentencias[3] = {"GET","SET","STORE"};
+
 /**********************************************/
 /* ESTUCTURAS								  */
 /**********************************************/
@@ -95,6 +106,8 @@ struct pcb_esi {
 	float estimacion_anterior;
 	int instruccion_actual;
 	int ejec_anterior;			// 1 Si en la siguiente corrida debe ejectar denuevo la ultima instruccion
+	int tiempo_espera;
+	float response_ratio;
 	t_conexion_esi * conexion;
 	char * clave_bloqueo;
 };
@@ -131,6 +144,13 @@ struct consulta_bloqueo{
 };
 typedef struct consulta_bloqueo t_consulta_bloqueo;
 
+struct deadlock{
+	int pid;
+	char* clave_tomada;
+	char* clave_pedida;
+};
+typedef struct deadlock t_deadlock;
+
 /**********************************************/
 /* DATOS GLOBALES							  */
 /**********************************************/
@@ -143,7 +163,7 @@ t_list * esi_terminados;
 t_list * claves_bloqueadas;
 t_pcb_esi * esi_en_ejecucion = NULL;
 t_pcb_esi * esi_por_desalojar = NULL;
-t_consulta_bloqueo * clave_a_bloquear_por_set = NULL;
+t_consulta_bloqueo * clave_a_bloquear_por_get = NULL;
 t_consulta_bloqueo * clave_a_desbloquear_por_store = NULL;
 
 int esi_seq_pid = 0;
@@ -152,8 +172,10 @@ int estado_pausa_por_consola = no_pausado; // Pausa la ejecución de ESI y desal
 // Globales para capturar eventos al recibir el resultado de la sentencia del ESI
 int bloqueo_en_ejecucion = 0;		// Bloquear al ESI en ejecucion
 int desalojo_en_ejecucion = 0;		// Desalojar al ESI en ejecucion por SJF-CD
-int bloqueo_por_set = 0;			// Bloquear clave por resultado positivo de SET
+int bloqueo_por_get = 0;			// Bloquear clave por resultado positivo de GET
 int desbloqueo_por_store = 0;		// Desbloquear clave por resultado positivo de STORE
+int kill_en_ejecucion = 0;			// Matar al ESI en ejecucion
+int kill_flag = 0;					// Flag para mandar la confirmacion de kill en finalizar_esi
 
 struct config config;
 
@@ -179,8 +201,11 @@ void terminar_planificador(void);
 void planificar(void);
 void obtener_proximo_ejecucion(void);
 void desalojar_ejecucion(void);
-
 void leer_configuracion_desde_archivo(char* path_archivo);
+void configurar_signals(void);
+void captura_sigpipe(int signo);
+void logger_planificador(int tipo_esc, int tipo_log, const char* mensaje, ...);
+char * sentencia_string(int sentencia);
 
 //Utilidades para la consola
 int consola_derivar_comando(char * buffer);
@@ -216,11 +241,16 @@ t_pcb_esi * sacar_esi_de_lista_pid(t_list *lista,int pid);
 t_pcb_esi * buscar_esi_bloqueado_por_clave(char* clave);
 t_pcb_esi * sacar_esi_bloqueado_por_clave(char* clave);
 void ordenar_lista_estimacion(t_list * lista);
+void ordenar_lista_response_ratio(t_list * lista);
 int estimar_esi(t_pcb_esi * esi);
+void aumentar_tiempo_espera_ready(void);
+void calcular_response_ratio(t_pcb_esi* esi);
 int confirmar_bloqueo_ejecucion(void);
 int confirmar_desalojo_ejecucion(void);
 int confirmar_pausa_por_consola(void);
-int finalizar_esi(int pid_esi);
+int confirmar_kill_ejecucion(void);
+void enviar_confirmacion_kill(int pid);
+int finalizar_esi(int pid_esi, int liberar);
 
 //Manejo de Coordinador
 int recibir_mensaje_coordinador(int coord_socket);
@@ -235,8 +265,10 @@ int destruir_clave_bloqueada(t_claves_bloqueadas * clave_bloqueada);
 t_claves_bloqueadas * buscar_clave_bloqueada(char* clave); //, int pid);
 
 void desbloquear_claves_bloqueadas_pid(int pid);
-void confirmar_bloqueo_por_set(void);
+void confirmar_bloqueo_por_get(void);
 void confirmar_desbloqueo_por_store(void);
 
-// TODO Eliminar esta función
-void crear_claves_bloqueadas_dummy();
+void dummy_genera_deadlock(void);
+void mostrar_deadlock(t_list * deadlock);
+int buscar_esi_en_deadlock(t_list* lista_deadlocks,int pid);
+void destruir_lista_deadlocks(t_list * lista_deadlocks);
