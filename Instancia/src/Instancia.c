@@ -816,12 +816,18 @@ void grabarArchivoPorPrimeraVez(int fd, char * valor, int tamanio) {
 }
 
 void obtenerValorAsociadoAClave(char clave[40]) {
-	printf("Obteniendo valor asociado a la clave: %s\n", clave);
+	printf("Obteniendo valor asociado a la clave: %s...\n", clave);
 	t_list * listaIndices = obtenerIndicesDeClave(clave);
 	int tamanioValor = obtenerTamanioTotalDeValorGuardado(listaIndices);
 	t_indice_entrada * indiceBase = list_get(listaIndices, 0);
-	char * valor = obtenerValorCompleto(indiceBase->puntero, tamanioValor);
-	strcpy(valorConsultado, valor);
+
+	// Desalojo memoria reservada para la variable global y vuelvo a alocar el nuevo espacio necesario
+	free(valorConsultado);
+	valorConsultado = malloc(tamanioValor);
+
+	valorConsultado = obtenerValorCompleto(indiceBase->puntero, tamanioValor);
+
+	printf("Valor copiado a variable global: %s\n", valorConsultado);
 }
 
 void realizarStoreDeClave(char clave[40]) {
@@ -1029,7 +1035,6 @@ void interpretarOperacionCoordinador(t_content_header * header,
 		switch (sentenciaRecibida->keyword) {
 
 		case OBTENER_VALOR:
-			printf("TODO: Leer clave y devolver valor...\n");
 			obtenerValorAsociadoAClave(sentenciaRecibida->clave);
 
 			enviarResultadoSentencia(socketCoordinador, OBTENER_VALOR);
