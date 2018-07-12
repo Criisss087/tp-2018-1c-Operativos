@@ -307,6 +307,7 @@ void devolverCodigoResultadoAESI(int socketCliente, int cod, int idEsi, int proc
 
 	char * pr;
 	char * pr_c;
+	int bandera = 0;
 	if (proceso == instancia){pr = strdup("instancia");} else pr = strdup("esi");
 	log_info(logger, "Rdo que llega a la funcion'%d', proceso: %d", cod, proceso);
 
@@ -314,19 +315,29 @@ void devolverCodigoResultadoAESI(int socketCliente, int cod, int idEsi, int proc
 	if (cod ==ERROR_I && proceso == instancia){
 		cod_error->resultado_del_parseado = ABORTAR;
 		pr_c = strdup("abortar");
+		bandera = 1;
 	}
 
 	if (cod ==CLAVE_BLOQUEADA && proceso == esi){
 		cod_error->resultado_del_parseado = CLAVE_BLOQUEADA;
 		pr_c = strdup("clave bloqueada");
+		bandera = 1;
 	}
 
 	if (((cod == EXITO_I) && (proceso == instancia)) || ((cod == CORRECTO) && (proceso == esi))){
 		cod_error->resultado_del_parseado = CORRECTO;
 		pr_c = strdup("correcto");
+		bandera = 1;
 	}
 
 	if (cod == ABORTAR && proceso == esi){
+		cod_error->resultado_del_parseado = ABORTAR;
+		pr_c = strdup("abortar");
+		bandera = 1;
+	}
+
+	if (bandera == 0){
+		log_error(logger, "BASURA DEVUELTA POR LA INSTANCIA, ENVIANDO CODIGO DE ABORTO", pr,pr_c);
 		cod_error->resultado_del_parseado = ABORTAR;
 		pr_c = strdup("abortar");
 	}
