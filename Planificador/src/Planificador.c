@@ -326,6 +326,8 @@ int recibir_mensaje_coordinador(int coord_socket)
 		exit(EXIT_FAILURE);
 	}
 
+	logger_planificador(loguear,l_debug,"Operacion: %d!",content_header->operacion);
+
 	if(content_header->operacion == OPERACION_CONSULTA_CLAVE_COORD)
 	{
 
@@ -1151,8 +1153,16 @@ void status_clave(t_status_clave* clave_st, char * clave)
 
 		lista_esis_bloq_por_clave = esis_bloqueados_por_clave(clave);
 
-		logger_planificador(escribir_loguear, l_info,"Listado de ESIs bloqueados por clave %s: \n\n", clave);
-		mostrar_esis_consola(lista_esis_bloq_por_clave);
+		logger_planificador(escribir_loguear, l_info,"Listado de ESIs bloqueados por clave %s: \n", clave);
+		if(list_size(lista_esis_bloq_por_clave))
+		{
+			mostrar_esis_consola(lista_esis_bloq_por_clave);
+		}
+		else
+		{
+			logger_planificador(escribir_loguear, l_info,"No hay esis bloqueados por la clave %s\n", clave);
+		}
+
 
 		list_destroy(lista_esis_bloq_por_clave);
 

@@ -155,14 +155,14 @@ void atender_comando_status(){
 		t_content_header * header_rta_consulta_status = crear_cabecera_mensaje(coordinador,planificador,PLANIFICADOR_COORDINADOR_CMD_STATUS,sizeof(t_status_clave));
 
 		//log_info(logger,"Este print no hace que funcione");
+		//log_error(logger,"operacion mandada: %d",header_rta_consulta_status->operacion);
 
-
-		int rdo_send_h = send(socket_planif, header_rta_consulta_status, sizeof(header_rta_consulta_status),0);
+		int rdo_send_h = send(socket_planif, header_rta_consulta_status, sizeof(t_content_header),0);
 		if(rdo_send_h < 0)
 		{
 			log_error(logger,"Error al mandar el header de la consulta de status");
 		}
-
+		//log_info(logger,"Despues de mandar el header");
 
 		//Mandar t_status_clave
 		t_status_clave * st_clave = malloc(sizeof(t_status_clave));
@@ -170,11 +170,16 @@ void atender_comando_status(){
 		st_clave->tamanio_instancia_nombre = st_clave_interno->tamanio_instancia_nombre;
 		st_clave->tamanio_valor = st_clave_interno->tamanio_valor;
 
+		log_info(logger,"Antes de mandar sT_clave: cod %d %d %d",st_clave->cod,st_clave->tamanio_instancia_nombre,st_clave->tamanio_valor);
+
 		int rdo_send_st_clave = send(socket_planif, st_clave, sizeof(t_status_clave),0);
 		if(rdo_send_st_clave < 0)
 		{
 			log_error(logger,"Error al mandar los datos del resultado de la consulta status");
 		}
+
+		log_info(logger,"despues de mandar st_clave");
+
 
 		//Ahora mando valor y nombre instancia, en ese orden.
 		if (st_clave->cod != COORDINADOR_SIN_CLAVE){
