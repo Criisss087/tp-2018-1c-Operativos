@@ -70,6 +70,7 @@ rta_envio enviarSentenciaInstancia(t_sentencia * sentencia){
 	rta.instancia->id = proxima->id;
 	rta.instancia->nombre = strdup(proxima->nombre);
 	rta.instancia->socket = proxima->socket;
+	log_warning(logger,"codigos enviados en header a instancia: %d %d %d %d",coordinador,instancia,COORDINADOR_INSTANCIA_SENTENCIA, sizeof(t_content_header) );
 	t_content_header * header = crear_cabecera_mensaje(coordinador,instancia,COORDINADOR_INSTANCIA_SENTENCIA, sizeof(t_content_header));
 	t_esi_operacion_sin_puntero * s_sin_p = armar_esi_operacion_sin_puntero(sentencia);
 
@@ -212,18 +213,18 @@ t_clave * guardarClaveInternamente(char clave[40], int keyword){
 
 }
 
-int chequearConectividadProceso(t_instancia * instancia){
+int chequearConectividadProceso(t_instancia * inst){
 	t_content_header * st_connect = crear_cabecera_mensaje(coordinador,instancia,COORDINADOR_INSTANCIA_CHEQUEO_CONEXION,0);
-	int status_connect = send(instancia->socket,st_connect,sizeof(t_content_header),0);
-	int status_recv = recv(instancia->socket,st_connect,sizeof(t_content_header),0);
+	int status_connect = send(inst->socket,st_connect,sizeof(t_content_header),0);
+	int status_recv = recv(inst->socket,st_connect,sizeof(t_content_header),0);
 	free(st_connect);
 	log_error(logger, "cheqconectproce status_recv %d", status_recv);
-	if (status_recv ==-1 || status_recv == 0){instancia->flag_thread = 0; return DESCONECTADO;}
+	if (status_recv ==-1 || status_recv == 0){inst->flag_thread = 0; return DESCONECTADO;}
 	else return CONECTADO;
 }
 
 void loopPlanificadorConsulta(){
-	while(1){
+	while(GLOBAL_SEGUIR){
 		log_warning(logger,"loopPlanificadorCOnsulta");
 		pthread_mutex_lock(&consulta_planificador);
 		log_warning(logger,"entro en mutex");
@@ -306,6 +307,7 @@ void devolverCodigoResultadoAESI(int socketCliente, int cod, int idEsi, int proc
 
 	char * pr;
 	char * pr_c;
+	int bandera = 0;
 	if (proceso == instancia){pr = strdup("instancia");} else pr = strdup("esi");
 	log_info(logger, "Rdo que llega a la funcion'%d', proceso: %d", cod, proceso);
 
@@ -313,19 +315,29 @@ void devolverCodigoResultadoAESI(int socketCliente, int cod, int idEsi, int proc
 	if (cod ==ERROR_I && proceso == instancia){
 		cod_error->resultado_del_parseado = ABORTAR;
 		pr_c = strdup("abortar");
+		bandera = 1;
 	}
 
 	if (cod ==CLAVE_BLOQUEADA && proceso == esi){
 		cod_error->resultado_del_parseado = CLAVE_BLOQUEADA;
 		pr_c = strdup("clave bloqueada");
+		bandera = 1;
 	}
 
 	if (((cod == EXITO_I) && (proceso == instancia)) || ((cod == CORRECTO) && (proceso == esi))){
 		cod_error->resultado_del_parseado = CORRECTO;
 		pr_c = strdup("correcto");
+		bandera = 1;
 	}
 
 	if (cod == ABORTAR && proceso == esi){
+		cod_error->resultado_del_parseado = ABORTAR;
+		pr_c = strdup("abortar");
+		bandera = 1;
+	}
+
+	if (bandera == 0){
+		log_error(logger, "BASURA DEVUELTA POR LA INSTANCIA, ENVIANDO CODIGO DE ABORTO", pr,pr_c);
 		cod_error->resultado_del_parseado = ABORTAR;
 		pr_c = strdup("abortar");
 	}
@@ -342,10 +354,12 @@ void devolverCodigoResultadoAESI(int socketCliente, int cod, int idEsi, int proc
 void indicarCompactacionATodasLasInstancias(){
 	//Uso varios para que un hilo instancia no entre dos veces y otro se quede sin compactar
 	log_warning(logger,"Indicando a las instancias que compacten");
-	for (int i = 0; list_size(lista_instancias) >i; i++){
+	int tieneHiloActivo(t_instancia * i){return (i->flag_thread == 1);};
+	int total = list_size(list_filter(lista_instancias, *tieneHiloActivo));
+	for (int i = 0; total >i; i++){
 		sem_post(&semInstancias);
 	}
-	for (int i = 0; list_size(lista_instancias) >i; i++){
+	for (int i = 0; total >i; i++){
 		sem_wait(&semInstanciasFin);
 	}
 	/*
@@ -571,7 +585,7 @@ int main(int argc, char **argv){
     struct sockaddr_in addr;// Esta estructura contendra los datos de la conexion del cliente. IP, puerto, etc.
     socklen_t addrlen = sizeof(addr);
 
-	while (1){
+	while (GLOBAL_SEGUIR){
     	log_info(logger, "Esperando conexiones...");
     	int socketCliente = accept(listenningSocket, (struct sockaddr *) &addr, &addrlen);
 		log_info(logger, "Conexión recibida - Accept: %d ",socketCliente);
