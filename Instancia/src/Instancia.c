@@ -55,6 +55,24 @@ void enviarResultadoSentencia(int socketCoordinador, int keyword) {
 	t_respuesta_instancia * resultadoAEnviar;
 	switch (keyword) {
 
+	case OBTENER_VALOR:
+		enviarHeader(socketCoordinador, instancia, coordinador,
+		INSTANCIA_COORDINADOR_RESPUESTA_SENTENCIA, strlen(valorConsultado));
+
+		printf("Enviando Valor asociado a la clave consultada...\n");
+		resultado = send(socketCoordinador, valorConsultado,
+				strlen(valorConsultado), 0);
+
+		if (resultado == -1) {
+			printf("Error en el send");
+			// TODO: Implementar exit para abortar ejecucion
+		}
+
+		printf("\tResultado: %d\n", resultado);
+		printf("\tValor obtenido y enviado: %s\n", valorConsultado);
+		printf("--------------------------------------------------------\n");
+		break;
+
 	case SET_:
 		enviarHeader(socketCoordinador, instancia, coordinador,
 		INSTANCIA_COORDINADOR_RESPUESTA_SENTENCIA, sizeof(int));
@@ -84,7 +102,8 @@ void enviarResultadoSentencia(int socketCoordinador, int keyword) {
 
 		printf("Enviando Respuesta de sentencia STORE...\n");
 
-		resultadoAEnviar = armarRespuestaParaCoordinador(respuestaParaCoordinador);
+		resultadoAEnviar = armarRespuestaParaCoordinador(
+				respuestaParaCoordinador);
 
 		resultado = send(socketCoordinador, resultadoAEnviar,
 				sizeof(t_respuesta_instancia), 0);
@@ -95,13 +114,14 @@ void enviarResultadoSentencia(int socketCoordinador, int keyword) {
 		}
 
 		printf("\tResultado: %d\n", resultado);
-		printf("\tResultado de ejecucion enviado: %d\n", respuestaParaCoordinador);
+		printf("\tResultado de ejecucion enviado: %d\n",
+				respuestaParaCoordinador);
 		printf("--------------------------------------------------------\n");
 		break;
 
-	case COORDINADOR_INSTANCIA_RECUPERAR_CLAVES:
+		case COORDINADOR_INSTANCIA_RECUPERAR_CLAVES:
 		enviarHeader(socketCoordinador, instancia, coordinador,
-		INSTANCIA_COORDINADOR_RESPUESTA_SENTENCIA, sizeof(int));
+				INSTANCIA_COORDINADOR_RESPUESTA_SENTENCIA, sizeof(int));
 		printf(
 				"Enviando Respuesta de Reconexion (cantidad de entradas disponibles)...\n");
 
@@ -135,7 +155,7 @@ void enviarResultadoSentencia(int socketCoordinador, int keyword) {
 				sizeof(t_respuesta_instancia), 0);
 
 		if (resultado == -1) {
-			printf("Error en el send");
+			printf("Error en el send\n");
 			// TODO: Implementar exit para abortar ejecucion
 		}
 
@@ -689,7 +709,6 @@ void guardarClaveValor(char clave[40], char * valor) {
 					if (numeroEntrada
 							>= configTablaEntradas->cantTotalEntradas) {
 
-						// TODO: Buscar donde se encuentra el PRIMER indiceBase para guardar la clave
 						numeroEntrada = nroEntradaBaseAux;
 						printf("Valor de numeroEntrada: %d. El aux: %d\n",
 								numeroEntrada, nroEntradaBaseAux);
@@ -794,6 +813,15 @@ void * append(int fd, char * valor, size_t nbytes, void *map, size_t len) {
 
 void grabarArchivoPorPrimeraVez(int fd, char * valor, int tamanio) {
 	write(fd, valor, tamanio);
+}
+
+void obtenerValorAsociadoAClave(char clave[40]) {
+	printf("Obteniendo valor asociado a la clave: %s\n", clave);
+	t_list * listaIndices = obtenerIndicesDeClave(clave);
+	int tamanioValor = obtenerTamanioTotalDeValorGuardado(listaIndices);
+	t_indice_entrada * indiceBase = list_get(listaIndices, 0);
+	char * valor = obtenerValorCompleto(indiceBase->puntero, tamanioValor);
+	strcpy(valorConsultado, valor);
 }
 
 void realizarStoreDeClave(char clave[40]) {
@@ -1001,13 +1029,15 @@ void interpretarOperacionCoordinador(t_content_header * header,
 		switch (sentenciaRecibida->keyword) {
 
 		case OBTENER_VALOR:
+			printf("TODO: Leer clave y devolver valor...\n");
+			obtenerValorAsociadoAClave(sentenciaRecibida->clave);
+
+			enviarResultadoSentencia(socketCoordinador, OBTENER_VALOR);
 			break;
 
 		case SET_:
 			guardarClaveValor(sentenciaRecibida->clave,
 					sentenciaRecibida->valor);
-			// TODO: Probablemente el siguiente print sea innecesario.
-			// imprimirTablaEntradas();
 			enviarResultadoSentencia(socketCoordinador, SET_);
 			break;
 
@@ -1015,7 +1045,6 @@ void interpretarOperacionCoordinador(t_content_header * header,
 			realizarStoreDeClave(sentenciaRecibida->clave);
 			enviarResultadoSentencia(socketCoordinador, STORE_);
 			break;
-
 		}
 
 		break;

@@ -34,7 +34,6 @@
 #define COORDINADOR_INSTANCIA_CONFIG_INICIAL 2
 #define COORDINADOR_INSTANCIA_SENTENCIA 3
 #define INSTANCIA_COORDINADOR_RESPUESTA_SENTENCIA 4
-#define COORDINADOR_INSTANCIA_RECONEXION 5
 #define COORDINADOR_INSTANCIA_RECUPERAR_CLAVES 5
 #define COORDINADOR_INSTANCIA_COMPACTAR 6
 
@@ -76,6 +75,7 @@ int contadorOperacion = 0;
 int nroEntradaBaseAux = 0;
 
 int respuestaParaCoordinador;
+char * valorConsultado;
 
 char * tablaEntradas;
 
