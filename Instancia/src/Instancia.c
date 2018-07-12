@@ -84,7 +84,7 @@ void enviarResultadoSentencia(int socketCoordinador, int keyword) {
 
 		printf("Enviando Respuesta de sentencia STORE...\n");
 
-		resultadoAEnviar = armarRespuestaParaCoordinador(resultadoEjecucion);
+		resultadoAEnviar = armarRespuestaParaCoordinador(respuestaParaCoordinador);
 
 		resultado = send(socketCoordinador, resultadoAEnviar,
 				sizeof(t_respuesta_instancia), 0);
@@ -95,7 +95,7 @@ void enviarResultadoSentencia(int socketCoordinador, int keyword) {
 		}
 
 		printf("\tResultado: %d\n", resultado);
-		printf("\tResultado de ejecucion enviado: %d\n", resultadoEjecucion);
+		printf("\tResultado de ejecucion enviado: %d\n", respuestaParaCoordinador);
 		printf("--------------------------------------------------------\n");
 		break;
 
