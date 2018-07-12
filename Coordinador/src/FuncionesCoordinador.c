@@ -152,6 +152,7 @@ void captura_sigpipe(int signo)
     {
     	//TODO finalizar ejecución
     	log_warning(logger, "Finalizando proceso...");
+    	GLOBAL_SEGUIR = 0;
     	exit(EXIT_FAILURE);
     }
     else if(signo == SIGPIPE)

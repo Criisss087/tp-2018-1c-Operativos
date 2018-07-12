@@ -224,7 +224,7 @@ int chequearConectividadProceso(t_instancia * inst){
 }
 
 void loopPlanificadorConsulta(){
-	while(1){
+	while(GLOBAL_SEGUIR){
 		log_warning(logger,"loopPlanificadorCOnsulta");
 		pthread_mutex_lock(&consulta_planificador);
 		log_warning(logger,"entro en mutex");
@@ -585,7 +585,7 @@ int main(int argc, char **argv){
     struct sockaddr_in addr;// Esta estructura contendra los datos de la conexion del cliente. IP, puerto, etc.
     socklen_t addrlen = sizeof(addr);
 
-	while (1){
+	while (GLOBAL_SEGUIR){
     	log_info(logger, "Esperando conexiones...");
     	int socketCliente = accept(listenningSocket, (struct sockaddr *) &addr, &addrlen);
 		log_info(logger, "Conexión recibida - Accept: %d ",socketCliente);

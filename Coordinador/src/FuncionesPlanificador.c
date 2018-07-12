@@ -123,7 +123,7 @@ void atender_comando_status(){
 
 	int socket_planif = socketCliente;
 
-	while(1){
+	while(GLOBAL_SEGUIR){
 		//recv header
 		t_content_header * header_consulta_valor = malloc(sizeof(t_content_header));
 		int estado_recv_consulta = recv(socket_planif,header_consulta_valor,sizeof(t_content_header),0);
