@@ -1390,11 +1390,7 @@ int enviar_coordinador_clave_status(char* clave_nombre){
 
 	t_content_header *header = crear_cabecera_mensaje(planificador, coordinador, PLANIFICADOR_COORDINADOR_CMD_STATUS, strlen(clave_nombre));
 
-	//t_status_clave *st_clave = malloc(sizeof(t_status_clave));
-	//st_clave->nombre = strdup(clave_nombre);
-
 	logger_planificador(loguear, l_info, "Envío consulta de status por clave %s.", clave_nombre);
-
 
 	//Envía Header al Coordinador
 	int res_send = send(coord_status_socket, header, sizeof(t_content_header), 0);
@@ -1408,8 +1404,6 @@ int enviar_coordinador_clave_status(char* clave_nombre){
 		log_error(logger, "Error en send body al Coordinador.");
 	}
 
-	//free(st_clave->nombre);
-	//free(st_clave);
 	destruir_cabecera_mensaje(header);
 	return res_send;
 }
