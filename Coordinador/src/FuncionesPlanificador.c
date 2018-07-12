@@ -14,6 +14,8 @@ t_status_clave_interno * buscar_clave(char * nombre_clave){
 		return list_find(lista_claves,*mismoNombre);
 	}
 
+	list_iterate(lista_claves,(void*)printf);
+
 	t_status_clave_interno * st = malloc(sizeof(t_status_clave_interno));
 
 	t_clave * clave = getClaveByName(nombre_clave);
@@ -133,7 +135,7 @@ void atender_comando_status(){
 		{
 			log_error(logger,"Error al recibir el header de la consulta de status");
 		}
-		log_info(logger,"Cantidad a leer: %d",header_consulta_valor->cantidad_a_leer);
+		//log_info(logger,"Cantidad a leer: %d",header_consulta_valor->cantidad_a_leer);
 		//En el campo "cantidad_a_leer" me indica la long del nombre de la clave
 		//recv del nombre de la clave
 		char * nombre_clave = malloc(header_consulta_valor->cantidad_a_leer);
@@ -145,7 +147,7 @@ void atender_comando_status(){
 		}
 
 
-		log_info(logger,"Clave recibida: %s",nombre_clave);
+		//log_info(logger,"Clave recibida: %s",nombre_clave);
 
 		st_clave_interno = buscar_clave(nombre_clave);
 
@@ -170,7 +172,7 @@ void atender_comando_status(){
 		st_clave->tamanio_instancia_nombre = st_clave_interno->tamanio_instancia_nombre;
 		st_clave->tamanio_valor = st_clave_interno->tamanio_valor;
 
-		log_info(logger,"Antes de mandar sT_clave: cod %d %d %d",st_clave->cod,st_clave->tamanio_instancia_nombre,st_clave->tamanio_valor);
+		//log_info(logger,"Antes de mandar sT_clave: cod %d %d %d",st_clave->cod,st_clave->tamanio_instancia_nombre,st_clave->tamanio_valor);
 
 		int rdo_send_st_clave = send(socket_planif, st_clave, sizeof(t_status_clave),0);
 		if(rdo_send_st_clave < 0)
@@ -178,13 +180,13 @@ void atender_comando_status(){
 			log_error(logger,"Error al mandar los datos del resultado de la consulta status");
 		}
 
-		log_info(logger,"despues de mandar st_clave");
-
+		//log_info(logger,"cod %d",st_clave->cod);
 
 		//Ahora mando valor y nombre instancia, en ese orden.
 		if (st_clave->cod != COORDINADOR_SIN_CLAVE){
 			//Se envía siempre el nombre de la instancia para los siguientes casos:
 			//INSTANCIA_SIMULADA, INSTANCIA_SIN_CLAVE, CORRECTO_CONSULTA_VALOR, INSTANCIA_CAIDA
+			log_info(logger,"nombre instancia %s",st_clave_interno->nombre_instancia);
 			int rdo_send_instancia = send(socket_planif, st_clave_interno->nombre_instancia, st_clave_interno->tamanio_instancia_nombre, 0);
 			if(rdo_send_instancia < 0)
 			{
@@ -192,8 +194,8 @@ void atender_comando_status(){
 			}
 
 			//Si es caso feliz, se envía el valor.
-			if (st_clave->cod != CORRECTO_CONSULTA_VALOR){
-
+			if (st_clave->cod == CORRECTO_CONSULTA_VALOR){
+				log_info(logger,"valor %s",st_clave_interno->valor);
 				int rdo_send_valor = send(socket_planif, st_clave_interno->valor, st_clave_interno->tamanio_valor, 0);
 				if(rdo_send_valor < 0)
 				{
