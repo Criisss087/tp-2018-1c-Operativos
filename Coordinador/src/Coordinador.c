@@ -72,19 +72,7 @@ rta_envio enviarSentenciaInstancia(t_sentencia * sentencia){
 	rta.instancia = malloc(sizeof(t_instancia));
 
 	t_instancia * proxima;
-	/*
-	switch(sentencia->keyword){
-	case SET:
-		//asignar instancia
-		break;
-	case STORE:
-		break;
-	default:
-		//GET - Sé que no tiene que ir a la instancia. Voy a usar este código cuando necesite sabes el valor de la clave
-		break;
-	}*/
 
-	//**
 	int tiene_clave(t_clave * clObj){
 		return (strcmp(sentencia->clave, clObj->clave)==0);
 	}
@@ -94,7 +82,7 @@ rta_envio enviarSentenciaInstancia(t_sentencia * sentencia){
 		logger_coordinador(escribir_loguear,l_error,"Más de una instancia tiene asignada la clave %s\n",sentencia->clave);
 	}
 	else{
-		if (list_size(instancias_con_clave ) == 1){
+		if (list_size(instancias_con_clave) == 1){
 			//Existe
 			t_clave * instanciaDuena = list_get(instancias_con_clave ,0);
 			proxima =  instanciaDuena->instancia;
@@ -104,7 +92,6 @@ rta_envio enviarSentenciaInstancia(t_sentencia * sentencia){
 			proxima = siguienteInstanciaSegunAlgoritmo(sentencia->clave, ASIGNAR);
 			t_clave * instanciaDuena = list_get(instancias_con_clave ,0);
 			instanciaDuena->instancia = proxima;
-
 		}
 	}
 
@@ -181,6 +168,8 @@ rta_envio enviarSentenciaInstancia(t_sentencia * sentencia){
 	rta.cod= rta_instancia->rdo_operacion;
 	logger_coordinador(escribir_loguear, l_info, "Respuesta de instancia nombre %s, respuesta: - %d - %d - entradas libres: %d \n",proxima->nombre,rta.cod,rta_instancia->rdo_operacion,rta_instancia->entradas_libres);
 
+	free(rta_instancia);
+
 	//Si estoy pidiendo el valor de la clave, recibo la clave:
 	//GET - Sé que no tiene que ir a la instancia. Voy a usar este código cuando necesite sabes el valor de la clave
 	if (sentencia->keyword == OBTENER_VALOR){
@@ -200,6 +189,7 @@ rta_envio enviarSentenciaInstancia(t_sentencia * sentencia){
 	//NO libero la instancia "proxima" porque apunnta a la lista de instancias. si la libero al estoy borrando de la lista.
 	destruir_cabecera_mensaje(header);
 	free(s_sin_p);
+	list_destroy(instancias_con_clave);
 
 	return rta;
 	}
@@ -339,16 +329,16 @@ int consultarPlanificador(t_sentencia * sentencia){
 
 	destruir_cabecera_mensaje(header);
 
-	int * rta = malloc(sizeof(int));
-	status_recv = recv(PROCESO_PLANIFICADOR.socket,rta, sizeof(int),0);
+	rta1 = malloc(sizeof(int));
+	status_recv = recv(PROCESO_PLANIFICADOR.socket,rta1, sizeof(int),0);
 
 	if(status_recv < 0){
 		logger_coordinador(escribir_loguear, l_error,"Error en el recv de la respuesta del planificador al consultar\n");
 	}
 
-	logger_coordinador(escribir_loguear, l_info,"Respuesta de Planificador en consultar: %d\n",*rta);
+	logger_coordinador(escribir_loguear, l_info,"Respuesta de Planificador en consultar: %d\n",*rta1);
 
-	return *rta;
+	return *rta1;
 }
 
 void loopPlanificadorConsulta(){
@@ -505,6 +495,8 @@ void indicarCompactacionATodasLasInstancias(){
 
 void proseguirOperacionNormal(int socketCliente, t_sentencia * sentencia_con_punteros){
 
+	rta_envio rdo_ejecucion_instancia;
+
 	switch(sentencia_con_punteros->keyword){
 	case OBTENER_VALOR://get
 		//guardarClaveInternamente(sentencia_con_punteros->clave); ya guardé cuando chequeé si podia ejecutar
@@ -517,7 +509,7 @@ void proseguirOperacionNormal(int socketCliente, t_sentencia * sentencia_con_pun
 		logger_coordinador(escribir_loguear,l_info, "\nEnviando sentencia a instancia\n");
 
 		//Tanto para set o store le pregunté al planificador si podía continuar. El planificador ya hizo chequeos necesarios/operaciones necesarias.
-		rta_envio rdo_ejecucion_instancia = enviarSentenciaInstancia(sentencia_con_punteros);
+		rdo_ejecucion_instancia = enviarSentenciaInstancia(sentencia_con_punteros);
 
 		//Reintenta hasta 3 veces si debe compactar.
 		int contador = 3;
@@ -534,6 +526,10 @@ void proseguirOperacionNormal(int socketCliente, t_sentencia * sentencia_con_pun
 		devolverResultadoAESI(socketCliente, rdo_ejecucion_instancia, sentencia_con_punteros->pid,instancia);
 		break;
 	}
+
+	free(rdo_ejecucion_instancia.instancia->nombre);
+	free(rdo_ejecucion_instancia.instancia);
+	free(rdo_ejecucion_instancia.valor);
 }
 
 void interpretarOperacionESI(t_content_header * hd, int socketCliente){
@@ -576,9 +572,7 @@ void interpretarOperacionESI(t_content_header * hd, int socketCliente){
 			free(buffer);
 			buffer = strdup(valRec);
 
-		}
-		else
-		{
+		}else{
 			free(buffer);
 			buffer = strdup("");
 		}
@@ -615,6 +609,9 @@ void interpretarOperacionESI(t_content_header * hd, int socketCliente){
 			default:
 				break;
 		}
+
+		free(sentencia_con_punteros->valor);
+		free(sentencia_con_punteros);
 		free(sentencia);
 		break;
 	}

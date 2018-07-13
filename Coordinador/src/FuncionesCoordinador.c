@@ -201,6 +201,10 @@ void liberar_loggers(){
 void finalizar_coordinador(){
 	liberar_listas();
 	liberar_loggers();
+
+	if(rta1 != NULL){
+		free(rta1);
+	}
 }
 
 void captura_sigpipe(int signo)

@@ -18,8 +18,6 @@ t_status_clave_interno * buscar_clave(char * nombre_clave){
 		return list_find(lista_claves,(void*)mismoNombre);
 	}
 
-	list_iterate(lista_claves,(void*)printf);
-
 	t_status_clave_interno * st = malloc(sizeof(t_status_clave_interno));
 
 	t_clave * clave = getClaveByName(nombre_clave);
