@@ -101,6 +101,38 @@ struct addrinfo* crear_addrinfo(){
 	return serverInfo;
 }
 
+int listenningSocket( char * puerto)
+{
+	struct sockaddr_in dir_sock;
+
+	//Convierto el string a INT para htons
+	unsigned int puerto_i = atoi(puerto);
+
+	dir_sock.sin_family = AF_INET;
+	dir_sock.sin_addr.s_addr = INADDR_ANY;
+	dir_sock.sin_port = htons(puerto_i);
+
+	int server_socket = socket(AF_INET, SOCK_STREAM, 0);
+	if (server_socket < 0)
+	{
+		return -1;
+	}
+
+	int activado = 1;
+	setsockopt(server_socket,SOL_SOCKET,SO_REUSEADDR, &activado, sizeof(activado));
+
+	if(bind(server_socket, (void*)&dir_sock, sizeof(dir_sock)) != 0)
+	{
+		return -1;
+	}
+
+
+	listen(server_socket, BACKLOG);
+
+	return server_socket;
+
+}
+
 t_esi_operacion_sin_puntero * armar_esi_operacion_sin_puntero(t_sentencia * sentencia){
 	t_esi_operacion_sin_puntero * op_sin_punt = malloc(sizeof(t_esi_operacion_sin_puntero));
 	strncpy(op_sin_punt->clave, sentencia->clave,40);

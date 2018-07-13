@@ -94,6 +94,7 @@ t_status_clave_interno * buscar_clave(char * nombre_clave){
 }
 
 void atender_comando_status(){
+	/****
 	struct addrinfo hints;
 	struct addrinfo *serverInfo;
 
@@ -124,6 +125,19 @@ void atender_comando_status(){
 	log_info(logger, "Conexión recibida desde el planificador para comando status - Accept: %d ",socketCliente);
 
 	int socket_planif = socketCliente;
+	****/
+	int listenning_socket = listenningSocket(PUERTO_ESCUCHA_PETICION_STATUS);
+	log_warning(logger, "listenning hilo status %d", listenning_socket);
+	struct sockaddr_in client_addr;
+
+	//Setea la direccion en 0
+	memset(&client_addr, 0, sizeof(client_addr));
+	socklen_t client_len = sizeof(client_addr);
+
+	//Acepta la nueva conexion
+	int socket_planif = accept(listenning_socket, (struct sockaddr *)&client_addr, &client_len);
+	log_warning(logger, "listenning socket hilo status accepted %d", socket_planif);
+
 	int estado_recv_consulta = 1;
 	t_status_clave_interno * st_clave_interno = NULL;
 

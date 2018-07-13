@@ -567,7 +567,7 @@ int main(int argc, char **argv){
 
 	armar_hilo_planificador_status();
 
-	struct addrinfo *serverInfo = crear_addrinfo();
+	/*struct addrinfo *serverInfo = crear_addrinfo();
 	int listenningSocket = socket(serverInfo->ai_family, serverInfo->ai_socktype, serverInfo->ai_protocol);
 	log_info(logger,"Socket de escucha creado %d", listenningSocket);
 
@@ -584,13 +584,27 @@ int main(int argc, char **argv){
 
     struct sockaddr_in addr;// Esta estructura contendra los datos de la conexion del cliente. IP, puerto, etc.
     socklen_t addrlen = sizeof(addr);
-
+*/
+	int listenning_socket = listenningSocket(PUERTO);
+	log_warning(logger, "listenning socket principal %d", listenning_socket);
 	while (GLOBAL_SEGUIR){
+		struct sockaddr_in client_addr;
+
+		//Setea la direccion en 0
+		memset(&client_addr, 0, sizeof(client_addr));
+		socklen_t client_len = sizeof(client_addr);
+
+		//Acepta la nueva conexion
+		int socketCliente = accept(listenning_socket, (struct sockaddr *)&client_addr, &client_len);
+		log_warning(logger, "listenning socket principal accepted %d", socketCliente);
+		/******
     	log_info(logger, "Esperando conexiones...");
     	int socketCliente = accept(listenningSocket, (struct sockaddr *) &addr, &addrlen);
 		log_info(logger, "Conexión recibida - Accept: %d ",socketCliente);
+		*******/
 
 		crear_hilo_conexion(socketCliente, escucharMensajesEntrantes);
+		log_warning(logger, "main - nuevo hilo creado");
 	}
 
     close(listenningSocket);
