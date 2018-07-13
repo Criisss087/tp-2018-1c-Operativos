@@ -135,7 +135,7 @@ void atender_comando_status(){
 		{
 			log_error(logger,"Error al recibir el header de la consulta de status");
 		}
-		//log_info(logger,"Cantidad a leer: %d",header_consulta_valor->cantidad_a_leer);
+
 		//En el campo "cantidad_a_leer" me indica la long del nombre de la clave
 		//recv del nombre de la clave
 		char * nombre_clave = malloc(header_consulta_valor->cantidad_a_leer);
@@ -146,25 +146,16 @@ void atender_comando_status(){
 			log_error(logger,"Error al recibir la clave de la consulta de status");
 		}
 
-
-		//log_info(logger,"Clave recibida: %s",nombre_clave);
-
 		st_clave_interno = buscar_clave(nombre_clave);
-
-		//log_info(logger,"Con este print descomentado, funciona");
 
 		//Devolver rta:
 		t_content_header * header_rta_consulta_status = crear_cabecera_mensaje(coordinador,planificador,PLANIFICADOR_COORDINADOR_CMD_STATUS,sizeof(t_status_clave));
-
-		//log_info(logger,"Este print no hace que funcione");
-		//log_error(logger,"operacion mandada: %d",header_rta_consulta_status->operacion);
 
 		int rdo_send_h = send(socket_planif, header_rta_consulta_status, sizeof(t_content_header),0);
 		if(rdo_send_h < 0)
 		{
 			log_error(logger,"Error al mandar el header de la consulta de status");
 		}
-		//log_info(logger,"Despues de mandar el header");
 
 		//Mandar t_status_clave
 		t_status_clave * st_clave = malloc(sizeof(t_status_clave));
@@ -172,15 +163,11 @@ void atender_comando_status(){
 		st_clave->tamanio_instancia_nombre = st_clave_interno->tamanio_instancia_nombre;
 		st_clave->tamanio_valor = st_clave_interno->tamanio_valor;
 
-		//log_info(logger,"Antes de mandar sT_clave: cod %d %d %d",st_clave->cod,st_clave->tamanio_instancia_nombre,st_clave->tamanio_valor);
-
 		int rdo_send_st_clave = send(socket_planif, st_clave, sizeof(t_status_clave),0);
 		if(rdo_send_st_clave < 0)
 		{
 			log_error(logger,"Error al mandar los datos del resultado de la consulta status");
 		}
-
-		//log_info(logger,"cod %d",st_clave->cod);
 
 		//Ahora mando valor y nombre instancia, en ese orden.
 		if (st_clave->cod != COORDINADOR_SIN_CLAVE){

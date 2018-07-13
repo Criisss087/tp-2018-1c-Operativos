@@ -1153,9 +1153,9 @@ void status_clave(t_status_clave* clave_st, char * clave)
 
 		lista_esis_bloq_por_clave = esis_bloqueados_por_clave(clave);
 
-		logger_planificador(escribir_loguear, l_info,"Listado de ESIs bloqueados por clave %s: \n", clave);
 		if(list_size(lista_esis_bloq_por_clave))
 		{
+			logger_planificador(escribir_loguear, l_info,"Listado de ESIs bloqueados por clave %s: \n", clave);
 			mostrar_esis_consola(lista_esis_bloq_por_clave);
 		}
 		else
