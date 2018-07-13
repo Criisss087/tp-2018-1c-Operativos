@@ -52,77 +52,121 @@ void enviarResultadoSentencia(int socketCoordinador, int keyword) {
 	int resultado;
 	int resultadoEjecucion;
 
-	switch (keyword) {
 	t_respuesta_instancia * resultadoAEnviar;
-case SET_:
-	enviarHeader(socketCoordinador, instancia, coordinador,
-	INSTANCIA_COORDINADOR_RESPUESTA_SENTENCIA, sizeof(int));
+	switch (keyword) {
 
-	printf("Enviando Respuesta de sentencia SET...\n");
+	case OBTENER_VALOR:
+		enviarHeader(socketCoordinador, instancia, coordinador,
+		INSTANCIA_COORDINADOR_RESPUESTA_SENTENCIA, strlen(valorConsultado)+1);
 
-	resultadoEjecucion = EXITO_I;
+		printf("Enviando Valor asociado a la clave consultada...\n");
+		resultado = send(socketCoordinador, valorConsultado,
+				strlen(valorConsultado)+1, 0);
 
-	resultadoAEnviar = armarRespuestaParaCoordinador(resultadoEjecucion);
+		if (resultado == -1) {
+			printf("Error en el send");
+			// TODO: Implementar exit para abortar ejecucion
+		}
 
-	resultado = send(socketCoordinador, resultadoAEnviar,
-			sizeof(t_respuesta_instancia), 0);
+		printf("\tResultado: %d\n", resultado);
+		printf("\tValor obtenido y enviado: %s\n", valorConsultado);
+		printf("--------------------------------------------------------\n");
+		break;
 
-	if (resultado == -1) {
-		printf("Error en el send");
-		// TODO: Implementar exit para abortar ejecucion
-	}
+	case SET_:
+		enviarHeader(socketCoordinador, instancia, coordinador,
+		INSTANCIA_COORDINADOR_RESPUESTA_SENTENCIA, sizeof(int));
 
-	printf("\tResultado: %d\n", resultado);
-	printf("\tResultado de ejecucion enviado: %d\n", resultadoEjecucion);
-	printf("--------------------------------------------------------\n");
-	break;
+		printf("Enviando Respuesta de sentencia SET...\n");
 
-case STORE_:
-	enviarHeader(socketCoordinador, instancia, coordinador,
-	INSTANCIA_COORDINADOR_RESPUESTA_SENTENCIA, sizeof(int));
+		resultadoAEnviar = armarRespuestaParaCoordinador(
+				respuestaParaCoordinador);
 
-	printf("Enviando Respuesta de sentencia STORE...\n");
+		resultado = send(socketCoordinador, resultadoAEnviar,
+				sizeof(t_respuesta_instancia), 0);
 
-	resultadoEjecucion = EXITO_I;
+		if (resultado == -1) {
+			printf("Error en el send");
+			// TODO: Implementar exit para abortar ejecucion
+		}
 
-	resultadoAEnviar = armarRespuestaParaCoordinador(resultadoEjecucion);
+		printf("\tResultado: %d\n", resultado);
+		printf("\tResultado de ejecucion enviado: %d\n",
+				respuestaParaCoordinador);
+		printf("--------------------------------------------------------\n");
+		break;
 
-	resultado = send(socketCoordinador, resultadoAEnviar,
-			sizeof(t_respuesta_instancia), 0);
+	case STORE_:
+		enviarHeader(socketCoordinador, instancia, coordinador,
+		INSTANCIA_COORDINADOR_RESPUESTA_SENTENCIA, sizeof(int));
 
-	if (resultado == -1) {
-		printf("Error en el send");
-		// TODO: Implementar exit para abortar ejecucion
-	}
+		printf("Enviando Respuesta de sentencia STORE...\n");
 
-	printf("\tResultado: %d\n", resultado);
-	printf("\tResultado de ejecucion enviado: %d\n", resultadoEjecucion);
-	printf("--------------------------------------------------------\n");
-	break;
-case COORDINADOR_INSTANCIA_RECUPERAR_CLAVES:
-	enviarHeader(socketCoordinador, instancia, coordinador,
-	INSTANCIA_COORDINADOR_RESPUESTA_SENTENCIA, sizeof(int));
-	printf(
-			"Enviando Respuesta de Reconexion (cantidad de entradas disponibles)...\n");
+		resultadoAEnviar = armarRespuestaParaCoordinador(
+				respuestaParaCoordinador);
 
-	resultadoEjecucion = EXITO_I;
+		resultado = send(socketCoordinador, resultadoAEnviar,
+				sizeof(t_respuesta_instancia), 0);
 
-	resultadoAEnviar = armarRespuestaParaCoordinador(resultadoEjecucion);
+		if (resultado == -1) {
+			printf("Error en el send");
+			// TODO: Implementar exit para abortar ejecucion
+		}
 
-	resultado = send(socketCoordinador, resultadoAEnviar,
-			sizeof(t_respuesta_instancia), 0);
+		printf("\tResultado: %d\n", resultado);
+		printf("\tResultado de ejecucion enviado: %d\n",
+				respuestaParaCoordinador);
+		printf("--------------------------------------------------------\n");
+		break;
 
-	if (resultado == -1) {
-		printf("Error en el send");
-		// TODO: Implementar exit para abortar ejecucion
-	}
+		case COORDINADOR_INSTANCIA_RECUPERAR_CLAVES:
+		enviarHeader(socketCoordinador, instancia, coordinador,
+				INSTANCIA_COORDINADOR_RESPUESTA_SENTENCIA, sizeof(int));
+		printf(
+				"Enviando Respuesta de Reconexion (cantidad de entradas disponibles)...\n");
 
-	printf("\tResultado: %d\n", resultado);
-	printf("\tResultado de ejecucion enviado: %d\n", resultadoEjecucion);
-	printf("--------------------------------------------------------\n");
-	break;
-default:
-	break;
+		resultadoEjecucion = EXITO_I;
+
+		resultadoAEnviar = armarRespuestaParaCoordinador(resultadoEjecucion);
+
+		resultado = send(socketCoordinador, resultadoAEnviar,
+				sizeof(t_respuesta_instancia), 0);
+
+		if (resultado == -1) {
+			printf("Error en el send");
+			// TODO: Implementar exit para abortar ejecucion
+		}
+
+		printf("\tResultado: %d\n", resultado);
+		printf("\tResultado de ejecucion enviado: %d\n", resultadoEjecucion);
+		printf("--------------------------------------------------------\n");
+		break;
+
+	case COORDINADOR_INSTANCIA_COMPACTAR:
+		enviarHeader(socketCoordinador, instancia, coordinador,
+		INSTANCIA_COORDINADOR_RESPUESTA_SENTENCIA, sizeof(int));
+
+		printf("Enviando aviso de finalizacion de Compactacion...\n");
+
+		resultadoAEnviar = armarRespuestaParaCoordinador(
+				respuestaParaCoordinador);
+
+		resultado = send(socketCoordinador, resultadoAEnviar,
+				sizeof(t_respuesta_instancia), 0);
+
+		if (resultado == -1) {
+			printf("Error en el send\n");
+			// TODO: Implementar exit para abortar ejecucion
+		}
+
+		printf("\tResultado: %d\n", resultado);
+		printf("\tResultado de ejecucion enviado: %d\n",
+				respuestaParaCoordinador);
+		printf("--------------------------------------------------------\n");
+		break;
+
+	default:
+		break;
 	}
 }
 
@@ -148,6 +192,59 @@ t_configTablaEntradas * obtenerConfigTablaEntradas(int socketCoordinador) {
 			"################################################################\n");
 
 	return configRecibida;
+}
+
+char * obtenerPathArchivo(char clave[40]) {
+	char * puntoDeMontaje = strdup(PUNTO_DE_MONTAJE);
+// printf("Directorio donde se guardara el archivo: %s\n", puntoDeMontaje);
+
+	char * archivo;
+	archivo = string_new();
+	string_append(&archivo, clave);
+	string_append(&archivo, ".txt");
+// printf("Nombre del archivo que se creara: %s\n", archivo);
+
+	char * path = string_new();
+	string_append(&path, puntoDeMontaje);
+	string_append(&path, archivo);
+	printf("Path del archivo a crear: %s\n", path);
+
+	return path;
+}
+
+void recuperarClave(char clave[40]) {
+	printf("Clave a recuperar: %s\n", clave);
+
+	char * path = obtenerPathArchivo(clave);
+
+	int permisos = 0664;
+	int flags = O_RDONLY;
+
+	int fileDescriptor;
+	if ((fileDescriptor = open(path, flags, permisos)) < 0) {
+		printf("No se pudo crear el archivo: %s\n", path);
+		printf("\tFile Descriptor: %d\n", fileDescriptor);
+	} else {
+		printf("File Descriptor: %d\n", fileDescriptor);
+
+		char * valor = malloc(PACKAGESIZE);
+
+		int tamanioValor = read(fileDescriptor, valor, PACKAGESIZE);
+
+		printf("Valor recuperado: %s\n", valor);
+		printf("Tamaño del Valor recuperado: %d\n", tamanioValor);
+
+		guardarClaveValor(clave, valor);
+
+		free(valor);
+
+		printf("Cerrando el fileDescriptor...\n");
+		if (close(fileDescriptor) == 0) {
+			printf("\tArchivo cerrado correctamente.\n");
+		} else {
+			printf("\tError en el cerrado del archivo.\n");
+		}
+	}
 }
 
 void obtenerClavesARecuperar(int socketCoordinador, int cantClaves) {
@@ -302,6 +399,78 @@ void ordenarAscPorCodDeOperacion(t_list * lista) {
 	return;
 }
 
+t_list * obtenerClavesDeMayorEspacioUtilizado() {
+	printf("Obteniendo clave/s con valores asociados de mayor tamaño...\n");
+
+	t_indice_entrada * entradaAnterior = list_get(l_indice_entradas, 0);
+	t_indice_entrada * entradaActual;
+	t_list * clavesConMayorValor = list_create();
+
+	char * claveAnterior = malloc(sizeof(char *));
+	char * claveActual = malloc(sizeof(char *));
+	strcpy(claveAnterior, entradaAnterior->clave);
+
+	int tamanioParcial = 0;
+	int mayorTamanio = 0;
+
+	for (int i = 0; i < list_size(l_indice_entradas); i++) {
+		printf("Recorriendo entrada: %d\n", i);
+		entradaActual = list_get(l_indice_entradas, i);
+		strcpy(claveActual, entradaActual->clave);
+
+		if (strcmp(claveActual, claveAnterior) != 0) {
+			printf("\tCambio de clave: %s a clave: %s...\n", claveAnterior,
+					claveActual);
+			tamanioParcial = 0;
+		}
+
+		tamanioParcial = tamanioParcial + entradaActual->tamanioValor;
+		printf("Tamanio parcial: %d. Mayor tamanio: %d\n", tamanioParcial,
+				mayorTamanio);
+
+		if (tamanioParcial > mayorTamanio) {
+			printf("\tNueva clave con mayor valor encontrada: %s\n",
+					claveActual);
+			list_clean(clavesConMayorValor);
+			printf("\t\tClean de lista efectuado.\n");
+
+			char * item = malloc(strlen(claveActual));
+			strcpy(item, claveActual);
+
+			printf("\t\tAgregando nueva clave de mayor valor: %s\n", item);
+			list_add(clavesConMayorValor, item);
+
+			free(item);
+
+			mayorTamanio = tamanioParcial;
+
+		} else {
+			if (tamanioParcial == mayorTamanio) {
+				char * item = malloc(strlen(claveActual));
+				strcpy(item, claveActual);
+				printf(
+						"\tAgregando otra clave ya que tienen mismo tamanio maximo: %s\n",
+						item);
+
+				list_add(clavesConMayorValor, item);
+
+				free(item);
+
+			}
+		}
+
+		strcpy(claveAnterior, claveActual);
+	}
+
+	printf("Devolviendo claves con mayor valor...\n");
+
+	for (int i = 0; i < list_size(clavesConMayorValor); i++) {
+		printf("\tClave: %s\n", (char *) list_get(clavesConMayorValor, i));
+	}
+
+	return clavesConMayorValor;
+}
+
 t_indice_entrada * aplicarAlgoritmoDeReemplazo(char clave[40], char * valor) {
 	printf("Aplicando algoritmo de reemplazo: %s\n", ALGORITMO_DE_REEMPLAZO);
 
@@ -328,6 +497,7 @@ t_indice_entrada * aplicarAlgoritmoDeReemplazo(char clave[40], char * valor) {
 
 		printf("Clave a ser reemplazada: %s\n", claveAReemplazar);
 
+		// TODO: Eliminar los elementos de la lista destruida
 		list_destroy(listaAux);
 
 		t_list * indicesQueContienenClave = obtenerIndicesDeClave(
@@ -339,7 +509,34 @@ t_indice_entrada * aplicarAlgoritmoDeReemplazo(char clave[40], char * valor) {
 				entradaBase->numeroEntrada);
 
 	} else if (strcmp(ALGORITMO_DE_REEMPLAZO, "BSU") == 0) {
-		printf("Algoritmo BSU aun no desarrollado\n");
+
+		t_list * claves = obtenerClavesDeMayorEspacioUtilizado();
+
+		// Compruebo que no haya empates en el algoritmo
+		if (list_size(claves) == 1) {
+			// char claveAReemplazar[40] = list_get(claves, 0);
+			char * claveAReemplazar = list_get(claves, 0);
+			printf("Clave a ser reemplazada: %s\n", claveAReemplazar);
+
+			t_list * indicesQueContienenClave = obtenerIndicesDeClave(
+					claveAReemplazar);
+
+			t_indice_entrada * entradaBase = list_get(indicesQueContienenClave,
+					0);
+
+			indiceEntrada = guardarIndiceAtomicoEnTabla(clave, valor,
+					entradaBase->numeroEntrada);
+		} else {
+			// TODO: Modularizar el algoritmo circular
+			printf(
+					"Hay empate con el algoritmo BSU. Ejecutando algoritmo desempatador (CIRC)...\n");
+
+			numeroEntrada = 0;
+			printf("El puntero fue posicionado en la entrada: %d\n",
+					numeroEntrada);
+			indiceEntrada = guardarIndiceAtomicoEnTabla(clave, valor,
+					numeroEntrada);
+		}
 	}
 
 	return indiceEntrada;
@@ -416,15 +613,54 @@ void actualizarEntradasConNuevoValor(char clave[40], char * valor) {
 	t_indice_entrada * indiceBase = list_get(indices, 0);
 	eliminarEntradasAsociadasAClave(clave);
 
-	// Me guardo el numero de entrada para no perderlo al guardar claveValor
+// Me guardo el numero de entrada para no perderlo al guardar claveValor
 	int nroEntradaAux = numeroEntrada;
 
-	// Seteo el numero de entrada con el de las claves ya existentes.
+// Seteo el numero de entrada con el de las claves ya existentes.
 	numeroEntrada = indiceBase->numeroEntrada;
 	guardarClaveValor(clave, valor);
 
-	// Recupero el numero de entrada
+// Recupero el numero de entrada
 	numeroEntrada = nroEntradaAux;
+}
+
+_Bool hayEntradasContiguasDisponibles(int cantRequerida) {
+
+	printf("Obteniendo mayor cantidad de entradas contiguas disponibles...\n");
+	int mayorCantDeEntradasContiguasDisp = 0;
+	int contAux = 0;
+
+	for (int i = 0; i < configTablaEntradas->cantTotalEntradas; i++) {
+		_Bool entradaLibre = entradaExistenteEnIndice(i);
+		// printf("\t\tEntrada [%d] ocupada: %d\n", i, entradaLibre);
+		if (!entradaLibre) {
+			// printf("\t\tIncrementando contador auxiliar..\n");
+			contAux++;
+			if (i == (configTablaEntradas->cantTotalEntradas - 1)) {
+				// printf("\t\tUltima entrada...\n");
+				mayorCantDeEntradasContiguasDisp = contAux;
+				nroEntradaBaseAux = i + 1;
+			}
+		} else {
+			contAux = 0;
+			if (contAux > mayorCantDeEntradasContiguasDisp) {
+				mayorCantDeEntradasContiguasDisp = contAux;
+				nroEntradaBaseAux = i + 1;
+			}
+		}
+
+	}
+
+	nroEntradaBaseAux = nroEntradaBaseAux - mayorCantDeEntradasContiguasDisp;
+
+	printf(
+			"Numero de entrada donde se debe guardar el proximo indice NO atomico: %d\n",
+			nroEntradaBaseAux);
+
+	printf("\tMayor cantidad de entradas contiguas disponibles: %d\n",
+			mayorCantDeEntradasContiguasDisp);
+
+	return mayorCantDeEntradasContiguasDisp >= cantRequerida;
 }
 
 void guardarClaveValor(char clave[40], char * valor) {
@@ -450,6 +686,8 @@ void guardarClaveValor(char clave[40], char * valor) {
 		}
 
 		actualizarNroDeOperacion(indicesQueContienenClave);
+
+		respuestaParaCoordinador = EXITO_I;
 	} else {
 		printf("La clave no existe... guardar...\n");
 
@@ -463,22 +701,46 @@ void guardarClaveValor(char clave[40], char * valor) {
 
 			if (entradasDisponibles >= entradasNecesariasParaGuardarValor) {
 
-				t_indice_entrada * indiceBase = guardarIndiceNoAtomicoEnTabla(
-						clave, valor, numeroEntrada);
+				if (hayEntradasContiguasDisponibles(
+						entradasNecesariasParaGuardarValor)) {
 
-				numeroEntrada = numeroEntrada
-						+ entradasNecesariasParaGuardarValor;
+					printf("No es necesario compactar tabla de entradas...\n");
 
-				// guardarValorEnEntrada(sentenciaRecibida->valor,	indiceEntrada->puntero);
+					if (numeroEntrada
+							>= configTablaEntradas->cantTotalEntradas) {
 
-				printf("Guardando valor: %s en puntero: %p...\n", valor,
-						indiceBase->puntero);
-				memcpy(indiceBase->puntero, valor, strlen(valor));
+						numeroEntrada = nroEntradaBaseAux;
+						printf("Valor de numeroEntrada: %d. El aux: %d\n",
+								numeroEntrada, nroEntradaBaseAux);
+					}
 
-				printf("Valor guardado: %s\n", indiceBase->puntero);
+					t_indice_entrada * indiceBase =
+							guardarIndiceNoAtomicoEnTabla(clave, valor,
+									numeroEntrada);
+
+					numeroEntrada = numeroEntrada
+							+ entradasNecesariasParaGuardarValor;
+
+					// guardarValorEnEntrada(sentenciaRecibida->valor,	indiceEntrada->puntero);
+
+					printf("Guardando valor: %s en puntero: %p...\n", valor,
+							indiceBase->puntero);
+					memcpy(indiceBase->puntero, valor, strlen(valor));
+
+					printf("Valor guardado: %s\n", indiceBase->puntero);
+
+					respuestaParaCoordinador = EXITO_I;
+				} else {
+
+					printf(
+							"Es necesario compactar... Enviando solicitud al Coordinador...\n");
+					respuestaParaCoordinador = COMPACTAR;
+
+				}
 
 			} else {
 				printf("No hay mas lugar para guardar un valor NO atomico.\n");
+				respuestaParaCoordinador = ERROR_I;
 				//TODO: Devolver un error al coordinador
 			}
 
@@ -510,12 +772,12 @@ void guardarClaveValor(char clave[40], char * valor) {
 			memcpy(indiceEntrada->puntero, valor, strlen(valor));
 
 			printf("Valor guardado: %s\n", indiceEntrada->puntero);
+
+			respuestaParaCoordinador = EXITO_I;
 		}
 
 		imprimirTablaEntradas();
 
-		printf(
-				"TODO: Se supera la cantidad maxima de entradas definida por el coordinador. Se requiere reemplazar o compactar\n");
 	}
 }
 
@@ -532,24 +794,6 @@ void make_directory(const char* name) {
 				"No se puede crear el directorio... o ya existe...\t check = %d\n",
 				check);
 	}
-}
-
-char * obtenerPathArchivo(char clave[40]) {
-	char * puntoDeMontaje = strdup(PUNTO_DE_MONTAJE);
-	printf("Directorio donde se guardara el archivo: %s\n", puntoDeMontaje);
-
-	char * archivo;
-	archivo = string_new();
-	string_append(&archivo, clave);
-	string_append(&archivo, ".txt");
-	printf("Nombre del archivo que se creara: %s\n", archivo);
-
-	char * path = string_new();
-	string_append(&path, puntoDeMontaje);
-	string_append(&path, archivo);
-	printf("Path del archivo a crear: %s\n", path);
-
-	return path;
 }
 
 size_t getFileSize(const char* filename) {
@@ -571,39 +815,19 @@ void grabarArchivoPorPrimeraVez(int fd, char * valor, int tamanio) {
 	write(fd, valor, tamanio);
 }
 
-void recuperarClave(char clave[40]) {
-	printf("Clave a recuperar: %s\n", clave);
+void obtenerValorAsociadoAClave(char clave[40]) {
+	printf("Obteniendo valor asociado a la clave: %s...\n", clave);
+	t_list * listaIndices = obtenerIndicesDeClave(clave);
+	int tamanioValor = obtenerTamanioTotalDeValorGuardado(listaIndices);
+	t_indice_entrada * indiceBase = list_get(listaIndices, 0);
 
-	char * path = obtenerPathArchivo(clave);
+	// Desalojo memoria reservada para la variable global y vuelvo a alocar el nuevo espacio necesario
+	free(valorConsultado);
+	valorConsultado = malloc(tamanioValor);
 
-	int permisos = 0664;
-	int flags = O_RDONLY;
+	valorConsultado = obtenerValorCompleto(indiceBase->puntero, tamanioValor);
 
-	int fileDescriptor;
-	if ((fileDescriptor = open(path, flags, permisos)) < 0) {
-		printf("No se pudo crear el archivo: %s\n", path);
-		printf("\tFile Descriptor: %d\n", fileDescriptor);
-	} else {
-		printf("File Descriptor: %d\n", fileDescriptor);
-
-		char * valor = malloc(PACKAGESIZE);
-
-		int tamanioValor = read(fileDescriptor, valor, PACKAGESIZE);
-
-		printf("Valor recuperado: %s\n", valor);
-		printf("Tamaño del Valor recuperado: %d\n", tamanioValor);
-
-		guardarClaveValor(clave, valor);
-
-		free(valor);
-
-		printf("Cerrando el fileDescriptor...\n");
-		if (close(fileDescriptor) == 0) {
-			printf("\tArchivo cerrado correctamente.\n");
-		} else {
-			printf("\tError en el cerrado del archivo.\n");
-		}
-	}
+	printf("Valor copiado a variable global: %s\n", valorConsultado);
 }
 
 void realizarStoreDeClave(char clave[40]) {
@@ -624,65 +848,79 @@ void realizarStoreDeClave(char clave[40]) {
 
 	t_list * indices = obtenerIndicesDeClave(clave);
 
-	actualizarNroDeOperacion(indices);
+	if (list_size(indices) > 0) {
+		if (pthread_self() == threadId[0]) {
+			// En caso de ser el hilo DUMP, no quiero actualizar operacion
+			actualizarNroDeOperacion(indices);
 
-	imprimirTablaEntradas();
-
-	t_indice_entrada * primerEntrada = list_get(indices, 0);
-
-	int tamanioValorCompleto = obtenerTamanioTotalDeValorGuardado(indices);
-	printf("Tamaño del valor guardado: %d\n", tamanioValorCompleto);
-
-	char * valorCompleto = obtenerValorCompleto(primerEntrada->puntero,
-			tamanioValorCompleto);
-	printf("El valor completo es: %s\n", valorCompleto);
-
-	grabarArchivoPorPrimeraVez(fileDescriptor, valorCompleto,
-			tamanioValorCompleto);
-
-	char * punteroDeArchivo;
-
-//  ACA APLICAR EL APPEND PARA MANEJAR LA VARIACION DEL TAMAÑO DEL FD
-	if ((punteroDeArchivo = mmap(0, tamanioValorCompleto, permisos,
-	MAP_SHARED, fileDescriptor, 0)) == (caddr_t) -1) {
-		printf("mmap error for output\n");
-	}
-
-//	punteroDeArchivo = append(fileDescriptor, valor, tamanioDelValor, void *map, size_t len);
-
-	if (punteroDeArchivo != MAP_FAILED) {
-		printf("El Mapeo se efectuo correctamente\n\n");
-		printf("Puntero de archivo: %p\n", punteroDeArchivo);
-	} else {
-		printf("Error en el Mapeo de archivo\n");
-		switch (errno) {
-		case EINVAL:
-			printf(
-					"\tEither address was unusable, or inconsistent flags were given.\n");
-			break;
-		case EACCES:
-			printf(
-					"\tfiledes was not open for the type of access specified in protect.\n");
-			break;
-		case ENOMEM:
-			printf(
-					"\tEither there is not enough memory for the operation, or the process is out of address space.\n");
-			break;
-		case ENODEV:
-			printf("\tThis file is of a type that doesn't support mapping.\n");
-			break;
-		case ENOEXEC:
-			printf(
-					"\tThe file is on a filesystem that doesn't support mapping.\n");
-			break;
+			imprimirTablaEntradas();
 		}
+
+		t_indice_entrada * primerEntrada = list_get(indices, 0);
+
+		int tamanioValorCompleto = obtenerTamanioTotalDeValorGuardado(indices);
+		printf("Tamaño del valor guardado: %d\n", tamanioValorCompleto);
+
+		char * valorCompleto = obtenerValorCompleto(primerEntrada->puntero,
+				tamanioValorCompleto);
+		printf("El valor completo es: %s\n", valorCompleto);
+
+		grabarArchivoPorPrimeraVez(fileDescriptor, valorCompleto,
+				tamanioValorCompleto);
+
+		char * punteroDeArchivo;
+
+		//  ACA APLICAR EL APPEND PARA MANEJAR LA VARIACION DEL TAMAÑO DEL FD
+		if ((punteroDeArchivo = mmap(0, tamanioValorCompleto, permisos,
+		MAP_SHARED, fileDescriptor, 0)) == (caddr_t) -1) {
+			printf("mmap error for output\n");
+		}
+
+		//	punteroDeArchivo = append(fileDescriptor, valor, tamanioDelValor, void *map, size_t len);
+
+		if (punteroDeArchivo != MAP_FAILED) {
+			printf("El Mapeo se efectuo correctamente\n\n");
+			// printf("\tPuntero de archivo: %p\n", punteroDeArchivo);
+		} else {
+			printf("Error en el Mapeo de archivo\n");
+			switch (errno) {
+			case EINVAL:
+				printf(
+						"\tEither address was unusable, or inconsistent flags were given.\n");
+				break;
+			case EACCES:
+				printf(
+						"\tfiledes was not open for the type of access specified in protect.\n");
+				break;
+			case ENOMEM:
+				printf(
+						"\tEither there is not enough memory for the operation, or the process is out of address space.\n");
+				break;
+			case ENODEV:
+				printf(
+						"\tThis file is of a type that doesn't support mapping.\n");
+				break;
+			case ENOEXEC:
+				printf(
+						"\tThe file is on a filesystem that doesn't support mapping.\n");
+				break;
+			}
+		}
+
+		if (close(fileDescriptor) == 0) {
+			printf("\tArchivo cerrado correctamente.\n");
+		} else {
+			printf("\tError en el cerrado del archivo.\n");
+		}
+
+		respuestaParaCoordinador = EXITO_I;
+
+	} else {
+		respuestaParaCoordinador = ERROR_I;
+		printf("La clave %s no se encuentra en la tabla de entradas...\n",
+				clave);
 	}
 
-	if (close(fileDescriptor) == 0) {
-		printf("\tArchivo cerrado correctamente.\n");
-	} else {
-		printf("\tError en el cerrado del archivo.\n");
-	}
 }
 
 void grabarArchivo(char clave[40]) {
@@ -712,6 +950,58 @@ void grabarArchivo(char clave[40]) {
 	}
 }
 
+void ordenarAscPorNroDeEntrada(t_list * lista) {
+
+	printf(
+			"Ordenando tabla de entradas por numero de operacion ascendentemente...\n");
+
+	_Bool menorNroDeEntrada(t_indice_entrada * entrada1,
+			t_indice_entrada * entrada2) {
+		return entrada1->numeroEntrada < entrada2->numeroEntrada;
+	}
+
+	list_sort(lista, (void *) menorNroDeEntrada);
+}
+
+void compactarEntradas() {
+
+	int cantEntradasExistentes = list_size(l_indice_entradas);
+
+	printf("La tabla de entradas contiene %d indices...\n",
+			cantEntradasExistentes);
+
+	ordenarAscPorNroDeEntrada(l_indice_entradas);
+
+	imprimirTablaEntradas();
+
+	t_list * listaAuxiliar = list_create();
+	printf("Lista auxiliar creada...\n");
+
+	for (int i = 0; i < cantEntradasExistentes; i++) {
+		t_indice_entrada * entrada = list_get(l_indice_entradas, i);
+		t_indice_entrada * entradaAux = malloc(sizeof(t_indice_entrada));
+
+		entradaAux->numeroEntrada = i;
+		strcpy(entradaAux->clave, entrada->clave);
+		entradaAux->tamanioValor = entrada->tamanioValor;
+		entradaAux->esAtomica = entrada->esAtomica;
+		entradaAux->nroDeOperacion = entrada->nroDeOperacion;
+		entradaAux->puntero = tablaEntradas
+				+ (i * configTablaEntradas->tamanioEntradas);
+
+		list_add(listaAuxiliar, entradaAux);
+
+	}
+
+	list_clean(l_indice_entradas);
+	printf("Clean efectuado correctamente sobre la tabla de entradas...\n");
+
+	printf("Asignando lista auxiliar a la tabla de entradas...\n");
+	list_add_all(l_indice_entradas, listaAuxiliar);
+
+	list_destroy_and_destroy_elements(listaAuxiliar, (void*) free);
+}
+
 void interpretarOperacionCoordinador(t_content_header * header,
 		int socketCoordinador) {
 
@@ -734,7 +1024,7 @@ void interpretarOperacionCoordinador(t_content_header * header,
 		obtenerClavesARecuperar(socketCoordinador, header->cantidad_a_leer);
 
 		enviarResultadoSentencia(socketCoordinador,
-				COORDINADOR_INSTANCIA_RECUPERAR_CLAVES); // TODO: Añadir al enum el keyword reconexion= 3
+		COORDINADOR_INSTANCIA_RECUPERAR_CLAVES);
 
 		break;
 
@@ -745,12 +1035,14 @@ void interpretarOperacionCoordinador(t_content_header * header,
 		switch (sentenciaRecibida->keyword) {
 
 		case OBTENER_VALOR:
+			obtenerValorAsociadoAClave(sentenciaRecibida->clave);
+
+			enviarResultadoSentencia(socketCoordinador, OBTENER_VALOR);
 			break;
 
 		case SET_:
 			guardarClaveValor(sentenciaRecibida->clave,
 					sentenciaRecibida->valor);
-			imprimirTablaEntradas();
 			enviarResultadoSentencia(socketCoordinador, SET_);
 			break;
 
@@ -758,7 +1050,6 @@ void interpretarOperacionCoordinador(t_content_header * header,
 			realizarStoreDeClave(sentenciaRecibida->clave);
 			enviarResultadoSentencia(socketCoordinador, STORE_);
 			break;
-
 		}
 
 		break;
@@ -768,6 +1059,43 @@ void interpretarOperacionCoordinador(t_content_header * header,
 		enviarHeader(socketCoordinador, instancia, coordinador,
 		INSTANCIA_COORDINADOR_CONFIRMA_CONEXION_ACTIVA, 0);
 		break;
+
+	case COORDINADOR_INSTANCIA_COMPACTAR:
+		printf("Iniciando proceso de Compactacion...\n");
+
+		// Esta linea se debe eliminar luego de implementar compactar()
+		// respuestaParaCoordinador = EXITO_I;
+
+		compactarEntradas();
+
+		imprimirTablaEntradas();
+
+		enviarResultadoSentencia(socketCoordinador,
+		COORDINADOR_INSTANCIA_COMPACTAR);
+
+	}
+}
+
+void ejecutarDump() {
+	void storearClave(t_indice_entrada * entrada) {
+		realizarStoreDeClave(entrada->clave);
+	}
+
+	list_iterate(l_indice_entradas, (void*) storearClave);
+}
+
+void iniciarDump() {
+	while (1) {
+		usleep(INTERVALO_DUMP * 1000000); // El producto es necesario ya que usleep recibe microsegundos como parametro
+		printf("#################################################\n");
+		printf("#           Comenzando proceso Dump...          #\n");
+		printf("#################################################\n");
+
+		ejecutarDump();
+
+		printf("#################################################\n");
+		printf("#          Dump realizado correctamente.        #\n");
+		printf("#################################################\n");
 	}
 }
 
@@ -778,6 +1106,12 @@ int main(int argc, char **argv) {
 	int socketCoordinador = conexionConCoordinador();
 
 	enviarNombreInstanciaACoordinador(socketCoordinador);
+
+	int err = pthread_create(&(threadId[1]), NULL, (void *) iniciarDump, NULL);
+	if (err != 0)
+		printf("No se pudo crear el thread para DUMP: [%s]\n", strerror(err));
+	else
+		printf("Thread para DUMP creado correctamente\n");
 
 	t_content_header * header = malloc(sizeof(t_content_header));
 	int status = 1;
@@ -797,6 +1131,8 @@ int main(int argc, char **argv) {
 		}
 		status = interpretarHeader(socketCoordinador, header);
 	}
+
+	pthread_cancel(threadId[1]);
 
 	close(socketCoordinador);
 

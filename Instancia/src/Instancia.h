@@ -12,6 +12,7 @@
 #include <stdlib.h>
 #include <redis_lib.h>
 #include <stdio.h>
+#include <unistd.h> // Para el uso de usleep()
 #include <string.h>
 #include <arpa/inet.h>
 #include <sys/socket.h>
@@ -22,6 +23,7 @@
 #include <sys/types.h>
 #include <errno.h>
 #include <fcntl.h>
+#include <pthread.h>
 
 #include "CargarArchivoDeConfiguracion.c"
 
@@ -32,18 +34,18 @@
 #define COORDINADOR_INSTANCIA_CONFIG_INICIAL 2
 #define COORDINADOR_INSTANCIA_SENTENCIA 3
 #define INSTANCIA_COORDINADOR_RESPUESTA_SENTENCIA 4
-#define COORDINADOR_INSTANCIA_RECONEXION 5
 #define COORDINADOR_INSTANCIA_RECUPERAR_CLAVES 5
+#define COORDINADOR_INSTANCIA_COMPACTAR 6
 
 #define COORDINADOR_INSTANCIA_COMPROBAR_CONEXION -1
 #define INSTANCIA_COORDINADOR_CONFIRMA_CONEXION_ACTIVA -1
 
 // struct para el envio de nombre de Instancia al Coordinador
-typedef struct{
+typedef struct {
 	char nombreInstancia[40];
 } __attribute__((packed)) t_info_instancia;
 
-typedef struct{
+typedef struct {
 		int keyword;
 		char clave[40];
 		char* valor;
@@ -56,7 +58,7 @@ t_configTablaEntradas * configTablaEntradas;
 t_list * l_indice_entradas;
 
 // Estructura de Tabla de indice de Entradas
-typedef struct{
+typedef struct {
 	int numeroEntrada;
 	char clave[40];
 	int tamanioValor;
@@ -65,9 +67,20 @@ typedef struct{
 	char* puntero;
 } __attribute__((packed)) t_indice_entrada;
 
+// Cantidad de threads requeridos: principal + auxiliar para efectuar DUMP
+pthread_t threadId[2];
+
 int numeroEntrada = 0;
 int contadorOperacion = 0;
+int nroEntradaBaseAux = 0;
+
+int respuestaParaCoordinador;
+char * valorConsultado;
 
 char * tablaEntradas;
+
+// Funciones utilizadas
+
+void guardarClaveValor(char clave[40], char * valor);
 
 #endif /* SRC_UTILIDADES_H_ */
