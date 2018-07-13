@@ -86,7 +86,7 @@ rta_envio enviarSentenciaInstancia(t_sentencia * sentencia){
 		int header_envio = send(proxima->socket,header,sizeof(t_content_header),0);
 		int sentencia_envio = send(proxima->socket, s_sin_p, sizeof(t_esi_operacion_sin_puntero),0);
 		if (sentencia->keyword == SET_){
-			int valor_envio = send(proxima->socket,sentencia->valor,strlen(sentencia->valor),0);
+			int valor_envio = send(proxima->socket,sentencia->valor,strlen(sentencia->valor)+1,0);
 		}
 
 		log_info(logger,"Enviada sentencia a instancia");
