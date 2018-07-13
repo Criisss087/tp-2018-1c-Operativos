@@ -38,7 +38,7 @@ void enviarNombreInstanciaACoordinador(int socketCoordinador) {
 	t_info_instancia * infoInstancia = malloc(sizeof(t_info_instancia));
 
 	memcpy(infoInstancia->nombreInstancia, NOMBRE_INSTANCIA,
-			strlen(NOMBRE_INSTANCIA));
+			strlen(NOMBRE_INSTANCIA)+1);
 
 	printf("Enviando Informacion inicial de Instancia...\n");
 	int resultado = send(socketCoordinador, infoInstancia,
