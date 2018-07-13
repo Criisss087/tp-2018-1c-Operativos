@@ -377,6 +377,7 @@ int puedoEjecutarSentencia(t_sentencia * sentencia){
 	if(list_size(lista_instancias) == 0){
 		return ABORTAR;
 	}
+
 	t_clave * clave_obj = guardarClaveInternamente(sentencia->clave,sentencia->keyword);
 
 	if (sentencia->keyword == SET_){
@@ -698,40 +699,26 @@ int main(int argc, char **argv){
 
 	armar_hilo_planificador_status();
 
-	struct addrinfo *serverInfo = crear_addrinfo();
-	int listenningSocket = socket(serverInfo->ai_family, serverInfo->ai_socktype, serverInfo->ai_protocol);
+	int listenning_socket = listenningSocket(PUERTO);
 
-	logger_coordinador(loguear, l_info, "Socket de escucha creado %d \n", listenningSocket);
-
-    // Las siguientes dos lineas sirven para no lockear el address
-	int activado = 1;
-	setsockopt(listenningSocket, SOL_SOCKET, SO_REUSEADDR, &activado, sizeof(activado));
-
-    bind(listenningSocket,serverInfo->ai_addr, serverInfo->ai_addrlen);
-
-    logger_coordinador(loguear, l_info, "Socket de escucha bindeado \n");
-
-    freeaddrinfo(serverInfo);
-
-    logger_coordinador(escribir_loguear, l_info, "Escuchando... \n");
-
-    listen(listenningSocket, BACKLOG);
-
-    struct sockaddr_in addr;// Esta estructura contendra los datos de la conexion del cliente. IP, puerto, etc.
-    socklen_t addrlen = sizeof(addr);
+	logger_coordinador(escribir_loguear, l_warning, "\nEscuchando en socket principal, %d\n", listenning_socket);
 
 	while (GLOBAL_SEGUIR){
+		struct sockaddr_in client_addr;
 
-		logger_coordinador(escribir_loguear, l_info, "\nEsperando conexiones...\n");
+		//Setea la direccion en 0
+		memset(&client_addr, 0, sizeof(client_addr));
+		socklen_t client_len = sizeof(client_addr);
 
-    	int socketCliente = accept(listenningSocket, (struct sockaddr *) &addr, &addrlen);
+		//Acepta la nueva conexion
+		int socketCliente = accept(listenning_socket, (struct sockaddr *)&client_addr, &client_len);
 
-    	logger_coordinador(escribir_loguear, l_info, "Conexión recibida - Accept: %d \n",socketCliente);
+		logger_coordinador(escribir_loguear, l_warning, "\nAceptado socket cliente, %d\n", socketCliente);
 
 		crear_hilo_conexion(socketCliente, escucharMensajesEntrantes);
 	}
 
-    close(listenningSocket);
+    close(listenning_socket);
 
     finalizar_coordinador();
     return 0;
