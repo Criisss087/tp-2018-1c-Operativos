@@ -124,85 +124,95 @@ void atender_comando_status(){
 	log_info(logger, "Conexión recibida desde el planificador para comando status - Accept: %d ",socketCliente);
 
 	int socket_planif = socketCliente;
-
+	int estado_recv_consulta = 1;
 	t_status_clave_interno * st_clave_interno = NULL;
 
-	while(GLOBAL_SEGUIR){
+	while(GLOBAL_SEGUIR && 0 < estado_recv_consulta){
 		//recv header
 		t_content_header * header_consulta_valor = malloc(sizeof(t_content_header));
-		int estado_recv_consulta = recv(socket_planif,header_consulta_valor,sizeof(t_content_header),0);
+		estado_recv_consulta = recv(socket_planif,header_consulta_valor,sizeof(t_content_header),0);
 		if(estado_recv_consulta < 0)
 		{
-			log_error(logger,"Error al recibir el header de la consulta de status");
+			log_error(logger,"Error al recibir el header de la consulta de status %d", estado_recv_consulta);
 		}
+		else{
+			//En el campo "cantidad_a_leer" me indica la long del nombre de la clave
+				//recv del nombre de la clave
+				char * nombre_clave = malloc(header_consulta_valor->cantidad_a_leer);
 
-		//En el campo "cantidad_a_leer" me indica la long del nombre de la clave
-		//recv del nombre de la clave
-		char * nombre_clave = malloc(header_consulta_valor->cantidad_a_leer);
-
-		int status_recv_clave = recv(socket_planif, nombre_clave, header_consulta_valor->cantidad_a_leer,0);
-		if(status_recv_clave < 0)
-		{
-			log_error(logger,"Error al recibir la clave de la consulta de status");
-		}
-
-		st_clave_interno = buscar_clave(nombre_clave);
-
-		//Devolver rta:
-		t_content_header * header_rta_consulta_status = crear_cabecera_mensaje(coordinador,planificador,PLANIFICADOR_COORDINADOR_CMD_STATUS,sizeof(t_status_clave));
-
-		int rdo_send_h = send(socket_planif, header_rta_consulta_status, sizeof(t_content_header),0);
-		if(rdo_send_h < 0)
-		{
-			log_error(logger,"Error al mandar el header de la consulta de status");
-		}
-
-		//Mandar t_status_clave
-		t_status_clave * st_clave = malloc(sizeof(t_status_clave));
-		st_clave->cod = st_clave_interno->cod;
-		st_clave->tamanio_instancia_nombre = st_clave_interno->tamanio_instancia_nombre;
-		st_clave->tamanio_valor = st_clave_interno->tamanio_valor;
-
-		int rdo_send_st_clave = send(socket_planif, st_clave, sizeof(t_status_clave),0);
-		if(rdo_send_st_clave < 0)
-		{
-			log_error(logger,"Error al mandar los datos del resultado de la consulta status");
-		}
-
-		//Ahora mando valor y nombre instancia, en ese orden.
-		if (st_clave->cod != COORDINADOR_SIN_CLAVE){
-			//Se envía siempre el nombre de la instancia para los siguientes casos:
-			//INSTANCIA_SIMULADA, INSTANCIA_SIN_CLAVE, CORRECTO_CONSULTA_VALOR, INSTANCIA_CAIDA
-			log_info(logger,"nombre instancia %s",st_clave_interno->nombre_instancia);
-			int rdo_send_instancia = send(socket_planif, st_clave_interno->nombre_instancia, st_clave_interno->tamanio_instancia_nombre, 0);
-			if(rdo_send_instancia < 0)
-			{
-				log_error(logger,"Error al mandar el nombre de la instancia");
-			}
-
-			//Si es caso feliz, se envía el valor.
-			if (st_clave->cod == CORRECTO_CONSULTA_VALOR){
-				log_info(logger,"valor %s",st_clave_interno->valor);
-				int rdo_send_valor = send(socket_planif, st_clave_interno->valor, st_clave_interno->tamanio_valor, 0);
-				if(rdo_send_valor < 0)
+				int status_recv_clave = recv(socket_planif, nombre_clave, header_consulta_valor->cantidad_a_leer,0);
+				if(status_recv_clave <= 0)
 				{
-					log_error(logger,"Error al mandar el valor de la clave");
+					log_error(logger,"Error al recibir la clave de la consulta de status");
+				}else{
+					st_clave_interno = buscar_clave(nombre_clave);
+
+					//Devolver rta:
+					t_content_header * header_rta_consulta_status = crear_cabecera_mensaje(coordinador,planificador,PLANIFICADOR_COORDINADOR_CMD_STATUS,sizeof(t_status_clave));
+
+					int rdo_send_h = send(socket_planif, header_rta_consulta_status, sizeof(t_content_header),0);
+					if(rdo_send_h < 0)
+					{
+						log_error(logger,"Error al mandar el header de la consulta de status");
+					}else{
+						//Mandar t_status_clave
+						t_status_clave * st_clave = malloc(sizeof(t_status_clave));
+						st_clave->cod = st_clave_interno->cod;
+						st_clave->tamanio_instancia_nombre = st_clave_interno->tamanio_instancia_nombre;
+						st_clave->tamanio_valor = st_clave_interno->tamanio_valor;
+
+						int rdo_send_st_clave = send(socket_planif, st_clave, sizeof(t_status_clave),0);
+						if(rdo_send_st_clave < 0)
+						{
+							log_error(logger,"Error al mandar los datos del resultado de la consulta status");
+						}else{
+							//Ahora mando valor y nombre instancia, en ese orden.
+							if (st_clave->cod != COORDINADOR_SIN_CLAVE){
+								//Se envía siempre el nombre de la instancia para los siguientes casos:
+								//INSTANCIA_SIMULADA, INSTANCIA_SIN_CLAVE, CORRECTO_CONSULTA_VALOR, INSTANCIA_CAIDA
+								log_info(logger,"nombre instancia %s",st_clave_interno->nombre_instancia);
+								int rdo_send_instancia = send(socket_planif, st_clave_interno->nombre_instancia, st_clave_interno->tamanio_instancia_nombre, 0);
+								if(rdo_send_instancia < 0)
+								{
+									log_error(logger,"Error al mandar el nombre de la instancia");
+								}
+								else{
+									//Si es caso feliz, se envía el valor.
+									if (st_clave->cod == CORRECTO_CONSULTA_VALOR){
+										log_info(logger,"valor %s",st_clave_interno->valor);
+										int rdo_send_valor = send(socket_planif, st_clave_interno->valor, st_clave_interno->tamanio_valor, 0);
+										if(rdo_send_valor < 0)
+										{
+											log_error(logger,"Error al mandar el valor de la clave");
+										}
+
+									}
+								}
+
+
+							}
+
+							free(st_clave);
+							free(st_clave_interno);
+							free(header_consulta_valor);
+							destruir_cabecera_mensaje(header_rta_consulta_status);
+							free(nombre_clave);
+						}
+
+
+					}
+
+
 				}
 
-			}
+
 		}
 
-		free(st_clave);
-		free(st_clave_interno);
-		free(header_consulta_valor);
-		destruir_cabecera_mensaje(header_rta_consulta_status);
-		free(nombre_clave);
 
 	}
+	log_info(logger,"Fin hilo status");
+
 	close(socket_planif);
-	log_destroy(logger);
-
-
 }
 
 void armar_hilo_planificador_status(){
