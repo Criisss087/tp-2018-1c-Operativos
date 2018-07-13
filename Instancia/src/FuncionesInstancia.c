@@ -137,7 +137,7 @@ int obtenerTamanioTotalDeValorGuardado(t_list * listaDeIndices) {
 	printf("Obteniendo tamanio total de valor referenciado en entradas: %d\n",
 			tamanioTotal);
 
-	return tamanioTotal;
+	return tamanioTotal +1;
 
 }
 
