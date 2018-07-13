@@ -334,7 +334,7 @@ void loopInstancia(t_instancia * inst, char * nombre){
 	//wait instancia semaforo
 	inst->flag_thread = 1;
 	int status = 1;
-	while (status){
+	while (status && inst->flag_thread){
 		sem_wait(&semInstancias);
 		//enviar orden de compactación
 		if (chequearConectividadProceso(inst) == CONECTADO){
