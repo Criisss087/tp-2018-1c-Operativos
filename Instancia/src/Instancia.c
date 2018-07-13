@@ -57,11 +57,11 @@ void enviarResultadoSentencia(int socketCoordinador, int keyword) {
 
 	case OBTENER_VALOR:
 		enviarHeader(socketCoordinador, instancia, coordinador,
-		INSTANCIA_COORDINADOR_RESPUESTA_SENTENCIA, strlen(valorConsultado));
+		INSTANCIA_COORDINADOR_RESPUESTA_SENTENCIA, strlen(valorConsultado)+1);
 
 		printf("Enviando Valor asociado a la clave consultada...\n");
 		resultado = send(socketCoordinador, valorConsultado,
-				strlen(valorConsultado), 0);
+				strlen(valorConsultado)+1, 0);
 
 		if (resultado == -1) {
 			printf("Error en el send");
