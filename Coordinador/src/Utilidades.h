@@ -157,6 +157,7 @@ t_log * logger;
 t_log * logger_operaciones;
 t_list * lista_instancias;
 t_list * lista_claves;
+
 int * rta1; //la hago global para poder hacer el free
 int id_counter = 0;
 

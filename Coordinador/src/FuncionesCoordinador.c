@@ -191,6 +191,7 @@ void destruir_lista_clave(t_clave * clave){
 void liberar_listas(){
 	list_destroy_and_destroy_elements(lista_instancias, (void*)destruir_lista_instancia);
 	list_destroy_and_destroy_elements(lista_claves, (void*)destruir_lista_clave);
+
 }
 
 void liberar_loggers(){

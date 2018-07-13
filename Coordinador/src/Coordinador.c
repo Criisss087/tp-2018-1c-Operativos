@@ -526,10 +526,6 @@ void proseguirOperacionNormal(int socketCliente, t_sentencia * sentencia_con_pun
 		devolverResultadoAESI(socketCliente, rdo_ejecucion_instancia, sentencia_con_punteros->pid,instancia);
 		break;
 	}
-
-	free(rdo_ejecucion_instancia.instancia->nombre);
-	free(rdo_ejecucion_instancia.instancia);
-	free(rdo_ejecucion_instancia.valor);
 }
 
 void interpretarOperacionESI(t_content_header * hd, int socketCliente){
@@ -669,7 +665,6 @@ void *escucharMensajesEntrantes(int socketCliente){
     		logger_coordinador(escribir_loguear,l_info, "Interpretando header... \n");
     		interpretarHeader(header, socketCliente);
     	};
-
    	}
 
     logger_coordinador(escribir_loguear, l_info, "\nCerrada \n");
