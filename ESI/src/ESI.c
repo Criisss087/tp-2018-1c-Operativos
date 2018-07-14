@@ -291,7 +291,7 @@ void recibir_orden_planif_para_comenzar(t_content_header * header){
 
 	switch(header->operacion){
 		case RECIBIR_ORDEN_EJECUCION:
-			printf("Orden recibida, comienzo el parseo. \n");
+			printf("Orden recibida, comienzo. \n");
 			break;
 		case RECIBIR_KILL_PLANIF:
 			printf("Me mataron desde el planificador!. \n");
@@ -456,35 +456,43 @@ void enviar_al_planificador_la_rta_del_coordinador(t_content_header * header){
 
 }
 
-void esperar_orden_planificador_para_finalizar(void){
+void esperar_orden_planificador_para_finalizar(int esperar){
 
-	printf("Esperando orden del planificador para finalizar...\n");
+	t_content_header* content_header;
 
-	t_content_header* content_header = malloc(sizeof(t_content_header));
-	int read_size = recv(serverPlanif, content_header, sizeof(t_content_header), (int)NULL);
+	if(esperar){
 
-	if(read_size < 0){
-		printf("Error en el recv de la orden del planificador. \n");
-		finalizar_esi();
-		free(content_header);
-		exit(EXIT_FAILURE);
+		printf("Esperando orden del planificador para finalizar...\n");
+
+		content_header = malloc(sizeof(t_content_header));
+		int read_size = recv(serverPlanif, content_header, sizeof(t_content_header), (int)NULL);
+
+		if(read_size < 0){
+			printf("Error en el recv de la orden del planificador. \n");
+			finalizar_esi();
+			free(content_header);
+			exit(EXIT_FAILURE);
+		}
+
+
+		confirmacion = malloc(sizeof(t_confirmacion_sentencia));
+		read_size = recv(serverPlanif, confirmacion, sizeof(t_confirmacion_sentencia), 0);
+
+		if(read_size < 0){
+			printf("Error en el recv del contenido de la orden del planificador. \n");
+			finalizar_esi();
+			free(content_header);
+			exit(EXIT_FAILURE);
+		}
+
+		if(content_header->operacion == RECIBIR_ORDEN_EJECUCION)
+			esperar = 0;
+
+		destruir_cabecera_mensaje(content_header);
 	}
 
-	//mostrar_header(content_header);
-
-	confirmacion = malloc(sizeof(t_confirmacion_sentencia));
-	read_size = recv(serverPlanif, confirmacion, sizeof(t_confirmacion_sentencia), 0);
-
-	if(read_size < 0){
-		printf("Error en el recv del contenido de la orden del planificador. \n");
-		finalizar_esi();
-		free(content_header);
-		exit(EXIT_FAILURE);
-	}
-
-	if(content_header->operacion == RECIBIR_ORDEN_EJECUCION){
-		printf("Orden recibida, finaliza el proceso \n");
-		free(content_header);
+	if(!esperar){
+		printf("Finaliza el proceso \n");
 
 		content_header = crear_cabecera_mensaje(esi, planificador, ENVIAR_RESULTADO_PLANIF , sizeof(t_confirmacion_sentencia));
 		//mostrar_header(content_header);
@@ -495,7 +503,6 @@ void esperar_orden_planificador_para_finalizar(void){
 		if(finalice_lectura < 0){
 			printf("Error en el send del header de finalice_lectura al planificador. \n");
 			finalizar_esi();
-			destruir_cabecera_mensaje(content_header);
 			exit(EXIT_FAILURE);
 		}
 
@@ -506,12 +513,9 @@ void esperar_orden_planificador_para_finalizar(void){
 		if(finalice_lectura < 0){
 			printf("Error en el send del contenido de finalice_lectura al planificador. \n");
 			finalizar_esi();
-			destruir_cabecera_mensaje(content_header);
 			exit(EXIT_FAILURE);
 		}
-
 		destruir_cabecera_mensaje(content_header);
-
 		printf("Fin de ejecucion por alcanzar el fin del archivo \n");
 	}
 
@@ -615,12 +619,15 @@ int main(int argc, char **argv){
 				free(linea_a_parsear);
 				linea_a_parsear = NULL;
 				read = getline(&linea_a_parsear, &direccion_de_la_linea_a_parsear, archivo_a_leer_por_el_ESI);
+
 			}
 
-			/*if(confirmacion->ejec_anterior == 1){
-				//sentencia_anterior = sentencia;
-				//sentencia_actual = sentencia_anterior;
-			}*/
+			if(read == -1){
+				//Se llegó al fin del archivo,
+				//hay que mandar solamente el mensaje de finalizar, sin esperar confirmacion
+				fin_archivo++;
+				break;
+			}
 
 			printf("Ejecutar línea anterior? : %d\n", confirmacion->ejec_anterior);
 			printf("\n");
@@ -648,9 +655,18 @@ int main(int argc, char **argv){
 
 	}//while...
 
-	printf("\n");
 
-	esperar_orden_planificador_para_finalizar();
+	if(fin_archivo)
+	{
+		esperar = 0;
+	}
+	else
+	{
+		esperar++;
+	}
+
+	printf("\n");
+	esperar_orden_planificador_para_finalizar(esperar);
 
 	finalizar_esi();
 

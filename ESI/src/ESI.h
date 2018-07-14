@@ -52,6 +52,8 @@ int serverPlanif;
 t_confirmacion_sentencia * confirmacion;
 char * linea_a_parsear;
 t_esi_operacion parsed;
+int fin_archivo = 0;
+int esperar = 0;
 
 //Configuracion
 char * IP_COORDINADOR;
@@ -75,7 +77,7 @@ void abrir_script(char *path);
 void enviar_linea_parseada_coordinador(t_content_header * header, t_esi_operacion parsed);
 void recibir_respuesta_coordinador(t_content_header * header);
 void enviar_al_planificador_la_rta_del_coordinador(t_content_header * header);
-void esperar_orden_planificador_para_finalizar(void);
+void esperar_orden_planificador_para_finalizar(int esperar);
 void abortar_esi(void);
 
 #endif /* SRC_ESI_H_ */
