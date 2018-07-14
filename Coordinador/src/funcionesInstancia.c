@@ -138,7 +138,7 @@ void actualizarEntradasLibres(char * nombre, int entradas_libres){
 
 	logger_coordinador(loguear, l_warning,"cantidad en instancia: %d\n",getInstanciaByName(nombre)->entradas_libres);
 
-	list_map(lista_instancias,(void *)actualizarEntradasLibresCondicional);
+	list_iterate(lista_instancias,(void *)actualizarEntradasLibresCondicional);
 
 	logger_coordinador(loguear, l_warning,"cantidad en instancia despuesde actualizar: %d\n",getInstanciaByName(nombre)->entradas_libres);
 }
@@ -153,7 +153,7 @@ void actualizarSocketInstancia(char * nombre, int socket){
 
 	logger_coordinador(loguear, l_warning,"socket de instancia: %d\n",getInstanciaByName(nombre)->socket);
 
-	list_map(lista_instancias,(void *)actualizarSocketInstanciaCondicional);
+	list_iterate(lista_instancias,(void *)actualizarSocketInstanciaCondicional);
 
 	logger_coordinador(loguear, l_warning,"sokcet en instancia despuesde actualizar: %d\n",getInstanciaByName(nombre)->socket);
 }

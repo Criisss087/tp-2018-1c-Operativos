@@ -7,6 +7,7 @@
  ============================================================================
  */
 #include "Utilidades.h"
+#include "FuncionesCoordinador.c"
 
 void logger_coordinador(int tipo_esc, int tipo_log, const char* mensaje, ...){
 
@@ -101,6 +102,9 @@ rta_envio enviarSentenciaInstancia(t_sentencia * sentencia){
 		free(proxima);
 		rta.instancia->nombre = strdup(proxima->nombre);
 		rta.cod = ABORTAR;
+
+		list_destroy_and_destroy_elements(instancias_con_clave, (void*)destruir_lista_clave);
+
 		return rta;
 	}
 
@@ -121,6 +125,9 @@ rta_envio enviarSentenciaInstancia(t_sentencia * sentencia){
 		rta.cod = ERROR_I;
 		rta.instancia = NULL;
 		rta.valor = NULL;
+		list_destroy_and_destroy_elements(instancias_con_clave, (void*)destruir_lista_clave);
+		destruir_cabecera_mensaje(header);
+		free(s_sin_p);
 		return rta;
 		}
 	else{
@@ -188,7 +195,7 @@ rta_envio enviarSentenciaInstancia(t_sentencia * sentencia){
 	//NO libero la instancia "proxima" porque apunnta a la lista de instancias. si la libero al estoy borrando de la lista.
 	destruir_cabecera_mensaje(header);
 	free(s_sin_p);
-	list_destroy(instancias_con_clave);
+	list_destroy_and_destroy_elements(instancias_con_clave, (void*)destruir_lista_clave);
 
 	return rta;
 	}
@@ -262,6 +269,7 @@ t_clave * guardarClaveInternamente(char clave[40], int keyword){
 				instanciaDuena = getClaveByName(clave);
 				instanciaDuena->instancia = siguienteInstanciaSegunAlgoritmo(clave,ASIGNAR);
 			}
+			list_destroy_and_destroy_elements(instancias_con_clave, (void*)destruir_lista_clave);
 			return instanciaDuena;
 		}
 		else{
@@ -286,6 +294,8 @@ t_clave * guardarClaveInternamente(char clave[40], int keyword){
 			strncpy(claveObjeto->clave,clave,40);
 
 			list_add(lista_claves,claveObjeto);
+
+			list_destroy_and_destroy_elements(instancias_con_clave, (void*)destruir_lista_clave);
 
 			return claveObjeto;
 		}
@@ -374,8 +384,6 @@ int puedoEjecutarSentencia(t_sentencia * sentencia){
 		return ABORTAR;
 	}
 
-
-
 	t_clave * clave_obj = guardarClaveInternamente(sentencia->clave,sentencia->keyword);
 
 	if (sentencia->keyword == SET_){
@@ -385,9 +393,7 @@ int puedoEjecutarSentencia(t_sentencia * sentencia){
 				eliminarClave(sentencia->clave);
 				return ABORTAR;
 			}
-	//		else return CORRECTO;
 		}
-		//else return CORRECTO;
 	}
 
 	pthread_mutex_lock(&lock_sentencia_global);
@@ -535,6 +541,9 @@ void proseguirOperacionNormal(int socketCliente, t_sentencia * sentencia_con_pun
 		devolverResultadoAESI(socketCliente, rdo_ejecucion_instancia, sentencia_con_punteros->pid,instancia);
 		break;
 	}
+
+	free(rdo_ejecucion_instancia.instancia->nombre);
+	free(rdo_ejecucion_instancia.instancia);
 }
 
 void interpretarOperacionESI(t_content_header * hd, int socketCliente){

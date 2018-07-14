@@ -8,7 +8,6 @@
 #include "funcionesInstancia.c"
 #include "Utilidades.h"
 
-
 void crear_hilo_conexion(int socket, void*funcion_a_ejecutar(int)){
 	pthread_t hilo;
 	pthread_create(&hilo,NULL,(void*)funcion_a_ejecutar,(void*)socket);
