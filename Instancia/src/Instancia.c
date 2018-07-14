@@ -168,6 +168,9 @@ void enviarResultadoSentencia(int socketCoordinador, int keyword) {
 	default:
 		break;
 	}
+
+	if(resultadoAEnviar)
+		free(resultadoAEnviar);
 }
 
 t_configTablaEntradas * obtenerConfigTablaEntradas(int socketCoordinador) {
@@ -1116,8 +1119,9 @@ void iniciarDump() {
 int main(int argc, char **argv) {
 
 	cargarArchivoDeConfig(argv[1]);
+	configurar_signals();
 
-	int socketCoordinador = conexionConCoordinador();
+	socketCoordinador = conexionConCoordinador();
 
 	enviarNombreInstanciaACoordinador(socketCoordinador);
 
@@ -1143,12 +1147,95 @@ int main(int argc, char **argv) {
 					"El codigo de proceso no es correcto o no esta identificado.\n");
 			break;
 		}
+
 		status = interpretarHeader(socketCoordinador, header);
 	}
 
+	free(header);
 	pthread_cancel(threadId[1]);
 
 	close(socketCoordinador);
 
 	return 0;
+}
+
+void configurar_signals(void)
+{
+	struct sigaction signal_struct;
+	signal_struct.sa_handler = captura_sigint;
+	signal_struct.sa_flags   = 0;
+
+	sigemptyset(&signal_struct.sa_mask);
+
+    sigaddset(&signal_struct.sa_mask, SIGINT);
+    if (sigaction(SIGINT, &signal_struct, NULL) < 0)
+    {
+        fprintf(stderr, "sigaction error\n");
+        exit(1);
+    }
+
+}
+
+void captura_sigint(int signo)
+{
+	printf("\n\nSe presinó ctrl+c, son las 3 de la mañana y tengo que hacer mil free's\n\n");
+
+    if(signo == SIGINT)
+    {
+    	finalizar_instancia();
+
+    	exit(EXIT_FAILURE);
+    }
+
+}
+
+void finalizar_instancia(void){
+
+	//Destruyo las configs
+	if(IP_COORDINADOR){
+		free(IP_COORDINADOR);
+		IP_COORDINADOR = NULL;
+	}
+
+	if(PUNTO_DE_MONTAJE){
+		free(PUNTO_DE_MONTAJE);
+		PUNTO_DE_MONTAJE = NULL;
+	}
+
+	if(NOMBRE_INSTANCIA){
+		free(NOMBRE_INSTANCIA);
+		NOMBRE_INSTANCIA = NULL;
+	}
+
+
+	if(ALGORITMO_DE_REEMPLAZO){
+		free(ALGORITMO_DE_REEMPLAZO);
+		ALGORITMO_DE_REEMPLAZO = NULL;
+	}
+
+	destruir_tabla_entradas();
+
+	pthread_cancel(threadId[1]);
+
+	close(socketCoordinador);
+
+}
+
+void destruir_tabla_entradas(void){
+
+	void destruir_indice_entrada(t_indice_entrada * indice_entrada){
+		if(indice_entrada->puntero)
+			free(indice_entrada->puntero);
+
+		free(indice_entrada);
+	}
+
+	list_destroy_and_destroy_elements(l_indice_entradas,(void*)destruir_indice_entrada);
+
+	if(configTablaEntradas)
+		free(configTablaEntradas);
+
+	if(tablaEntradas)
+		free(tablaEntradas);
+
 }
