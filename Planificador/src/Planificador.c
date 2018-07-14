@@ -509,11 +509,6 @@ int recibir_mensaje_esi(t_conexion_esi conexion_esi)
 				confirmar_bloqueo_ejecucion();
 			}
 
-			if(desalojo_en_ejecucion)
-			{
-				confirmar_desalojo_ejecucion();
-			}
-
 			if(bloqueo_por_get)
 			{
 				confirmar_bloqueo_por_get();
@@ -530,6 +525,11 @@ int recibir_mensaje_esi(t_conexion_esi conexion_esi)
 
 			if(kill_en_ejecucion){
 				confirmar_kill_ejecucion();
+			}
+
+			if(desalojo_en_ejecucion)
+			{
+				confirmar_desalojo_ejecucion();
 			}
 
 			// Ordenar ejecutar siguiente sentencia del ESI
@@ -2208,8 +2208,20 @@ int desbloquear_clave(char* clave)
 		esi_a_desbloquear->tiempo_espera = 0;
 		estimar_esi(esi_a_desbloquear);
 
+		if(!strcmp(config.algoritmo, "SJF-CD"))
+		{
+			if((esi_en_ejecucion!=NULL) && (esi_a_desbloquear->estimacion_real < esi_en_ejecucion->estimacion_actual))
+			{
+				logger_planificador(escribir_loguear,l_info,"El ESI desbloqueado de PID %d debe desalojar al ESI en ejecucion!",esi_a_desbloquear->pid);
+				desalojo_en_ejecucion++;
+				esi_por_desalojar = esi_a_desbloquear;
+				logger_planificador(escribir_loguear,l_info,"Esperando a que ESI %d termine su sentencia\n",esi_en_ejecucion->pid);
+			}
+		}
+
 		//Lo agrego a Ready
 		list_add(esi_listos,esi_a_desbloquear);
+
 
 		//Busco si hay otro esi bloqueado por la misma clave
 		//Si no existe otro esi bloqueado por esa clave, hay que eliminar la clave de la lista de claves bloqueadas
