@@ -139,7 +139,7 @@ void atender_comando_status(){
 		//recv header
 		t_content_header * header_consulta_valor = malloc(sizeof(t_content_header));
 		estado_recv_consulta = recv(socket_planif,header_consulta_valor,sizeof(t_content_header),0);
-
+		logger_coordinador(escribir_loguear, l_error,"header status %d\n", estado_recv_consulta);
 		if(estado_recv_consulta < 0){
 			logger_coordinador(escribir_loguear, l_error,"Error en el recv del header de consulta valor\n");
 		}else{
@@ -152,15 +152,17 @@ void atender_comando_status(){
 			if(status_recv_clave <= 0){
 				logger_coordinador(escribir_loguear, l_error,"Error en el recv de la clave para consultar valor\n");
 			}else{
+				logger_coordinador(escribir_loguear, l_error,"clave recvida\n");
 				t_status_clave_interno * st_clave_interno = buscar_clave(nombre_clave);
 
 				//Devolver rta:
 				t_content_header * header_rta_consulta_status = crear_cabecera_mensaje(coordinador,planificador,PLANIFICADOR_COORDINADOR_CMD_STATUS,sizeof(t_status_clave));
-				int rdo_send_h = send(socket_planif, header_rta_consulta_status, sizeof(header_rta_consulta_status),0);
+				int rdo_send_h = send(socket_planif, header_rta_consulta_status, sizeof(t_content_header),0);
 
 				if(rdo_send_h < 0){
 					logger_coordinador(escribir_loguear, l_error,"Error en el send del header de la rta a consulta status\n");
 				}else{
+					logger_coordinador(escribir_loguear, l_error,"send correcto\n");
 					//Mandar t_status_clave
 					t_status_clave * st_clave = malloc(sizeof(t_status_clave));
 					st_clave->cod = st_clave_interno->cod;
@@ -172,12 +174,15 @@ void atender_comando_status(){
 					if(rdo_send_st_clave < 0){
 						logger_coordinador(escribir_loguear, l_error,"Error en el send del contenido de la rta a consulta status\n");
 					}else{
+						logger_coordinador(escribir_loguear, l_error,"send correcto rta paq\n");
 						//Ahora mando valor y nombre instancia, en ese orden.
 						if (st_clave->cod != COORDINADOR_SIN_CLAVE){
 
 							//Se envía siempre el nombre de la instancia para los siguientes casos:
 							//INSTANCIA_SIMULADA, INSTANCIA_SIN_CLAVE, CORRECTO_CONSULTA_VALOR, INSTANCIA_CAIDA
+							logger_coordinador(escribir_loguear, l_error,"coord sin clave\n");
 							int rdo_send_instancia = send(socket_planif, st_clave_interno->nombre_instancia, st_clave_interno->tamanio_instancia_nombre, 0);
+							logger_coordinador(escribir_loguear, l_error,"send correto nom inst\n");
 
 							if(rdo_send_instancia < 0){
 								logger_coordinador(escribir_loguear, l_error,"Error en el send del nombre de instancia y tamanio en la rta a consulta status\n");
@@ -191,7 +196,8 @@ void atender_comando_status(){
 									}
 								}
 							}
-						}
+						}else logger_coordinador(escribir_loguear, l_error,"coord sin clave\n");
+						logger_coordinador(escribir_loguear, l_error,"fin sends\n");
 						free(st_clave);
 						free(st_clave_interno->nombre_instancia);
 						free(st_clave_interno->valor);
