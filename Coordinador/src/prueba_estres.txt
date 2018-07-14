@@ -1,0 +1,4 @@
+algoritmo=EL
+cantidad_entradas=50
+tamanio_entradas=10
+retardo=10

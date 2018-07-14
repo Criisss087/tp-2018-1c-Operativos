@@ -1,0 +1,4 @@
+algoritmo=LSU
+cantidad_entradas=20
+tamanio_entradas=10
+retardo=250
