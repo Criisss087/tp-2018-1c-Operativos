@@ -253,3 +253,8 @@ void configurar_signals(void)
     }
 
 }
+
+int existeClave(char *nombre){
+	bool mismaClave(t_clave * clave){return string_equals_ignore_case(clave->clave, nombre);}
+	return list_any_satisfy(lista_claves, (void *)mismaClave);
+}

@@ -366,20 +366,28 @@ int puedoEjecutarSentencia(t_sentencia * sentencia){
 	logger_coordinador(escribir_loguear, l_info,"\nChequeando si puedo ejecutar la sentencia...\n");
 
 	if(list_size(lista_instancias) == 0){
+		logger_coordinador(escribir_loguear,l_error, "Aborto ESI: No hay instancias conectadas\n");
 		return ABORTAR;
 	}
+
+	if (sentencia->keyword != GET && !existeClave(sentencia->clave)){
+		logger_coordinador(escribir_loguear,l_error, "Aborto ESI: SET o STORE a clave sin GET previo\n");
+		return ABORTAR;
+	}
+
+
 
 	t_clave * clave_obj = guardarClaveInternamente(sentencia->clave,sentencia->keyword);
 
 	if (sentencia->keyword == SET_){
 		if (clave_obj->instancia != NULL){
 			if(chequearConectividadProceso(clave_obj->instancia) == DESCONECTADO){
-				logger_coordinador(escribir_loguear,l_error, "Chequo conectividad proceso: desconectado\n");
+				logger_coordinador(escribir_loguear,l_error, "Aborto ESI: instancia %s: desconectado\n", clave_obj->instancia->nombre);
 				return ABORTAR;
 			}
-			else return CORRECTO;
+	//		else return CORRECTO;
 		}
-		else return CORRECTO;
+		//else return CORRECTO;
 	}
 
 	pthread_mutex_lock(&lock_sentencia_global);
