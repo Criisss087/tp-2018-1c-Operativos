@@ -1,0 +1,1086 @@
+[INFO] 00:54:50:278 Coordinador/(6280:6800): ESI 0 = GET opcion1  
+
+[INFO] 00:54:50:286 Coordinador/(6280:6800): ESI 0 = GET opcion1  - ERROR: ABORTAR 
+
+[INFO] 00:55:44:912 Coordinador/(6280:6987): ESI 1 = GET opcion1  
+
+[INFO] 00:55:49:918 Coordinador/(6280:6987): ESI 1 = GET opcion2  
+
+[INFO] 00:55:55:38 Coordinador/(6280:6987): ESI 1 = GET opcion3  
+
+[INFO] 00:56:00:118 Coordinador/(6280:6987): ESI 1 = GET opcion4  
+
+[INFO] 00:57:10:50 Coordinador/(7066:7084): ESI 0 = GET opcion1  
+
+[INFO] 00:57:10:355 Coordinador/(7066:7084): ESI 0 = GET opcion2  
+
+[INFO] 00:57:10:778 Coordinador/(7066:7084): ESI 0 = GET opcion3  
+
+[INFO] 00:57:11:158 Coordinador/(7066:7084): ESI 0 = GET opcion4  
+
+[INFO] 00:57:11:537 Coordinador/(7066:7084): ESI 0 = GET opcion5  
+
+[INFO] 00:57:11:917 Coordinador/(7066:7084): ESI 0 = GET opcion6  
+
+[INFO] 00:57:12:297 Coordinador/(7066:7084): ESI 0 = GET opcion7  
+
+[INFO] 00:57:12:677 Coordinador/(7066:7084): ESI 0 = GET opcion8  
+
+[INFO] 00:57:13:57 Coordinador/(7066:7084): ESI 0 = GET opcion9  
+
+[INFO] 00:57:13:437 Coordinador/(7066:7084): ESI 0 = GET opcion10  
+
+[INFO] 00:58:11:146 Coordinador/(7066:7106): ESI 1 = GET opcion1  
+
+[INFO] 00:58:11:186 Coordinador/(7066:7106): ESI 1 = GET opcion1  - ERROR: CLAVE BLOQUEADA 
+
+[INFO] 02:02:18:267 Coordinador/(9442:10781): ESI 0 = GET e3:sony:juegos  
+
+[INFO] 02:02:18:628 Coordinador/(9442:10781): ESI 0 = GET e3:microsoft:juegos  
+
+[INFO] 02:02:19:6 Coordinador/(9442:10781): ESI 0 = SET e3:sony:juegos TLOU2 
+
+[INFO] 02:02:19:478 Coordinador/(9442:10781): ESI 0 = SET e3:sony:juegos Spiderman 
+
+[INFO] 02:02:19:862 Coordinador/(9442:10781): ESI 0 = SET e3:sony:juegos GhostOfTsushima 
+
+[INFO] 02:02:20:226 Coordinador/(9442:10781): ESI 0 = SET e3:sony:juegos DeathStranding 
+
+[INFO] 02:02:20:600 Coordinador/(9442:10781): ESI 0 = SET e3:sony:juegos ResidenEvil2Remake 
+
+[INFO] 02:02:20:978 Coordinador/(9442:10781): ESI 0 = SET e3:sony:juegos Destiny2DLCForsaken 
+
+[INFO] 02:02:21:341 Coordinador/(9442:10781): ESI 0 = SET e3:microsoft:juegos DLCCuphead 
+
+[INFO] 02:02:21:713 Coordinador/(9442:10781): ESI 0 = SET e3:microsoft:juegos ForzaHorizon4 
+
+[INFO] 02:02:22:106 Coordinador/(9442:10781): ESI 0 = SET e3:microsoft:juegos Gears5 
+
+[INFO] 02:02:22:471 Coordinador/(9442:10781): ESI 0 = SET e3:microsoft:juegos MetroExodus 
+
+[INFO] 02:02:22:854 Coordinador/(9442:10781): ESI 0 = SET e3:microsoft:juegos Fallout76 
+
+[INFO] 02:02:23:247 Coordinador/(9442:10781): ESI 0 = SET e3:microsoft:juegos TheDivision2 
+
+[INFO] 02:02:23:618 Coordinador/(9442:10781): ESI 0 = SET e3:microsoft:juegos DyingLight2 
+
+[INFO] 02:02:23:1 Coordinador/(9442:10781): ESI 0 = SET e3:microsoft:juegos Crackdown3 
+
+[INFO] 02:02:24:371 Coordinador/(9442:10781): ESI 0 = SET e3:microsoft:juegos HaloInfinite 
+
+[INFO] 02:02:24:747 Coordinador/(9442:10781): ESI 0 = SET e3:microsoft:juegos KingdomHearts3 
+
+[INFO] 02:02:25:152 Coordinador/(9442:10781): ESI 0 = STORE e3:microsoft:juegos  
+
+[INFO] 02:02:25:578 Coordinador/(9442:10781): ESI 0 = STORE e3:sony:juegos  
+
+[INFO] 02:02:26:49 Coordinador/(9442:10808): ESI 1 = GET postre:ingrediente1  
+
+[INFO] 02:02:26:163 Coordinador/(9442:10808): ESI 1 = GET postre:ingrediente1  - ERROR: CLAVE BLOQUEADA 
+
+[INFO] 02:02:26:359 Coordinador/(9442:10837): ESI 2 = GET sony:consola:ps1  
+
+[INFO] 02:02:26:672 Coordinador/(9442:10837): ESI 2 = GET sony:consola:ps2  
+
+[INFO] 02:02:27:54 Coordinador/(9442:10837): ESI 2 = GET sony:consola:ps3  
+
+[INFO] 02:02:27:427 Coordinador/(9442:10837): ESI 2 = GET sony:consola:ps4  
+
+[INFO] 02:02:27:822 Coordinador/(9442:10837): ESI 2 = GET microsoft:consola:xbox  
+
+[INFO] 02:02:28:150 Coordinador/(9442:10837): ESI 2 = GET microsoft:consola:xbox360  
+
+[INFO] 02:02:28:491 Coordinador/(9442:10837): ESI 2 = GET microsoft:consola:xboxone  
+
+[INFO] 02:02:28:821 Coordinador/(9442:10837): ESI 2 = GET nintendo:consola:nes  
+
+[INFO] 02:02:29:150 Coordinador/(9442:10837): ESI 2 = GET nintendo:consola:snes  
+
+[INFO] 02:02:29:482 Coordinador/(9442:10837): ESI 2 = GET nintendo:consola:nintendo64  
+
+[INFO] 02:02:29:818 Coordinador/(9442:10837): ESI 2 = GET nintendo:consola:gamecube  
+
+[INFO] 02:02:30:160 Coordinador/(9442:10837): ESI 2 = GET nintendo:consola:wii  
+
+[INFO] 02:02:30:496 Coordinador/(9442:10837): ESI 2 = GET nintendo:consola:wiiu  
+
+[INFO] 02:02:30:831 Coordinador/(9442:10837): ESI 2 = GET nintendo:consola:switch  
+
+[INFO] 02:02:31:159 Coordinador/(9442:10837): ESI 2 = SET nintendo:consola:nes Mario 
+
+[INFO] 02:02:31:558 Coordinador/(9442:10837): ESI 2 = SET nintendo:consola:snes SuperMario 
+
+[INFO] 02:02:31:942 Coordinador/(9442:10837): ESI 2 = SET nintendo:consola:nintendo64 Mario64 
+
+[INFO] 02:02:32:319 Coordinador/(9442:10837): ESI 2 = SET nintendo:consola:gamecube Mario 
+
+[INFO] 02:02:32:710 Coordinador/(9442:10837): ESI 2 = SET nintendo:consola:wii MarioGalaxy 
+
+[INFO] 02:02:33:78 Coordinador/(9442:10837): ESI 2 = SET nintendo:consola:wiiu RIP 
+
+[INFO] 02:02:33:458 Coordinador/(9442:10837): ESI 2 = SET nintendo:consola:switch MarioOddysey 
+
+[INFO] 02:02:33:866 Coordinador/(9442:10837): ESI 2 = SET sony:consola:ps1 FinalFantasy 
+
+[INFO] 02:02:34:243 Coordinador/(9442:10837): ESI 2 = SET sony:consola:ps2 GodOfWar 
+
+[INFO] 02:02:34:620 Coordinador/(9442:10837): ESI 2 = SET sony:consola:ps3 TLOU 
+
+[INFO] 02:02:35:9 Coordinador/(9442:10837): ESI 2 = SET sony:consola:ps4 Bloodborne 
+
+[INFO] 02:02:35:393 Coordinador/(9442:10837): ESI 2 = SET microsoft:consola:xbox Halo 
+
+[INFO] 02:02:35:810 Coordinador/(9442:10837): ESI 2 = SET microsoft:consola:xbox360 Halo 
+
+[INFO] 02:02:36:225 Coordinador/(9442:10837): ESI 2 = SET microsoft:consola:xboxone Halo 
+
+[INFO] 02:02:36:644 Coordinador/(9442:10892): ESI 3 = GET platoprincipal:ingrediente5  
+
+[INFO] 02:02:36:953 Coordinador/(9442:10892): ESI 3 = GET platoprincipal:ingrediente4  
+
+[INFO] 02:02:37:319 Coordinador/(9442:10892): ESI 3 = GET platoprincipal:ingrediente3  
+
+[INFO] 02:02:37:658 Coordinador/(9442:10892): ESI 3 = GET platoprincipal:ingrediente2  
+
+[INFO] 02:02:37:994 Coordinador/(9442:10892): ESI 3 = GET platoprincipal:ingrediente1  
+
+[INFO] 02:02:38:336 Coordinador/(9442:10892): ESI 3 = SET platoprincipal:ingrediente1 milanesadecarne 
+
+[INFO] 02:02:38:718 Coordinador/(9442:10892): ESI 3 = SET platoprincipal:ingrediente2 queso 
+
+[INFO] 02:02:39:107 Coordinador/(9442:10892): ESI 3 = SET platoprincipal:ingrediente3 jamon 
+
+[INFO] 02:02:39:491 Coordinador/(9442:10892): ESI 3 = SET platoprincipal:ingrediente4 lechuga 
+
+[INFO] 02:02:39:876 Coordinador/(9442:10892): ESI 3 = SET platoprincipal:ingrediente5 tomate 
+
+[INFO] 02:02:40:267 Coordinador/(9442:10892): ESI 3 = STORE platoprincipal:ingrediente1  
+
+[INFO] 02:02:40:699 Coordinador/(9442:10892): ESI 3 = STORE platoprincipal:ingrediente2  
+
+[INFO] 02:02:41:128 Coordinador/(9442:10892): ESI 3 = STORE platoprincipal:ingrediente3  
+
+[INFO] 02:02:41:558 Coordinador/(9442:10892): ESI 3 = STORE platoprincipal:ingrediente4  
+
+[INFO] 02:02:41:991 Coordinador/(9442:10892): ESI 3 = STORE platoprincipal:ingrediente5  
+
+[INFO] 02:02:42:450 Coordinador/(9442:10894): ESI 4 = GET sandwich:bondiola:simple  
+
+[INFO] 02:02:42:768 Coordinador/(9442:10894): ESI 4 = GET sandwich:bondiola:jyq  
+
+[INFO] 02:02:43:125 Coordinador/(9442:10894): ESI 4 = GET sandwich:bondiola:completo  
+
+[INFO] 02:02:43:482 Coordinador/(9442:10894): ESI 4 = GET sandwich:lomo:simple  
+
+[INFO] 02:02:43:915 Coordinador/(9442:10894): ESI 4 = GET sandwich:lomo:jyq  
+
+[INFO] 02:02:44:312 Coordinador/(9442:10894): ESI 4 = GET sandwich:lomo:completo  
+
+[INFO] 02:02:44:710 Coordinador/(9442:10894): ESI 4 = GET sandwich:vacio:simple  
+
+[INFO] 02:02:45:89 Coordinador/(9442:10894): ESI 4 = GET sandwich:vacio:jyq  
+
+[INFO] 02:02:45:486 Coordinador/(9442:10894): ESI 4 = GET sandwich:vacio:completo  
+
+[INFO] 02:02:45:865 Coordinador/(9442:10894): ESI 4 = GET sandwich:choripan  
+
+[INFO] 02:02:46:223 Coordinador/(9442:10894): ESI 4 = GET sandwich:morcipan  
+
+[INFO] 02:02:46:641 Coordinador/(9442:10894): ESI 4 = GET parrilla:chinchulines  
+
+[INFO] 02:02:46:987 Coordinador/(9442:10894): ESI 4 = GET parrilla:rinion  
+
+[INFO] 02:02:47:312 Coordinador/(9442:10894): ESI 4 = GET parrilla:tiraasado  
+
+[INFO] 02:02:47:637 Coordinador/(9442:10894): ESI 4 = GET parrilla:vacio  
+
+[INFO] 02:02:47:966 Coordinador/(9442:10894): ESI 4 = GET parrilla:entrania  
+
+[INFO] 02:02:48:340 Coordinador/(9442:10894): ESI 4 = GET parrilla:bifedelomo  
+
+[INFO] 02:02:48:702 Coordinador/(9442:10894): ESI 4 = GET parrilla:matambre:simple  
+
+[INFO] 02:02:49:26 Coordinador/(9442:10894): ESI 4 = GET parrilla:matambre:alapizza  
+
+[INFO] 02:02:49:353 Coordinador/(9442:10894): ESI 4 = GET parrilla:ojodebife  
+
+[INFO] 02:02:49:677 Coordinador/(9442:10894): ESI 4 = GET parrilla:molleja  
+
+[INFO] 02:02:50:5 Coordinador/(9442:10894): ESI 4 = GET parrilla:pareja  
+
+[INFO] 02:02:50:333 Coordinador/(9442:10894): ESI 4 = GET cocina:papasfritas  
+
+[INFO] 02:02:50:661 Coordinador/(9442:10894): ESI 4 = GET cocina:batatasfritas  
+
+[INFO] 02:02:50:0 Coordinador/(9442:10894): ESI 4 = GET cocina:tallarines  
+
+[INFO] 02:02:51:341 Coordinador/(9442:10894): ESI 4 = GET cocina:ravioles  
+
+[INFO] 02:02:51:684 Coordinador/(9442:10894): ESI 4 = GET cocina:nioquis  
+
+[INFO] 02:02:52:16 Coordinador/(9442:10894): ESI 4 = GET cocina:suprema  
+
+[INFO] 02:02:52:377 Coordinador/(9442:10894): ESI 4 = GET cocina:milanesa:carne  
+
+[INFO] 02:02:52:704 Coordinador/(9442:10894): ESI 4 = GET cocina:milanesa:pollo  
+
+[INFO] 02:02:53:33 Coordinador/(9442:10894): ESI 4 = SET sandwich:bondiola:simple panbondiola 
+
+[INFO] 02:02:53:410 Coordinador/(9442:10894): ESI 4 = SET sandwich:bondiola:jyq panjamonquesobondiola 
+
+[INFO] 02:02:53:800 Coordinador/(9442:10894): ESI 4 = SET sandwich:bondiola:completo panjamonquesolechugatomatebondiola 
+
+[INFO] 02:02:54:200 Coordinador/(9442:10894): ESI 4 = SET sandwich:lomo:simple panlomo 
+
+[INFO] 02:02:54:577 Coordinador/(9442:10894): ESI 4 = SET sandwich:lomo:jyq panjamonquesolomo 
+
+[INFO] 02:02:54:947 Coordinador/(9442:10894): ESI 4 = SET sandwich:lomo:completo panjamonquesolechugatomatelomo 
+
+[INFO] 02:02:55:349 Coordinador/(9442:10894): ESI 4 = SET sandwich:vacio:simple panvacio 
+
+[INFO] 02:02:55:739 Coordinador/(9442:10894): ESI 4 = SET sandwich:vacio:jyq panjamonquesovacio 
+
+[INFO] 02:02:56:140 Coordinador/(9442:10894): ESI 4 = SET sandwich:vacio:completo panjamonquesolechugatomatevacio 
+
+[INFO] 02:02:56:581 Coordinador/(9442:10894): ESI 4 = SET sandwich:choripan panchorizo 
+
+[INFO] 02:02:56:969 Coordinador/(9442:10894): ESI 4 = SET sandwich:morcipan panmorcilla 
+
+[INFO] 02:02:57:360 Coordinador/(9442:10894): ESI 4 = SET parrilla:chinchulines chinchulineslimon 
+
+[INFO] 02:02:57:738 Coordinador/(9442:10894): ESI 4 = SET parrilla:rinion rinionylimon 
+
+[INFO] 02:02:58:119 Coordinador/(9442:10894): ESI 4 = SET parrilla:tiraasado porcionde3o4huesos 
+
+[INFO] 02:02:58:501 Coordinador/(9442:10894): ESI 4 = SET parrilla:vacio vacioconfritas 
+
+[INFO] 02:02:58:907 Coordinador/(9442:10894): ESI 4 = SET parrilla:entrania entraniaconfritas 
+
+[INFO] 02:02:59:321 Coordinador/(9442:10894): ESI 4 = SET parrilla:bifedelomo bifeconfritas 
+
+[INFO] 02:02:59:733 Coordinador/(9442:10894): ESI 4 = SET parrilla:matambre:simple matambrefritas 
+
+[INFO] 02:03:00:125 Coordinador/(9442:10894): ESI 4 = SET parrilla:matambre:alapizza matambrejamonquesooregano 
+
+[INFO] 02:03:00:505 Coordinador/(9442:10894): ESI 4 = SET parrilla:ojodebife ojodebifeconfritas 
+
+[INFO] 02:03:00:882 Coordinador/(9442:10894): ESI 4 = SET parrilla:molleja mollejaconlimon 
+
+[INFO] 02:03:01:277 Coordinador/(9442:10894): ESI 4 = SET parrilla:pareja chorizoymorcilla 
+
+[INFO] 02:03:01:664 Coordinador/(9442:10894): ESI 4 = SET cocina:papasfritas papayaceite 
+
+[INFO] 02:03:02:45 Coordinador/(9442:10894): ESI 4 = SET cocina:batatasfritas batatayaceite 
+
+[INFO] 02:03:02:415 Coordinador/(9442:10894): ESI 4 = SET cocina:tallarines tallarinescontuco 
+
+[INFO] 02:03:02:794 Coordinador/(9442:10894): ESI 4 = SET cocina:ravioles raviolesdejyqcontuco 
+
+[INFO] 02:03:03:180 Coordinador/(9442:10894): ESI 4 = SET cocina:nioquis nioquisdepapacontuco 
+
+[INFO] 02:03:03:575 Coordinador/(9442:10894): ESI 4 = SET cocina:suprema supremaalamaryland 
+
+[INFO] 02:03:03:961 Coordinador/(9442:10894): ESI 4 = SET cocina:milanesa:carne milanesadecarneconfritas 
+
+[INFO] 02:03:04:342 Coordinador/(9442:10894): ESI 4 = SET cocina:milanesa:pollo milanesadepolloconfritas 
+
+[INFO] 02:03:04:749 Coordinador/(9442:10894): ESI 4 = STORE sandwich:bondiola:simple  
+
+[INFO] 02:03:05:180 Coordinador/(9442:10894): ESI 4 = STORE sandwich:bondiola:jyq  
+
+[INFO] 02:03:05:610 Coordinador/(9442:10894): ESI 4 = STORE sandwich:bondiola:completo  
+
+[INFO] 02:03:06:45 Coordinador/(9442:10894): ESI 4 = STORE sandwich:lomo:simple  
+
+[INFO] 02:03:06:477 Coordinador/(9442:10894): ESI 4 = STORE sandwich:lomo:jyq  
+
+[INFO] 02:03:06:906 Coordinador/(9442:10894): ESI 4 = STORE sandwich:lomo:completo  
+
+[INFO] 02:03:07:337 Coordinador/(9442:10894): ESI 4 = STORE sandwich:vacio:simple  
+
+[INFO] 02:03:07:773 Coordinador/(9442:10894): ESI 4 = STORE sandwich:vacio:jyq  
+
+[INFO] 02:03:08:231 Coordinador/(9442:10894): ESI 4 = STORE sandwich:vacio:completo  
+
+[INFO] 02:03:08:667 Coordinador/(9442:10894): ESI 4 = STORE sandwich:choripan  
+
+[INFO] 02:03:09:101 Coordinador/(9442:10894): ESI 4 = STORE sandwich:morcipan  
+
+[INFO] 02:03:09:528 Coordinador/(9442:10894): ESI 4 = STORE parrilla:chinchulines  
+
+[INFO] 02:03:09:967 Coordinador/(9442:10894): ESI 4 = STORE parrilla:rinion  
+
+[INFO] 02:03:10:398 Coordinador/(9442:10894): ESI 4 = STORE parrilla:tiraasado  
+
+[INFO] 02:03:10:826 Coordinador/(9442:10894): ESI 4 = STORE parrilla:vacio  
+
+[INFO] 02:03:11:290 Coordinador/(9442:10894): ESI 4 = STORE parrilla:entrania  
+
+[INFO] 02:03:11:721 Coordinador/(9442:10894): ESI 4 = STORE parrilla:bifedelomo  
+
+[INFO] 02:03:12:149 Coordinador/(9442:10894): ESI 4 = STORE parrilla:matambre:simple  
+
+[INFO] 02:03:12:579 Coordinador/(9442:10894): ESI 4 = STORE parrilla:matambre:alapizza  
+
+[INFO] 02:03:13:18 Coordinador/(9442:10894): ESI 4 = STORE parrilla:ojodebife  
+
+[INFO] 02:03:13:445 Coordinador/(9442:10894): ESI 4 = STORE parrilla:molleja  
+
+[INFO] 02:03:13:878 Coordinador/(9442:10894): ESI 4 = STORE parrilla:pareja  
+
+[INFO] 02:03:14:312 Coordinador/(9442:10894): ESI 4 = STORE cocina:papasfritas  
+
+[INFO] 02:03:14:748 Coordinador/(9442:10894): ESI 4 = STORE cocina:batatasfritas  
+
+[INFO] 02:03:15:181 Coordinador/(9442:10894): ESI 4 = STORE cocina:tallarines  
+
+[INFO] 02:03:15:623 Coordinador/(9442:10894): ESI 4 = STORE cocina:ravioles  
+
+[INFO] 02:03:16:62 Coordinador/(9442:10894): ESI 4 = STORE cocina:nioquis  
+
+[INFO] 02:03:16:501 Coordinador/(9442:10894): ESI 4 = STORE cocina:suprema  
+
+[INFO] 02:03:16:925 Coordinador/(9442:10894): ESI 4 = STORE cocina:milanesa:carne  
+
+[INFO] 02:03:17:367 Coordinador/(9442:10894): ESI 4 = STORE cocina:milanesa:pollo  
+
+[INFO] 02:03:52:331 Coordinador/(9442:10808): ESI 1 = GET postre:ingrediente1  
+
+[INFO] 02:03:52:629 Coordinador/(9442:10808): ESI 1 = GET postre:ingrediente2  
+
+[INFO] 02:03:52:997 Coordinador/(9442:10808): ESI 1 = GET postre:ingrediente3  
+
+[INFO] 02:03:53:326 Coordinador/(9442:10808): ESI 1 = GET postre:ingrediente4  
+
+[INFO] 02:03:53:669 Coordinador/(9442:10808): ESI 1 = GET postre:ingrediente5  
+
+[INFO] 02:03:53:3 Coordinador/(9442:10808): ESI 1 = GET postre:ingrediente6  
+
+[INFO] 02:03:54:364 Coordinador/(9442:10808): ESI 1 = GET postre:ingrediente7  
+
+[INFO] 02:03:54:699 Coordinador/(9442:10808): ESI 1 = GET postre:ingrediente8  
+
+[INFO] 02:03:55:37 Coordinador/(9442:10808): ESI 1 = GET postre:ingrediente9  
+
+[INFO] 02:03:55:366 Coordinador/(9442:10808): ESI 1 = GET postre:ingrediente10  
+
+[INFO] 02:03:55:699 Coordinador/(9442:10808): ESI 1 = SET postre:ingrediente1 huevos 
+
+[INFO] 02:03:56:70 Coordinador/(9442:10808): ESI 1 = SET postre:ingrediente2 azucar 
+
+[INFO] 02:03:56:458 Coordinador/(9442:10808): ESI 1 = SET postre:ingrediente3 quesomascarpone 
+
+[INFO] 02:03:56:869 Coordinador/(9442:10808): ESI 1 = SET postre:ingrediente4 crema 
+
+[INFO] 02:03:57:262 Coordinador/(9442:10808): ESI 1 = SET postre:ingrediente5 esenciavainilla 
+
+[INFO] 02:03:57:653 Coordinador/(9442:10808): ESI 1 = SET postre:ingrediente6 oporto 
+
+[INFO] 02:03:58:85 Coordinador/(9442:10808): ESI 1 = SET postre:ingrediente7 cafe 
+
+[INFO] 02:03:58:469 Coordinador/(9442:10808): ESI 1 = SET postre:ingrediente8 vainillas 
+
+[INFO] 02:03:58:871 Coordinador/(9442:10808): ESI 1 = SET postre:ingrediente9 cacaoamargo 
+
+[INFO] 02:03:59:288 Coordinador/(9442:10808): ESI 1 = SET postre:ingrediente10 licordecafe 
+
+[INFO] 02:03:59:682 Coordinador/(9442:10808): ESI 1 = STORE postre:ingrediente1  
+
+[INFO] 02:04:00:143 Coordinador/(9442:10808): ESI 1 = STORE postre:ingrediente2  
+
+[INFO] 02:04:00:607 Coordinador/(9442:10808): ESI 1 = STORE postre:ingrediente3  
+
+[INFO] 02:04:01:54 Coordinador/(9442:10808): ESI 1 = STORE postre:ingrediente4  
+
+[INFO] 02:04:01:516 Coordinador/(9442:10808): ESI 1 = STORE postre:ingrediente5  
+
+[INFO] 02:04:01:958 Coordinador/(9442:10808): ESI 1 = STORE postre:ingrediente6  
+
+[INFO] 02:04:02:421 Coordinador/(9442:10808): ESI 1 = STORE postre:ingrediente7  
+
+[INFO] 02:04:02:870 Coordinador/(9442:10808): ESI 1 = STORE postre:ingrediente8  
+
+[INFO] 02:04:03:294 Coordinador/(9442:10808): ESI 1 = STORE postre:ingrediente9  
+
+[INFO] 02:04:03:718 Coordinador/(9442:10808): ESI 1 = STORE postre:ingrediente10  
+
+[INFO] 02:12:41:65 Coordinador/(11283:11323): ESI 0 = GET e3:sony:juegos  
+
+[INFO] 02:12:41:425 Coordinador/(11283:11323): ESI 0 = GET e3:microsoft:juegos  
+
+[INFO] 02:12:41:809 Coordinador/(11283:11323): ESI 0 = SET e3:sony:juegos TLOU2 
+
+[INFO] 02:12:42:289 Coordinador/(11283:11323): ESI 0 = SET e3:sony:juegos Spiderman 
+
+[INFO] 02:12:42:679 Coordinador/(11283:11323): ESI 0 = SET e3:sony:juegos GhostOfTsushima 
+
+[INFO] 02:12:43:182 Coordinador/(11283:11323): ESI 0 = SET e3:sony:juegos DeathStranding 
+
+[INFO] 02:12:43:666 Coordinador/(11283:11323): ESI 0 = SET e3:sony:juegos ResidenEvil2Remake 
+
+[INFO] 02:12:44:76 Coordinador/(11283:11323): ESI 0 = SET e3:sony:juegos Destiny2DLCForsaken 
+
+[INFO] 02:12:44:447 Coordinador/(11283:11323): ESI 0 = SET e3:microsoft:juegos DLCCuphead 
+
+[INFO] 02:12:44:831 Coordinador/(11283:11323): ESI 0 = SET e3:microsoft:juegos ForzaHorizon4 
+
+[INFO] 02:12:45:210 Coordinador/(11283:11323): ESI 0 = SET e3:microsoft:juegos Gears5 
+
+[INFO] 02:12:45:575 Coordinador/(11283:11323): ESI 0 = SET e3:microsoft:juegos MetroExodus 
+
+[INFO] 02:12:45:964 Coordinador/(11283:11323): ESI 0 = SET e3:microsoft:juegos Fallout76 
+
+[INFO] 02:12:46:340 Coordinador/(11283:11323): ESI 0 = SET e3:microsoft:juegos TheDivision2 
+
+[INFO] 02:12:46:722 Coordinador/(11283:11323): ESI 0 = SET e3:microsoft:juegos DyingLight2 
+
+[INFO] 02:12:47:111 Coordinador/(11283:11323): ESI 0 = SET e3:microsoft:juegos Crackdown3 
+
+[INFO] 02:12:47:492 Coordinador/(11283:11323): ESI 0 = SET e3:microsoft:juegos HaloInfinite 
+
+[INFO] 02:12:47:863 Coordinador/(11283:11323): ESI 0 = SET e3:microsoft:juegos KingdomHearts3 
+
+[INFO] 02:12:48:254 Coordinador/(11283:11323): ESI 0 = STORE e3:microsoft:juegos  
+
+[INFO] 02:12:48:679 Coordinador/(11283:11323): ESI 0 = STORE e3:sony:juegos  
+
+[INFO] 02:12:49:146 Coordinador/(11283:11325): ESI 1 = GET postre:ingrediente1  
+
+[INFO] 02:12:49:260 Coordinador/(11283:11325): ESI 1 = GET postre:ingrediente1  - ERROR: CLAVE BLOQUEADA 
+
+[INFO] 02:12:49:458 Coordinador/(11283:11327): ESI 2 = GET sony:consola:ps1  
+
+[INFO] 02:12:49:778 Coordinador/(11283:11327): ESI 2 = GET sony:consola:ps2  
+
+[INFO] 02:12:50:170 Coordinador/(11283:11327): ESI 2 = GET sony:consola:ps3  
+
+[INFO] 02:12:50:538 Coordinador/(11283:11327): ESI 2 = GET sony:consola:ps4  
+
+[INFO] 02:12:50:906 Coordinador/(11283:11327): ESI 2 = GET microsoft:consola:xbox  
+
+[INFO] 02:12:51:235 Coordinador/(11283:11327): ESI 2 = GET microsoft:consola:xbox360  
+
+[INFO] 02:12:51:627 Coordinador/(11283:11327): ESI 2 = GET microsoft:consola:xboxone  
+
+[INFO] 02:12:52:43 Coordinador/(11283:11327): ESI 2 = GET nintendo:consola:nes  
+
+[INFO] 02:12:52:419 Coordinador/(11283:11327): ESI 2 = GET nintendo:consola:snes  
+
+[INFO] 02:12:52:814 Coordinador/(11283:11327): ESI 2 = GET nintendo:consola:nintendo64  
+
+[INFO] 02:12:53:186 Coordinador/(11283:11327): ESI 2 = GET nintendo:consola:gamecube  
+
+[INFO] 02:12:53:554 Coordinador/(11283:11327): ESI 2 = GET nintendo:consola:wii  
+
+[INFO] 02:12:53:893 Coordinador/(11283:11327): ESI 2 = GET nintendo:consola:wiiu  
+
+[INFO] 02:12:54:223 Coordinador/(11283:11327): ESI 2 = GET nintendo:consola:switch  
+
+[INFO] 02:12:54:546 Coordinador/(11283:11327): ESI 2 = SET nintendo:consola:nes Mario 
+
+[INFO] 02:12:54:959 Coordinador/(11283:11327): ESI 2 = SET nintendo:consola:snes SuperMario 
+
+[INFO] 02:12:55:409 Coordinador/(11283:11327): ESI 2 = SET nintendo:consola:nintendo64 Mario64 
+
+[INFO] 02:12:55:896 Coordinador/(11283:11327): ESI 2 = SET nintendo:consola:gamecube Mario 
+
+[INFO] 02:12:56:404 Coordinador/(11283:11327): ESI 2 = SET nintendo:consola:wii MarioGalaxy 
+
+[INFO] 02:12:56:855 Coordinador/(11283:11327): ESI 2 = SET nintendo:consola:wiiu RIP 
+
+[INFO] 02:12:57:341 Coordinador/(11283:11327): ESI 2 = SET nintendo:consola:switch MarioOddysey 
+
+[INFO] 02:12:57:803 Coordinador/(11283:11327): ESI 2 = SET sony:consola:ps1 FinalFantasy 
+
+[INFO] 02:12:58:195 Coordinador/(11283:11327): ESI 2 = SET sony:consola:ps2 GodOfWar 
+
+[INFO] 02:12:58:568 Coordinador/(11283:11327): ESI 2 = SET sony:consola:ps3 TLOU 
+
+[INFO] 02:12:58:2 Coordinador/(11283:11327): ESI 2 = SET sony:consola:ps4 Bloodborne 
+
+[INFO] 02:12:59:431 Coordinador/(11283:11327): ESI 2 = SET microsoft:consola:xbox Halo 
+
+[INFO] 02:12:59:916 Coordinador/(11283:11327): ESI 2 = SET microsoft:consola:xbox360 Halo 
+
+[INFO] 02:13:00:330 Coordinador/(11283:11327): ESI 2 = SET microsoft:consola:xboxone Halo 
+
+[INFO] 02:13:00:747 Coordinador/(11283:11335): ESI 3 = GET platoprincipal:ingrediente5  
+
+[INFO] 02:13:01:57 Coordinador/(11283:11335): ESI 3 = GET platoprincipal:ingrediente4  
+
+[INFO] 02:13:01:418 Coordinador/(11283:11335): ESI 3 = GET platoprincipal:ingrediente3  
+
+[INFO] 02:13:01:795 Coordinador/(11283:11335): ESI 3 = GET platoprincipal:ingrediente2  
+
+[INFO] 02:13:02:162 Coordinador/(11283:11335): ESI 3 = GET platoprincipal:ingrediente1  
+
+[INFO] 02:13:02:515 Coordinador/(11283:11335): ESI 3 = SET platoprincipal:ingrediente1 milanesadecarne 
+
+[INFO] 02:13:02:915 Coordinador/(11283:11335): ESI 3 = SET platoprincipal:ingrediente2 queso 
+
+[INFO] 02:13:03:303 Coordinador/(11283:11335): ESI 3 = SET platoprincipal:ingrediente3 jamon 
+
+[INFO] 02:13:03:750 Coordinador/(11283:11335): ESI 3 = SET platoprincipal:ingrediente4 lechuga 
+
+[INFO] 02:13:04:279 Coordinador/(11283:11335): ESI 3 = SET platoprincipal:ingrediente5 tomate 
+
+[INFO] 02:13:04:771 Coordinador/(11283:11335): ESI 3 = STORE platoprincipal:ingrediente1  
+
+[INFO] 02:13:05:216 Coordinador/(11283:11335): ESI 3 = STORE platoprincipal:ingrediente2  
+
+[INFO] 02:13:05:649 Coordinador/(11283:11335): ESI 3 = STORE platoprincipal:ingrediente3  
+
+[INFO] 02:13:06:85 Coordinador/(11283:11335): ESI 3 = STORE platoprincipal:ingrediente4  
+
+[INFO] 02:13:06:519 Coordinador/(11283:11335): ESI 3 = STORE platoprincipal:ingrediente5  
+
+[INFO] 02:13:06:963 Coordinador/(11283:11337): ESI 4 = GET sandwich:bondiola:simple  
+
+[INFO] 02:13:07:303 Coordinador/(11283:11337): ESI 4 = GET sandwich:bondiola:jyq  
+
+[INFO] 02:13:07:676 Coordinador/(11283:11337): ESI 4 = GET sandwich:bondiola:completo  
+
+[INFO] 02:13:08:20 Coordinador/(11283:11337): ESI 4 = GET sandwich:lomo:simple  
+
+[INFO] 02:13:08:350 Coordinador/(11283:11337): ESI 4 = GET sandwich:lomo:jyq  
+
+[INFO] 02:13:08:678 Coordinador/(11283:11337): ESI 4 = GET sandwich:lomo:completo  
+
+[INFO] 02:13:09:6 Coordinador/(11283:11337): ESI 4 = GET sandwich:vacio:simple  
+
+[INFO] 02:13:09:363 Coordinador/(11283:11337): ESI 4 = GET sandwich:vacio:jyq  
+
+[INFO] 02:13:09:733 Coordinador/(11283:11337): ESI 4 = GET sandwich:vacio:completo  
+
+[INFO] 02:13:10:63 Coordinador/(11283:11337): ESI 4 = GET sandwich:choripan  
+
+[INFO] 02:13:10:412 Coordinador/(11283:11337): ESI 4 = GET sandwich:morcipan  
+
+[INFO] 02:13:10:737 Coordinador/(11283:11337): ESI 4 = GET parrilla:chinchulines  
+
+[INFO] 02:13:11:71 Coordinador/(11283:11337): ESI 4 = GET parrilla:rinion  
+
+[INFO] 02:13:11:397 Coordinador/(11283:11337): ESI 4 = GET parrilla:tiraasado  
+
+[INFO] 02:13:11:723 Coordinador/(11283:11337): ESI 4 = GET parrilla:vacio  
+
+[INFO] 02:13:12:49 Coordinador/(11283:11337): ESI 4 = GET parrilla:entrania  
+
+[INFO] 02:13:12:390 Coordinador/(11283:11337): ESI 4 = GET parrilla:bifedelomo  
+
+[INFO] 02:13:12:726 Coordinador/(11283:11337): ESI 4 = GET parrilla:matambre:simple  
+
+[INFO] 02:13:13:53 Coordinador/(11283:11337): ESI 4 = GET parrilla:matambre:alapizza  
+
+[INFO] 02:13:13:388 Coordinador/(11283:11337): ESI 4 = GET parrilla:ojodebife  
+
+[INFO] 02:13:13:724 Coordinador/(11283:11337): ESI 4 = GET parrilla:molleja  
+
+[INFO] 02:13:14:54 Coordinador/(11283:11337): ESI 4 = GET parrilla:pareja  
+
+[INFO] 02:13:14:395 Coordinador/(11283:11337): ESI 4 = GET cocina:papasfritas  
+
+[INFO] 02:13:14:735 Coordinador/(11283:11337): ESI 4 = GET cocina:batatasfritas  
+
+[INFO] 02:13:15:61 Coordinador/(11283:11337): ESI 4 = GET cocina:tallarines  
+
+[INFO] 02:13:15:398 Coordinador/(11283:11337): ESI 4 = GET cocina:ravioles  
+
+[INFO] 02:13:15:741 Coordinador/(11283:11337): ESI 4 = GET cocina:nioquis  
+
+[INFO] 02:13:16:89 Coordinador/(11283:11337): ESI 4 = GET cocina:suprema  
+
+[INFO] 02:13:16:430 Coordinador/(11283:11337): ESI 4 = GET cocina:milanesa:carne  
+
+[INFO] 02:13:16:753 Coordinador/(11283:11337): ESI 4 = GET cocina:milanesa:pollo  
+
+[INFO] 02:13:17:105 Coordinador/(11283:11337): ESI 4 = SET sandwich:bondiola:simple panbondiola 
+
+[INFO] 02:13:17:484 Coordinador/(11283:11337): ESI 4 = SET sandwich:bondiola:jyq panjamonquesobondiola 
+
+[INFO] 02:13:17:870 Coordinador/(11283:11337): ESI 4 = SET sandwich:bondiola:completo panjamonquesolechugatomatebondiola 
+
+[INFO] 02:13:18:261 Coordinador/(11283:11337): ESI 4 = SET sandwich:lomo:simple panlomo 
+
+[INFO] 02:13:18:629 Coordinador/(11283:11337): ESI 4 = SET sandwich:lomo:jyq panjamonquesolomo 
+
+[INFO] 02:13:19:12 Coordinador/(11283:11337): ESI 4 = SET sandwich:lomo:completo panjamonquesolechugatomatelomo 
+
+[INFO] 02:13:19:406 Coordinador/(11283:11337): ESI 4 = SET sandwich:vacio:simple panvacio 
+
+[INFO] 02:13:19:788 Coordinador/(11283:11337): ESI 4 = SET sandwich:vacio:jyq panjamonquesovacio 
+
+[INFO] 02:13:20:223 Coordinador/(11283:11337): ESI 4 = SET sandwich:vacio:completo panjamonquesolechugatomatevacio 
+
+[INFO] 02:13:20:835 Coordinador/(11283:11337): ESI 4 = SET sandwich:choripan panchorizo 
+
+[INFO] 02:13:21:290 Coordinador/(11283:11337): ESI 4 = SET sandwich:morcipan panmorcilla 
+
+[INFO] 02:13:21:682 Coordinador/(11283:11337): ESI 4 = SET parrilla:chinchulines chinchulineslimon 
+
+[INFO] 02:13:22:83 Coordinador/(11283:11337): ESI 4 = SET parrilla:rinion rinionylimon 
+
+[INFO] 02:13:22:462 Coordinador/(11283:11337): ESI 4 = SET parrilla:tiraasado porcionde3o4huesos 
+
+[INFO] 02:13:22:841 Coordinador/(11283:11337): ESI 4 = SET parrilla:vacio vacioconfritas 
+
+[INFO] 02:13:23:259 Coordinador/(11283:11337): ESI 4 = SET parrilla:entrania entraniaconfritas 
+
+[INFO] 02:13:23:648 Coordinador/(11283:11337): ESI 4 = SET parrilla:bifedelomo bifeconfritas 
+
+[INFO] 02:13:24:23 Coordinador/(11283:11337): ESI 4 = SET parrilla:matambre:simple matambrefritas 
+
+[INFO] 02:13:24:416 Coordinador/(11283:11337): ESI 4 = SET parrilla:matambre:alapizza matambrejamonquesooregano 
+
+[INFO] 02:13:24:813 Coordinador/(11283:11337): ESI 4 = SET parrilla:ojodebife ojodebifeconfritas 
+
+[INFO] 02:13:25:216 Coordinador/(11283:11337): ESI 4 = SET parrilla:molleja mollejaconlimon 
+
+[INFO] 02:13:25:614 Coordinador/(11283:11337): ESI 4 = SET parrilla:pareja chorizoymorcilla 
+
+[INFO] 02:13:25:996 Coordinador/(11283:11337): ESI 4 = SET cocina:papasfritas papayaceite 
+
+[INFO] 02:13:26:373 Coordinador/(11283:11337): ESI 4 = SET cocina:batatasfritas batatayaceite 
+
+[INFO] 02:13:26:781 Coordinador/(11283:11337): ESI 4 = SET cocina:tallarines tallarinescontuco 
+
+[INFO] 02:13:27:158 Coordinador/(11283:11337): ESI 4 = SET cocina:ravioles raviolesdejyqcontuco 
+
+[INFO] 02:13:27:539 Coordinador/(11283:11337): ESI 4 = SET cocina:nioquis nioquisdepapacontuco 
+
+[INFO] 02:13:27:926 Coordinador/(11283:11337): ESI 4 = SET cocina:suprema supremaalamaryland 
+
+[INFO] 02:13:28:329 Coordinador/(11283:11337): ESI 4 = SET cocina:milanesa:carne milanesadecarneconfritas 
+
+[INFO] 02:13:28:710 Coordinador/(11283:11337): ESI 4 = SET cocina:milanesa:pollo milanesadepolloconfritas 
+
+[INFO] 02:13:29:100 Coordinador/(11283:11337): ESI 4 = STORE sandwich:bondiola:simple  
+
+[INFO] 02:13:29:530 Coordinador/(11283:11337): ESI 4 = STORE sandwich:bondiola:jyq  
+
+[INFO] 02:13:29:980 Coordinador/(11283:11337): ESI 4 = STORE sandwich:bondiola:completo  
+
+[INFO] 02:13:30:411 Coordinador/(11283:11337): ESI 4 = STORE sandwich:lomo:simple  
+
+[INFO] 02:13:30:838 Coordinador/(11283:11337): ESI 4 = STORE sandwich:lomo:jyq  
+
+[INFO] 02:13:31:268 Coordinador/(11283:11337): ESI 4 = STORE sandwich:lomo:completo  
+
+[INFO] 02:13:31:700 Coordinador/(11283:11337): ESI 4 = STORE sandwich:vacio:simple  
+
+[INFO] 02:13:32:135 Coordinador/(11283:11337): ESI 4 = STORE sandwich:vacio:jyq  
+
+[INFO] 02:13:32:562 Coordinador/(11283:11337): ESI 4 = STORE sandwich:vacio:completo  
+
+[INFO] 02:13:33:12 Coordinador/(11283:11337): ESI 4 = STORE sandwich:choripan  
+
+[INFO] 02:13:33:441 Coordinador/(11283:11337): ESI 4 = STORE sandwich:morcipan  
+
+[INFO] 02:13:33:874 Coordinador/(11283:11337): ESI 4 = STORE parrilla:chinchulines  
+
+[INFO] 02:13:34:307 Coordinador/(11283:11337): ESI 4 = STORE parrilla:rinion  
+
+[INFO] 02:13:34:733 Coordinador/(11283:11337): ESI 4 = STORE parrilla:tiraasado  
+
+[INFO] 02:13:35:162 Coordinador/(11283:11337): ESI 4 = STORE parrilla:vacio  
+
+[INFO] 02:13:35:589 Coordinador/(11283:11337): ESI 4 = STORE parrilla:entrania  
+
+[INFO] 02:13:36:23 Coordinador/(11283:11337): ESI 4 = STORE parrilla:bifedelomo  
+
+[INFO] 02:13:36:455 Coordinador/(11283:11337): ESI 4 = STORE parrilla:matambre:simple  
+
+[INFO] 02:13:36:924 Coordinador/(11283:11337): ESI 4 = STORE parrilla:matambre:alapizza  
+
+[INFO] 02:13:37:359 Coordinador/(11283:11337): ESI 4 = STORE parrilla:ojodebife  
+
+[INFO] 02:13:37:810 Coordinador/(11283:11337): ESI 4 = STORE parrilla:molleja  
+
+[INFO] 02:13:38:243 Coordinador/(11283:11337): ESI 4 = STORE parrilla:pareja  
+
+[INFO] 02:13:38:689 Coordinador/(11283:11337): ESI 4 = STORE cocina:papasfritas  
+
+[INFO] 02:13:39:114 Coordinador/(11283:11337): ESI 4 = STORE cocina:batatasfritas  
+
+[INFO] 02:13:39:545 Coordinador/(11283:11337): ESI 4 = STORE cocina:tallarines  
+
+[INFO] 02:13:39:969 Coordinador/(11283:11337): ESI 4 = STORE cocina:ravioles  
+
+[INFO] 02:13:40:431 Coordinador/(11283:11337): ESI 4 = STORE cocina:nioquis  
+
+[INFO] 02:13:40:861 Coordinador/(11283:11337): ESI 4 = STORE cocina:suprema  
+
+[INFO] 02:13:41:290 Coordinador/(11283:11337): ESI 4 = STORE cocina:milanesa:carne  
+
+[INFO] 02:13:41:731 Coordinador/(11283:11337): ESI 4 = STORE cocina:milanesa:pollo  
+
+[INFO] 02:13:54:946 Coordinador/(11283:11325): ESI 1 = GET postre:ingrediente1  
+
+[INFO] 02:13:55:242 Coordinador/(11283:11325): ESI 1 = GET postre:ingrediente2  
+
+[INFO] 02:13:55:610 Coordinador/(11283:11325): ESI 1 = GET postre:ingrediente3  
+
+[INFO] 02:13:55:935 Coordinador/(11283:11325): ESI 1 = GET postre:ingrediente4  
+
+[INFO] 02:13:56:271 Coordinador/(11283:11325): ESI 1 = GET postre:ingrediente5  
+
+[INFO] 02:13:56:601 Coordinador/(11283:11325): ESI 1 = GET postre:ingrediente6  
+
+[INFO] 02:13:56:942 Coordinador/(11283:11325): ESI 1 = GET postre:ingrediente7  
+
+[INFO] 02:13:57:278 Coordinador/(11283:11325): ESI 1 = GET postre:ingrediente8  
+
+[INFO] 02:13:57:610 Coordinador/(11283:11325): ESI 1 = GET postre:ingrediente9  
+
+[INFO] 02:13:57:949 Coordinador/(11283:11325): ESI 1 = GET postre:ingrediente10  
+
+[INFO] 02:13:58:278 Coordinador/(11283:11325): ESI 1 = SET postre:ingrediente1 huevos 
+
+[INFO] 02:13:58:658 Coordinador/(11283:11325): ESI 1 = SET postre:ingrediente2 azucar 
+
+[INFO] 02:13:59:61 Coordinador/(11283:11325): ESI 1 = SET postre:ingrediente3 quesomascarpone 
+
+[INFO] 02:13:59:451 Coordinador/(11283:11325): ESI 1 = SET postre:ingrediente4 crema 
+
+[INFO] 02:13:59:833 Coordinador/(11283:11325): ESI 1 = SET postre:ingrediente5 esenciavainilla 
+
+[INFO] 02:14:00:214 Coordinador/(11283:11325): ESI 1 = SET postre:ingrediente6 oporto 
+
+[INFO] 02:14:00:630 Coordinador/(11283:11325): ESI 1 = SET postre:ingrediente7 cafe 
+
+[INFO] 02:14:01:19 Coordinador/(11283:11325): ESI 1 = SET postre:ingrediente8 vainillas 
+
+[INFO] 02:14:01:406 Coordinador/(11283:11325): ESI 1 = SET postre:ingrediente9 cacaoamargo 
+
+[INFO] 02:14:01:794 Coordinador/(11283:11325): ESI 1 = SET postre:ingrediente10 licordecafe 
+
+[INFO] 02:14:02:172 Coordinador/(11283:11325): ESI 1 = STORE postre:ingrediente1  
+
+[INFO] 02:14:02:598 Coordinador/(11283:11325): ESI 1 = STORE postre:ingrediente2  
+
+[INFO] 02:14:03:29 Coordinador/(11283:11325): ESI 1 = STORE postre:ingrediente3  
+
+[INFO] 02:14:03:481 Coordinador/(11283:11325): ESI 1 = STORE postre:ingrediente4  
+
+[INFO] 02:14:03:982 Coordinador/(11283:11325): ESI 1 = STORE postre:ingrediente5  
+
+[INFO] 02:14:04:431 Coordinador/(11283:11325): ESI 1 = STORE postre:ingrediente6  
+
+[INFO] 02:14:04:863 Coordinador/(11283:11325): ESI 1 = STORE postre:ingrediente7  
+
+[INFO] 02:14:05:313 Coordinador/(11283:11325): ESI 1 = STORE postre:ingrediente8  
+
+[INFO] 02:14:05:742 Coordinador/(11283:11325): ESI 1 = STORE postre:ingrediente9  
+
+[INFO] 02:14:06:181 Coordinador/(11283:11325): ESI 1 = STORE postre:ingrediente10  
+
+[INFO] 02:17:42:94 Coordinador/(11600:11620): ESI 0 = GET e3:sony:juegos  
+
+[INFO] 02:17:42:300 Coordinador/(11600:11620): ESI 0 = GET e3:microsoft:juegos  
+
+[INFO] 02:17:42:624 Coordinador/(11600:11620): ESI 0 = SET e3:sony:juegos TLOU2 
+
+[INFO] 02:17:42:949 Coordinador/(11600:11620): ESI 0 = SET e3:sony:juegos Spiderman 
+
+[INFO] 02:17:43:273 Coordinador/(11600:11620): ESI 0 = SET e3:sony:juegos GhostOfTsushima 
+
+[INFO] 02:17:43:594 Coordinador/(11600:11620): ESI 0 = SET e3:sony:juegos DeathStranding 
+
+[INFO] 02:17:43:918 Coordinador/(11600:11620): ESI 0 = SET e3:sony:juegos ResidenEvil2Remake 
+
+[INFO] 02:17:44:242 Coordinador/(11600:11620): ESI 0 = SET e3:sony:juegos Destiny2DLCForsaken 
+
+[INFO] 02:17:54:119 Coordinador/(11600:11620): ESI 0 = SET e3:microsoft:juegos DLCCuphead 
+
+[INFO] 02:17:54:406 Coordinador/(11600:11620): ESI 0 = SET e3:microsoft:juegos ForzaHorizon4 
+
+[INFO] 02:17:54:765 Coordinador/(11600:11620): ESI 0 = SET e3:microsoft:juegos Gears5 
+
+[INFO] 02:17:55:90 Coordinador/(11600:11620): ESI 0 = SET e3:microsoft:juegos MetroExodus 
+
+[INFO] 02:17:55:414 Coordinador/(11600:11620): ESI 0 = SET e3:microsoft:juegos Fallout76 
+
+[INFO] 02:17:55:743 Coordinador/(11600:11620): ESI 0 = SET e3:microsoft:juegos TheDivision2 
+
+[INFO] 02:17:56:74 Coordinador/(11600:11620): ESI 0 = SET e3:microsoft:juegos DyingLight2 
+
+[INFO] 02:17:56:398 Coordinador/(11600:11620): ESI 0 = SET e3:microsoft:juegos Crackdown3 
+
+[INFO] 02:17:56:723 Coordinador/(11600:11620): ESI 0 = SET e3:microsoft:juegos HaloInfinite 
+
+[INFO] 02:17:57:46 Coordinador/(11600:11620): ESI 0 = SET e3:microsoft:juegos KingdomHearts3 
+
+[INFO] 02:17:57:371 Coordinador/(11600:11620): ESI 0 = STORE e3:microsoft:juegos  
+
+[INFO] 02:17:57:743 Coordinador/(11600:11620): ESI 0 = STORE e3:sony:juegos  
+
+[INFO] 02:17:58:140 Coordinador/(11600:11622): ESI 1 = GET postre:ingrediente1  
+
+[INFO] 02:17:58:183 Coordinador/(11600:11622): ESI 1 = GET postre:ingrediente1  - ERROR: CLAVE BLOQUEADA 
+
+[INFO] 02:17:58:386 Coordinador/(11600:11624): ESI 2 = GET sony:consola:ps1  
+
+[INFO] 02:17:58:635 Coordinador/(11600:11624): ESI 2 = GET sony:consola:ps2  
+
+[INFO] 02:17:58:958 Coordinador/(11600:11624): ESI 2 = GET sony:consola:ps3  
+
+[INFO] 02:17:59:238 Coordinador/(11600:11624): ESI 2 = GET sony:consola:ps4  
+
+[INFO] 02:17:59:522 Coordinador/(11600:11624): ESI 2 = GET microsoft:consola:xbox  
+
+[INFO] 02:17:59:802 Coordinador/(11600:11624): ESI 2 = GET microsoft:consola:xbox360  
+
+[INFO] 02:18:00:94 Coordinador/(11600:11624): ESI 2 = GET microsoft:consola:xboxone  
+
+[INFO] 02:18:00:376 Coordinador/(11600:11624): ESI 2 = GET nintendo:consola:nes  
+
+[INFO] 02:18:00:663 Coordinador/(11600:11624): ESI 2 = GET nintendo:consola:snes  
+
+[INFO] 02:18:00:945 Coordinador/(11600:11624): ESI 2 = GET nintendo:consola:nintendo64  
+
+[INFO] 02:18:01:226 Coordinador/(11600:11624): ESI 2 = GET nintendo:consola:gamecube  
+
+[INFO] 02:18:01:510 Coordinador/(11600:11624): ESI 2 = GET nintendo:consola:wii  
+
+[INFO] 02:18:01:789 Coordinador/(11600:11624): ESI 2 = GET nintendo:consola:wiiu  
+
+[INFO] 02:18:02:74 Coordinador/(11600:11624): ESI 2 = GET nintendo:consola:switch  
+
+[INFO] 02:18:02:357 Coordinador/(11600:11624): ESI 2 = SET nintendo:consola:nes Mario 
+
+[INFO] 02:18:02:681 Coordinador/(11600:11624): ESI 2 = SET nintendo:consola:snes SuperMario 
+
+[INFO] 02:18:03:6 Coordinador/(11600:11624): ESI 2 = SET nintendo:consola:nintendo64 Mario64 
+
+[INFO] 02:18:03:330 Coordinador/(11600:11624): ESI 2 = SET nintendo:consola:gamecube Mario 
+
+[INFO] 02:18:03:653 Coordinador/(11600:11624): ESI 2 = SET nintendo:consola:wii MarioGalaxy 
+
+[INFO] 02:18:03:974 Coordinador/(11600:11624): ESI 2 = SET nintendo:consola:wiiu RIP 
+
+[INFO] 02:18:04:299 Coordinador/(11600:11624): ESI 2 = SET nintendo:consola:switch MarioOddysey 
+
+[INFO] 02:18:04:622 Coordinador/(11600:11624): ESI 2 = SET sony:consola:ps1 FinalFantasy 
+
+[INFO] 02:18:04:943 Coordinador/(11600:11624): ESI 2 = SET sony:consola:ps2 GodOfWar 
+
+[INFO] 02:18:05:267 Coordinador/(11600:11624): ESI 2 = SET sony:consola:ps3 TLOU 
+
+[INFO] 02:18:05:590 Coordinador/(11600:11624): ESI 2 = SET sony:consola:ps4 Bloodborne 
+
+[INFO] 02:18:05:915 Coordinador/(11600:11624): ESI 2 = SET microsoft:consola:xbox Halo 
+
+[INFO] 02:18:06:238 Coordinador/(11600:11624): ESI 2 = SET microsoft:consola:xbox360 Halo 
+
+[INFO] 02:18:06:563 Coordinador/(11600:11624): ESI 2 = SET microsoft:consola:xboxone Halo 
+
+[INFO] 02:18:06:899 Coordinador/(11600:11631): ESI 3 = GET platoprincipal:ingrediente5  
+
+[INFO] 02:18:07:149 Coordinador/(11600:11631): ESI 3 = GET platoprincipal:ingrediente4  
+
+[INFO] 02:18:07:470 Coordinador/(11600:11631): ESI 3 = GET platoprincipal:ingrediente3  
+
+[INFO] 02:18:07:750 Coordinador/(11600:11631): ESI 3 = GET platoprincipal:ingrediente2  
+
+[INFO] 02:18:08:29 Coordinador/(11600:11631): ESI 3 = GET platoprincipal:ingrediente1  
+
+[INFO] 02:18:08:309 Coordinador/(11600:11631): ESI 3 = SET platoprincipal:ingrediente1 milanesadecarne 
+
+[INFO] 02:18:08:631 Coordinador/(11600:11631): ESI 3 = SET platoprincipal:ingrediente2 queso 
+
+[INFO] 02:18:08:954 Coordinador/(11600:11631): ESI 3 = SET platoprincipal:ingrediente3 jamon 
+
+[INFO] 02:18:09:279 Coordinador/(11600:11631): ESI 3 = SET platoprincipal:ingrediente4 lechuga 
+
+[INFO] 02:18:09:597 Coordinador/(11600:11631): ESI 3 = SET platoprincipal:ingrediente5 tomate 
+
+[INFO] 02:18:09:918 Coordinador/(11600:11631): ESI 3 = STORE platoprincipal:ingrediente1  
+
+[INFO] 02:18:10:279 Coordinador/(11600:11631): ESI 3 = STORE platoprincipal:ingrediente2  
+
+[INFO] 02:18:10:637 Coordinador/(11600:11631): ESI 3 = STORE platoprincipal:ingrediente3  
+
+[INFO] 02:18:10:998 Coordinador/(11600:11631): ESI 3 = STORE platoprincipal:ingrediente4  
+
+[INFO] 02:18:11:358 Coordinador/(11600:11631): ESI 3 = STORE platoprincipal:ingrediente5  
+
+[INFO] 02:18:11:731 Coordinador/(11600:11635): ESI 4 = GET sandwich:bondiola:simple  
+
+[INFO] 02:18:11:978 Coordinador/(11600:11635): ESI 4 = GET sandwich:bondiola:jyq  
+
+[INFO] 02:18:12:298 Coordinador/(11600:11635): ESI 4 = GET sandwich:bondiola:completo  
+
+[INFO] 02:18:12:579 Coordinador/(11600:11635): ESI 4 = GET sandwich:lomo:simple  
+
+[INFO] 02:18:12:862 Coordinador/(11600:11635): ESI 4 = GET sandwich:lomo:jyq  
+
+[INFO] 02:18:13:142 Coordinador/(11600:11635): ESI 4 = GET sandwich:lomo:completo  
+
+[INFO] 02:18:13:423 Coordinador/(11600:11635): ESI 4 = GET sandwich:vacio:simple  
+
+[INFO] 02:18:13:707 Coordinador/(11600:11635): ESI 4 = GET sandwich:vacio:jyq  
+
+[INFO] 02:18:13:990 Coordinador/(11600:11635): ESI 4 = GET sandwich:vacio:completo  
+
+[INFO] 02:18:14:270 Coordinador/(11600:11635): ESI 4 = GET sandwich:choripan  
+
+[INFO] 02:18:14:550 Coordinador/(11600:11635): ESI 4 = GET sandwich:morcipan  
+
+[INFO] 02:18:14:830 Coordinador/(11600:11635): ESI 4 = GET parrilla:chinchulines  
+
+[INFO] 02:18:15:110 Coordinador/(11600:11635): ESI 4 = GET parrilla:rinion  
+
+[INFO] 02:18:15:392 Coordinador/(11600:11635): ESI 4 = GET parrilla:tiraasado  
+
+[INFO] 02:18:15:673 Coordinador/(11600:11635): ESI 4 = GET parrilla:vacio  
+
+[INFO] 02:18:15:954 Coordinador/(11600:11635): ESI 4 = GET parrilla:entrania  
+
+[INFO] 02:18:16:233 Coordinador/(11600:11635): ESI 4 = GET parrilla:bifedelomo  
+
+[INFO] 02:18:16:513 Coordinador/(11600:11635): ESI 4 = GET parrilla:matambre:simple  
+
+[INFO] 02:18:16:794 Coordinador/(11600:11635): ESI 4 = GET parrilla:matambre:alapizza  
+
+[INFO] 02:18:17:74 Coordinador/(11600:11635): ESI 4 = GET parrilla:ojodebife  
+
+[INFO] 02:18:17:354 Coordinador/(11600:11635): ESI 4 = GET parrilla:molleja  
+
+[INFO] 02:18:17:633 Coordinador/(11600:11635): ESI 4 = GET parrilla:pareja  
+
+[INFO] 02:18:17:914 Coordinador/(11600:11635): ESI 4 = GET cocina:papasfritas  
+
+[INFO] 02:18:18:194 Coordinador/(11600:11635): ESI 4 = GET cocina:batatasfritas  
+
+[INFO] 02:18:18:475 Coordinador/(11600:11635): ESI 4 = GET cocina:tallarines  
+
+[INFO] 02:18:18:753 Coordinador/(11600:11635): ESI 4 = GET cocina:ravioles  
+
+[INFO] 02:18:19:34 Coordinador/(11600:11635): ESI 4 = GET cocina:nioquis  
+
+[INFO] 02:18:19:313 Coordinador/(11600:11635): ESI 4 = GET cocina:suprema  
+
+[INFO] 02:18:19:594 Coordinador/(11600:11635): ESI 4 = GET cocina:milanesa:carne  
+
+[INFO] 02:18:19:879 Coordinador/(11600:11635): ESI 4 = GET cocina:milanesa:pollo  
+
+[INFO] 02:18:20:162 Coordinador/(11600:11635): ESI 4 = SET sandwich:bondiola:simple panbondiola 
+
+[INFO] 02:18:20:489 Coordinador/(11600:11635): ESI 4 = SET sandwich:bondiola:jyq panjamonquesobondiola 
+
+[INFO] 02:18:20:811 Coordinador/(11600:11635): ESI 4 = SET sandwich:bondiola:completo panjamonquesolechugatomatebondiola 
+
+[INFO] 02:18:21:134 Coordinador/(11600:11635): ESI 4 = SET sandwich:lomo:simple panlomo 
+
+[INFO] 02:18:21:463 Coordinador/(11600:11635): ESI 4 = SET sandwich:lomo:jyq panjamonquesolomo 
+
+[INFO] 02:18:21:789 Coordinador/(11600:11635): ESI 4 = SET sandwich:lomo:completo panjamonquesolechugatomatelomo 
+
+[INFO] 02:18:22:110 Coordinador/(11600:11635): ESI 4 = SET sandwich:vacio:simple panvacio 
+
+[INFO] 02:18:22:435 Coordinador/(11600:11635): ESI 4 = SET sandwich:vacio:jyq panjamonquesovacio 
+
+[INFO] 02:18:22:758 Coordinador/(11600:11635): ESI 4 = SET sandwich:vacio:completo panjamonquesolechugatomatevacio 
+
+[INFO] 02:18:23:82 Coordinador/(11600:11635): ESI 4 = SET sandwich:choripan panchorizo 
+
+[INFO] 02:18:23:406 Coordinador/(11600:11635): ESI 4 = SET sandwich:morcipan panmorcilla 
+
+[INFO] 02:18:23:730 Coordinador/(11600:11635): ESI 4 = SET parrilla:chinchulines chinchulineslimon 
+
+[INFO] 02:18:24:54 Coordinador/(11600:11635): ESI 4 = SET parrilla:rinion rinionylimon 
+
+[INFO] 02:18:24:378 Coordinador/(11600:11635): ESI 4 = SET parrilla:tiraasado porcionde3o4huesos 
+
+[INFO] 02:18:24:702 Coordinador/(11600:11635): ESI 4 = SET parrilla:vacio vacioconfritas 
+
+[INFO] 02:18:25:21 Coordinador/(11600:11635): ESI 4 = SET parrilla:entrania entraniaconfritas 
+
+[INFO] 02:18:25:342 Coordinador/(11600:11635): ESI 4 = SET parrilla:bifedelomo bifeconfritas 
+
+[INFO] 02:18:25:667 Coordinador/(11600:11635): ESI 4 = SET parrilla:matambre:simple matambrefritas 
+
+[INFO] 02:18:25:989 Coordinador/(11600:11635): ESI 4 = SET parrilla:matambre:alapizza matambrejamonquesooregano 
+
+[INFO] 02:18:26:314 Coordinador/(11600:11635): ESI 4 = SET parrilla:ojodebife ojodebifeconfritas 
+
+[INFO] 02:18:26:639 Coordinador/(11600:11635): ESI 4 = SET parrilla:molleja mollejaconlimon 
+
+[INFO] 02:18:26:962 Coordinador/(11600:11635): ESI 4 = SET parrilla:pareja chorizoymorcilla 
+
+[INFO] 02:18:27:282 Coordinador/(11600:11635): ESI 4 = SET cocina:papasfritas papayaceite 
+
+[INFO] 02:18:27:606 Coordinador/(11600:11635): ESI 4 = SET cocina:batatasfritas batatayaceite 
+
+[INFO] 02:18:27:930 Coordinador/(11600:11635): ESI 4 = SET cocina:tallarines tallarinescontuco 
+
+[INFO] 02:18:28:254 Coordinador/(11600:11635): ESI 4 = SET cocina:ravioles raviolesdejyqcontuco 
+
+[INFO] 02:18:28:579 Coordinador/(11600:11635): ESI 4 = SET cocina:nioquis nioquisdepapacontuco 
+
+[INFO] 02:18:28:902 Coordinador/(11600:11635): ESI 4 = SET cocina:suprema supremaalamaryland 
+
+[INFO] 02:18:29:231 Coordinador/(11600:11635): ESI 4 = SET cocina:milanesa:carne milanesadecarneconfritas 
+
+[INFO] 02:18:29:558 Coordinador/(11600:11635): ESI 4 = SET cocina:milanesa:pollo milanesadepolloconfritas 
+
+[INFO] 02:18:29:883 Coordinador/(11600:11635): ESI 4 = STORE sandwich:bondiola:simple  
+
+[INFO] 02:18:30:244 Coordinador/(11600:11635): ESI 4 = STORE sandwich:bondiola:jyq  
+
+[INFO] 02:18:30:606 Coordinador/(11600:11635): ESI 4 = STORE sandwich:bondiola:completo  
+
+[INFO] 02:18:30:966 Coordinador/(11600:11635): ESI 4 = STORE sandwich:lomo:simple  
+
+[INFO] 02:18:31:326 Coordinador/(11600:11635): ESI 4 = STORE sandwich:lomo:jyq  
+
+[INFO] 02:18:31:687 Coordinador/(11600:11635): ESI 4 = STORE sandwich:lomo:completo  
+
+[INFO] 02:18:32:47 Coordinador/(11600:11635): ESI 4 = STORE sandwich:vacio:simple  
+
+[INFO] 02:18:32:406 Coordinador/(11600:11635): ESI 4 = STORE sandwich:vacio:jyq  
+
+[INFO] 02:18:32:766 Coordinador/(11600:11635): ESI 4 = STORE sandwich:vacio:completo  
+
+[INFO] 02:18:33:127 Coordinador/(11600:11635): ESI 4 = STORE sandwich:choripan  
+
+[INFO] 02:18:33:491 Coordinador/(11600:11635): ESI 4 = STORE sandwich:morcipan  
+
+[INFO] 02:18:33:850 Coordinador/(11600:11635): ESI 4 = STORE parrilla:chinchulines  
+
+[INFO] 02:18:34:210 Coordinador/(11600:11635): ESI 4 = STORE parrilla:rinion  
+
+[INFO] 02:18:34:571 Coordinador/(11600:11635): ESI 4 = STORE parrilla:tiraasado  
+
+[INFO] 02:18:34:934 Coordinador/(11600:11635): ESI 4 = STORE parrilla:vacio  
+
+[INFO] 02:18:35:299 Coordinador/(11600:11635): ESI 4 = STORE parrilla:entrania  
+
+[INFO] 02:18:35:662 Coordinador/(11600:11635): ESI 4 = STORE parrilla:bifedelomo  
+
+[INFO] 02:18:36:23 Coordinador/(11600:11635): ESI 4 = STORE parrilla:matambre:simple  
+
+[INFO] 02:18:36:382 Coordinador/(11600:11635): ESI 4 = STORE parrilla:matambre:alapizza  
+
+[INFO] 02:18:36:743 Coordinador/(11600:11635): ESI 4 = STORE parrilla:ojodebife  
+
+[INFO] 02:18:37:107 Coordinador/(11600:11635): ESI 4 = STORE parrilla:molleja  
+
+[INFO] 02:18:37:471 Coordinador/(11600:11635): ESI 4 = STORE parrilla:pareja  
+
+[INFO] 02:18:37:830 Coordinador/(11600:11635): ESI 4 = STORE cocina:papasfritas  
+
+[INFO] 02:18:38:190 Coordinador/(11600:11635): ESI 4 = STORE cocina:batatasfritas  
+
+[INFO] 02:18:38:550 Coordinador/(11600:11635): ESI 4 = STORE cocina:tallarines  
+
+[INFO] 02:18:38:913 Coordinador/(11600:11635): ESI 4 = STORE cocina:ravioles  
+
+[INFO] 02:18:39:275 Coordinador/(11600:11635): ESI 4 = STORE cocina:nioquis  
+
+[INFO] 02:18:39:638 Coordinador/(11600:11635): ESI 4 = STORE cocina:suprema  
+
+[INFO] 02:18:39:998 Coordinador/(11600:11635): ESI 4 = STORE cocina:milanesa:carne  
+
+[INFO] 02:18:40:359 Coordinador/(11600:11635): ESI 4 = STORE cocina:milanesa:pollo  
+
