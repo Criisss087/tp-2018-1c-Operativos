@@ -24,6 +24,7 @@
 #include <errno.h>
 #include <fcntl.h>
 #include <pthread.h>
+#include <signal.h>
 
 #include "CargarArchivoDeConfiguracion.c"
 
@@ -70,6 +71,7 @@ typedef struct {
 // Cantidad de threads requeridos: principal + auxiliar para efectuar DUMP
 pthread_t threadId[2];
 
+int socketCoordinador;
 int numeroEntrada = 0;
 int contadorOperacion = 0;
 int nroEntradaBaseAux = 0;
@@ -82,5 +84,10 @@ char * tablaEntradas;
 // Funciones utilizadas
 
 void guardarClaveValor(char clave[40], char * valor);
+void configurar_signals(void);
+void captura_sigint(int signo);
+void finalizar_instancia(void);
+void destruir_tabla_entradas(void);
+
 
 #endif /* SRC_UTILIDADES_H_ */

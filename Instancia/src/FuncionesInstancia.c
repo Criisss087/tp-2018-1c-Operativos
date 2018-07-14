@@ -26,6 +26,8 @@ void enviarHeader(int socketCoordinador, int procesoOrigen, int procesoReceptor,
 
 	printf("Resultado de envio Header: %d \n", resultado);
 
+	free(header);
+
 }
 
 void enviarNombreInstanciaACoordinador(int socketCoordinador) {
@@ -36,6 +38,7 @@ void enviarNombreInstanciaACoordinador(int socketCoordinador) {
 	INSTANCIA_COORDINADOR_CONEXION, sizeof(t_info_instancia));
 
 	t_info_instancia * infoInstancia = malloc(sizeof(t_info_instancia));
+	memset(infoInstancia,0,sizeof(t_info_instancia));
 
 	memcpy(infoInstancia->nombreInstancia, NOMBRE_INSTANCIA,
 			strlen(NOMBRE_INSTANCIA)+1);
