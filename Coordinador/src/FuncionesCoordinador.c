@@ -7,7 +7,7 @@
 
 #include "funcionesInstancia.c"
 #include "Utilidades.h"
-#include "FuncionesPlanificador.c"
+
 
 void crear_hilo_conexion(int socket, void*funcion_a_ejecutar(int)){
 	pthread_t hilo;
@@ -258,3 +258,19 @@ int existeClave(char *nombre){
 	bool mismaClave(t_clave * clave){return string_equals_ignore_case(clave->clave, nombre);}
 	return list_any_satisfy(lista_claves, (void *)mismaClave);
 }
+
+void eliminarClave(char clave[40]){
+	int pos = 0;
+	int tam = list_size(lista_claves);
+	t_clave * aux = NULL;
+	for (int i = 0; tam>i;i++){
+		aux = list_get(lista_claves,i);
+		if (string_equals_ignore_case(aux->clave, clave)){
+			pos = i;
+			i = tam;
+		}
+	}
+	list_remove(lista_claves,pos);
+}
+
+#include "FuncionesPlanificador.c"

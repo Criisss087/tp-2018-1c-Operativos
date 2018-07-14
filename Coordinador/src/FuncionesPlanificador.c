@@ -49,6 +49,9 @@ t_status_clave_interno * buscar_clave(char * nombre_clave){
 				st->tamanio_instancia_nombre =strlen(clave->instancia->nombre);
 				st->tamanio_valor=-1;
 				st->valor=NULL;
+
+				logger_coordinador(escribir_loguear,l_error, "Se me consultó por una clave inaccesible (%s), la elimino \n", clave->clave);
+				eliminarClave(clave->clave);
 			}else{
 				//6
 				//////////////

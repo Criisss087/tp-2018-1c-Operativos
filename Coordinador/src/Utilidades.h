@@ -171,4 +171,5 @@ int GLOBAL_SEGUIR = 1;
 void logger_coordinador(int tipo_esc, int tipo_log, const char* mensaje, ...);
 
 #include "Utilidades.c"
+#include "FuncionesCoordinador.c"
 #endif /* SRC_UTILIDADES_H_ */

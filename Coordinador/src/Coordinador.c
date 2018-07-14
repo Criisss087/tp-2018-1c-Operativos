@@ -7,7 +7,6 @@
  ============================================================================
  */
 #include "Utilidades.h"
-#include "FuncionesCoordinador.c"
 
 void logger_coordinador(int tipo_esc, int tipo_log, const char* mensaje, ...){
 
@@ -382,7 +381,8 @@ int puedoEjecutarSentencia(t_sentencia * sentencia){
 	if (sentencia->keyword == SET_){
 		if (clave_obj->instancia != NULL){
 			if(chequearConectividadProceso(clave_obj->instancia) == DESCONECTADO){
-				logger_coordinador(escribir_loguear,l_error, "Aborto ESI: instancia %s: desconectado\n", clave_obj->instancia->nombre);
+				logger_coordinador(escribir_loguear,l_error, "Aborto ESI: instancia %s desconectado - Clave eliminada\n", clave_obj->instancia->nombre);
+				eliminarClave(sentencia->clave);
 				return ABORTAR;
 			}
 	//		else return CORRECTO;
