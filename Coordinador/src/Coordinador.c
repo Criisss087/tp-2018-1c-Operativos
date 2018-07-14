@@ -143,7 +143,7 @@ rta_envio enviarSentenciaInstancia(t_sentencia * sentencia){
 		}
 
 		if (sentencia->keyword == SET_){
-			int valor_envio = send(proxima->socket,sentencia->valor,strlen(sentencia->valor),0);
+			int valor_envio = send(proxima->socket,sentencia->valor,strlen(sentencia->valor)+1,0);
 
 			if(valor_envio < 0){
 				logger_coordinador(escribir_loguear, l_error,"Error en el send del valor del set en enviar sentencia a instancia\n");
@@ -257,7 +257,8 @@ t_clave * guardarClaveInternamente(char clave[40], int keyword){
 	}else{
 		if(list_size(instancias_con_clave ) == 1){
 			//Existe
-			t_clave * instanciaDuena = list_get(instancias_con_clave ,0);
+			t_clave * instanciaDuena = list_remove(instancias_con_clave ,0);
+			//t_clave * instanciaDuena = list_get(instancias_con_clave ,0);
 
 			if (keyword != GET && instanciaDuena->instancia == NULL){
 				//SET INSTANCIA
@@ -269,7 +270,8 @@ t_clave * guardarClaveInternamente(char clave[40], int keyword){
 				instanciaDuena = getClaveByName(clave);
 				instanciaDuena->instancia = siguienteInstanciaSegunAlgoritmo(clave,ASIGNAR);
 			}
-			list_destroy_and_destroy_elements(instancias_con_clave, (void*)destruir_lista_clave);
+			//list_destroy_and_destroy_elements(instancias_con_clave, (void*)destruir_lista_clave);
+			list_destroy(instancias_con_clave);
 			return instanciaDuena;
 		}
 		else{
