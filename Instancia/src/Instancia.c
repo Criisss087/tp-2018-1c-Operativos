@@ -553,7 +553,7 @@ t_indice_entrada * guardarIndiceNoAtomicoEnTabla(char clave[40], char * valor,
 	char * punteroBase = tablaEntradas
 			+ (numeroEntrada * configTablaEntradas->tamanioEntradas);
 
-	int tamanioTotalValor = strlen(valor);
+	int tamanioTotalValor = strlen(valor) + 1;
 
 	printf("\tTamanio total del Valor: %d\n", tamanioTotalValor);
 	printf("\tTamanio maximo a guardar por entrada: %d\n",
