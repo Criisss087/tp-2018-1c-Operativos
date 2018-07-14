@@ -75,6 +75,8 @@ typedef struct status_clave t_status_clave;
 //TODO: pasar a redis_lib
 enum {COORDINADOR_SIN_CLAVE, INSTANCIA_CAIDA, INSTANCIA_SIMULADA, CORRECTO_CONSULTA_VALOR, INSTANCIA_SIN_CLAVE};
 
+enum tipo_logueo { escribir, loguear, escribir_loguear, l_trace, l_debug, l_info, l_warning, l_error, l_esi};
+
 typedef struct {
 	char * valor;
 	char * nombre_instancia;
@@ -155,13 +157,18 @@ t_log * logger;
 t_log * logger_operaciones;
 t_list * lista_instancias;
 t_list * lista_claves;
+
+int * rta1; //la hago global para poder hacer el free
 int id_counter = 0;
 
 int indice_actual_lista; //que item de la lista fue el ultimo al que se asigno trabajo
 t_instancia PROCESO_PLANIFICADOR;
 int total_hilos = 0; //borrable
 int hay_instancias = 0; //No se porque si uso lista.element_count tira segmentation fault. que mierda pasa la concha de la lora.
+int GLOBAL_SEGUIR = 1;
 //***
+
+void logger_coordinador(int tipo_esc, int tipo_log, const char* mensaje, ...);
 
 #include "Utilidades.c"
 #endif /* SRC_UTILIDADES_H_ */
