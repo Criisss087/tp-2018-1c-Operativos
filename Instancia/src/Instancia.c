@@ -997,7 +997,21 @@ void compactarEntradas() {
 	printf("Clean efectuado correctamente sobre la tabla de entradas...\n");
 
 	printf("Asignando lista auxiliar a la tabla de entradas...\n");
-	list_add_all(l_indice_entradas, listaAuxiliar);
+
+	for (int i = 0; i < list_size(listaAuxiliar); i++) {
+		t_indice_entrada * entrada = list_get(listaAuxiliar, i);
+		t_indice_entrada * entradaAux = malloc(sizeof(t_indice_entrada));
+
+		entradaAux->numeroEntrada = entrada->numeroEntrada;
+		strcpy(entradaAux->clave, entrada->clave);
+		entradaAux->tamanioValor = entrada->tamanioValor;
+		entradaAux->esAtomica = entrada->esAtomica;
+		entradaAux->nroDeOperacion = entrada->nroDeOperacion;
+		entradaAux->puntero = entrada->puntero;
+
+		list_add(l_indice_entradas, entradaAux);
+	}
+	//list_add_all(l_indice_entradas, listaAuxiliar);
 
 	list_destroy_and_destroy_elements(listaAuxiliar, (void*) free);
 }
