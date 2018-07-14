@@ -329,7 +329,8 @@ int consultarPlanificador(t_sentencia * sentencia){
 
 	destruir_cabecera_mensaje(header);
 
-	rta1 = malloc(sizeof(int));
+//	rta1 = malloc(sizeof(int));
+	memset(rta1, 0, sizeof(rta1));
 	status_recv = recv(PROCESO_PLANIFICADOR.socket,rta1, sizeof(int),0);
 
 	if(status_recv < 0){

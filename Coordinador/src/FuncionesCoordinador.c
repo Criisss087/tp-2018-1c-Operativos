@@ -88,6 +88,7 @@ void seteosIniciales(char *path){
 	lista_claves = list_create();
 	indice_actual_lista = -1; //TODO usar la funcion list_size para ver si mostrar o no el error
 
+	rta1 = malloc(sizeof(int));
 	configurar_signals();
 }
 
@@ -138,7 +139,7 @@ t_esi_operacion_sin_puntero * armar_esi_operacion_sin_puntero(t_sentencia * sent
 	t_esi_operacion_sin_puntero * op_sin_punt = malloc(sizeof(t_esi_operacion_sin_puntero));
 	strncpy(op_sin_punt->clave, sentencia->clave,40);
 	op_sin_punt->keyword = sentencia->keyword;
-	op_sin_punt->tam_valor = strlen(sentencia->valor);
+	op_sin_punt->tam_valor = strlen(sentencia->valor)+1;
 	op_sin_punt->pid = sentencia->pid;
 	return op_sin_punt;
 }

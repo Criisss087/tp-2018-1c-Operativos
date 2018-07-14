@@ -190,6 +190,8 @@ void atender_comando_status(){
 							}
 						}
 						free(st_clave);
+						free(st_clave_interno->nombre_instancia);
+						free(st_clave_interno->valor);
 						free(st_clave_interno);
 						free(header_consulta_valor);
 						destruir_cabecera_mensaje(header_rta_consulta_status);
