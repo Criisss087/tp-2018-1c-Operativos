@@ -544,8 +544,8 @@ void proseguirOperacionNormal(int socketCliente, t_sentencia * sentencia_con_pun
 		break;
 	}
 
-	free(rdo_ejecucion_instancia.instancia->nombre);
-	free(rdo_ejecucion_instancia.instancia);
+	//free(rdo_ejecucion_instancia.instancia->nombre);
+	//free(rdo_ejecucion_instancia.instancia);
 }
 
 void interpretarOperacionESI(t_content_header * hd, int socketCliente){

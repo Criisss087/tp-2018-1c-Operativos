@@ -185,7 +185,7 @@ void destruir_lista_instancia(t_instancia * instancia){
 }
 
 void destruir_lista_clave(t_clave * clave){
-	free(clave);
+	//free(clave);
 }
 
 void liberar_listas(){
