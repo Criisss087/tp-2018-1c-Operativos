@@ -183,7 +183,7 @@ void atender_comando_status(){
 								logger_coordinador(escribir_loguear, l_error,"Error en el send del nombre de instancia y tamanio en la rta a consulta status\n");
 							}else{
 								//Si es caso feliz, se envía el valor.
-								if (st_clave->cod != CORRECTO_CONSULTA_VALOR){
+								if (st_clave->cod == CORRECTO_CONSULTA_VALOR){
 									int rdo_send_valor = send(socket_planif, st_clave_interno->valor, st_clave_interno->tamanio_valor, 0);
 
 									if(rdo_send_valor < 0){

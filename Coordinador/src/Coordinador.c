@@ -513,6 +513,9 @@ void indicarCompactacionATodasLasInstancias(){
 void proseguirOperacionNormal(int socketCliente, t_sentencia * sentencia_con_punteros){
 
 	rta_envio rdo_ejecucion_instancia;
+	rdo_ejecucion_instancia.cod = -15;
+	rdo_ejecucion_instancia.valor = NULL;
+	rdo_ejecucion_instancia.instancia = NULL;
 
 	switch(sentencia_con_punteros->keyword){
 	case OBTENER_VALOR://get
@@ -544,6 +547,12 @@ void proseguirOperacionNormal(int socketCliente, t_sentencia * sentencia_con_pun
 		break;
 	}
 
+	if (rdo_ejecucion_instancia.instancia != NULL){
+		if (rdo_ejecucion_instancia.instancia->nombre != NULL){
+			free(rdo_ejecucion_instancia.instancia->nombre);
+		}
+		free(rdo_ejecucion_instancia.instancia);
+	}
 	//free(rdo_ejecucion_instancia.instancia->nombre);
 	//free(rdo_ejecucion_instancia.instancia);
 }

@@ -190,7 +190,18 @@ void destruir_lista_clave(t_clave * clave){
 
 void liberar_listas(){
 	list_destroy_and_destroy_elements(lista_instancias, (void*)destruir_lista_instancia);
-	list_destroy_and_destroy_elements(lista_claves, (void*)destruir_lista_clave);
+	//list_destroy_and_destroy_elements(lista_claves, (void*)destruir_lista_clave);
+
+	/*int tam = list_size(lista_claves);
+	t_clave * una_clave = NULL;
+	for (int i = 0; tam  > i; i++){
+		una_clave = list_remove(lista_claves,i);
+		if (una_clave != NULL){
+			free(una_clave);
+			una_clave = NULL;
+		};
+
+	}*/
 
 }
 
