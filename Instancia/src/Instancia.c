@@ -57,11 +57,11 @@ void enviarResultadoSentencia(int socketCoordinador, int keyword) {
 
 	case OBTENER_VALOR:
 		enviarHeader(socketCoordinador, instancia, coordinador,
-		INSTANCIA_COORDINADOR_RESPUESTA_SENTENCIA, strlen(valorConsultado)+1);
+		INSTANCIA_COORDINADOR_RESPUESTA_SENTENCIA, strlen(valorConsultado) + 1);
 
 		printf("Enviando Valor asociado a la clave consultada...\n");
 		resultado = send(socketCoordinador, valorConsultado,
-				strlen(valorConsultado)+1, 0);
+				strlen(valorConsultado) + 1, 0);
 
 		if (resultado == -1) {
 			printf("Error en el send");
@@ -119,9 +119,9 @@ void enviarResultadoSentencia(int socketCoordinador, int keyword) {
 		printf("--------------------------------------------------------\n");
 		break;
 
-		case COORDINADOR_INSTANCIA_RECUPERAR_CLAVES:
+	case COORDINADOR_INSTANCIA_RECUPERAR_CLAVES:
 		enviarHeader(socketCoordinador, instancia, coordinador,
-				INSTANCIA_COORDINADOR_RESPUESTA_SENTENCIA, sizeof(int));
+		INSTANCIA_COORDINADOR_RESPUESTA_SENTENCIA, sizeof(int));
 		printf(
 				"Enviando Respuesta de Reconexion (cantidad de entradas disponibles)...\n");
 
@@ -169,7 +169,7 @@ void enviarResultadoSentencia(int socketCoordinador, int keyword) {
 		break;
 	}
 
-	if(resultadoAEnviar)
+	if (resultadoAEnviar)
 		free(resultadoAEnviar);
 }
 
@@ -358,7 +358,7 @@ t_indice_entrada * guardarIndiceAtomicoEnTabla(char clave[40], char * valor,
 
 	indiceEntrada->esAtomica = true;
 	indiceEntrada->nroDeOperacion = contadorOperacion;
-	indiceEntrada->tamanioValor = strlen(valor);
+	indiceEntrada->tamanioValor = strlen(valor)+1;
 
 	indiceEntrada->puntero = tablaEntradas
 			+ (indiceEntrada->numeroEntrada
@@ -553,7 +553,7 @@ t_indice_entrada * guardarIndiceNoAtomicoEnTabla(char clave[40], char * valor,
 	char * punteroBase = tablaEntradas
 			+ (numeroEntrada * configTablaEntradas->tamanioEntradas);
 
-	int tamanioTotalValor = strlen(valor);
+	int tamanioTotalValor = strlen(valor) + 1;
 
 	printf("\tTamanio total del Valor: %d\n", tamanioTotalValor);
 	printf("\tTamanio maximo a guardar por entrada: %d\n",
@@ -695,7 +695,7 @@ void guardarClaveValor(char clave[40], char * valor) {
 		printf("La clave no existe... guardar...\n");
 
 		int entradasNecesariasParaGuardarValor =
-				cantidadDeEntradasRequeridasParaValor(strlen(valor));
+				cantidadDeEntradasRequeridasParaValor(strlen(valor)+1);
 
 		if (entradasNecesariasParaGuardarValor > 1) {
 			// Guardar valor NO atomico en varias entradas
@@ -1159,56 +1159,52 @@ int main(int argc, char **argv) {
 	return 0;
 }
 
-void configurar_signals(void)
-{
+void configurar_signals(void) {
 	struct sigaction signal_struct;
 	signal_struct.sa_handler = captura_sigint;
-	signal_struct.sa_flags   = 0;
+	signal_struct.sa_flags = 0;
 
 	sigemptyset(&signal_struct.sa_mask);
 
-    sigaddset(&signal_struct.sa_mask, SIGINT);
-    if (sigaction(SIGINT, &signal_struct, NULL) < 0)
-    {
-        fprintf(stderr, "sigaction error\n");
-        exit(1);
-    }
+	sigaddset(&signal_struct.sa_mask, SIGINT);
+	if (sigaction(SIGINT, &signal_struct, NULL) < 0) {
+		fprintf(stderr, "sigaction error\n");
+		exit(1);
+	}
 
 }
 
-void captura_sigint(int signo)
-{
-	printf("\n\nSe presinó ctrl+c, son las 3 de la mañana y tengo que hacer mil free's\n\n");
+void captura_sigint(int signo) {
+	printf(
+			"\n\nSe presinó ctrl+c, son las 3 de la mañana y tengo que hacer mil free's\n\n");
 
-    if(signo == SIGINT)
-    {
-    	finalizar_instancia();
+	if (signo == SIGINT) {
+		finalizar_instancia();
 
-    	exit(EXIT_FAILURE);
-    }
+		exit(EXIT_FAILURE);
+	}
 
 }
 
-void finalizar_instancia(void){
+void finalizar_instancia(void) {
 
 	//Destruyo las configs
-	if(IP_COORDINADOR){
+	if (IP_COORDINADOR) {
 		free(IP_COORDINADOR);
 		IP_COORDINADOR = NULL;
 	}
 
-	if(PUNTO_DE_MONTAJE){
+	if (PUNTO_DE_MONTAJE) {
 		free(PUNTO_DE_MONTAJE);
 		PUNTO_DE_MONTAJE = NULL;
 	}
 
-	if(NOMBRE_INSTANCIA){
+	if (NOMBRE_INSTANCIA) {
 		free(NOMBRE_INSTANCIA);
 		NOMBRE_INSTANCIA = NULL;
 	}
 
-
-	if(ALGORITMO_DE_REEMPLAZO){
+	if (ALGORITMO_DE_REEMPLAZO) {
 		free(ALGORITMO_DE_REEMPLAZO);
 		ALGORITMO_DE_REEMPLAZO = NULL;
 	}
@@ -1221,21 +1217,22 @@ void finalizar_instancia(void){
 
 }
 
-void destruir_tabla_entradas(void){
+void destruir_tabla_entradas(void) {
 
-	void destruir_indice_entrada(t_indice_entrada * indice_entrada){
-		if(indice_entrada->puntero)
+	void destruir_indice_entrada(t_indice_entrada * indice_entrada) {
+		if (indice_entrada->puntero)
 			free(indice_entrada->puntero);
 
 		free(indice_entrada);
 	}
 
-	list_destroy_and_destroy_elements(l_indice_entradas,(void*)destruir_indice_entrada);
+	list_destroy_and_destroy_elements(l_indice_entradas,
+			(void*) destruir_indice_entrada);
 
-	if(configTablaEntradas)
+	if (configTablaEntradas)
 		free(configTablaEntradas);
 
-	if(tablaEntradas)
+	if (tablaEntradas)
 		free(tablaEntradas);
 
 }
