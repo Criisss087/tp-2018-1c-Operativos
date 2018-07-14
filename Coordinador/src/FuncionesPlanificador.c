@@ -1,3 +1,5 @@
+int listenningSocket(char * puerto);
+
 t_status_clave_interno * buscar_clave(char * nombre_clave){
 	//Buscar clave en lista interna de claves
 			//1-Si no existe, devolver cod = 0
@@ -10,11 +12,11 @@ t_status_clave_interno * buscar_clave(char * nombre_clave){
 						//8-No tiene valor: devolver cod= 4
 
 	t_clave * getClaveByName(char * nombre){
-		int mismoNombre(t_clave * clave){return string_equals_ignore_case(clave->clave, nombre);}
-		return list_find(lista_claves,*mismoNombre);
+		bool mismoNombre(t_clave * clave){
+			return string_equals_ignore_case(clave->clave, nombre);
+		}
+		return list_find(lista_claves,(void*)mismoNombre);
 	}
-
-	list_iterate(lista_claves,(void*)printf);
 
 	t_status_clave_interno * st = malloc(sizeof(t_status_clave_interno));
 
@@ -53,17 +55,30 @@ t_status_clave_interno * buscar_clave(char * nombre_clave){
 				t_content_header * header_peticion_valor = crear_cabecera_mensaje(coordinador,instancia,COORDINADOR_INSTANCIA_SENTENCIA, sizeof(t_content_header));
 				int header_envio = send(clave->instancia->socket,header_peticion_valor,sizeof(t_content_header),0);
 
+				if(header_envio < 0){
+					logger_coordinador(escribir_loguear, l_error,"Error en el send del header para pedir valor a instancia\n");
+				}
+
 				t_esi_operacion_sin_puntero * sentencia_obtener_valor = malloc(sizeof(t_esi_operacion_sin_puntero));
 				strncpy(sentencia_obtener_valor->clave,clave->clave,40);
 				sentencia_obtener_valor->keyword = OBTENER_VALOR;
 				sentencia_obtener_valor->pid = 0;
 				sentencia_obtener_valor->tam_valor = 0;
+
 				int sentencia_envio = send(clave->instancia->socket, sentencia_obtener_valor, sizeof(t_esi_operacion_sin_puntero),0);
+
+				if(sentencia_envio < 0){
+					logger_coordinador(escribir_loguear, l_error,"Error en el send del contenido para pedir valor a instancia\n");
+				}
 				///////////////
 
 				//recv header
 				t_content_header * header_rta_inst = malloc(sizeof(t_content_header));
 				int status_recv_header = recv(clave->instancia->socket,header_rta_inst,sizeof(t_content_header),0);
+
+				if(status_recv_header < 0){
+					logger_coordinador(escribir_loguear, l_error,"Error en el recv del contenido de la rta de instancia para pedir valor\n");
+				}
 
 				//recv valor
 				char * valor;
@@ -80,6 +95,10 @@ t_status_clave_interno * buscar_clave(char * nombre_clave){
 					valor = malloc(header_rta_inst->cantidad_a_leer);
 					int status_recv_valor = recv(clave->instancia->socket,valor, header_rta_inst->cantidad_a_leer,0);
 
+					if(status_recv_valor < 0){
+						logger_coordinador(escribir_loguear, l_error,"Error en el recv del contenido del valor en la rta de instancia\n");
+					}
+
 					st->cod = CORRECTO_CONSULTA_VALOR;
 					st->nombre_instancia = strdup(clave->instancia->nombre);
 					st->tamanio_instancia_nombre = strlen(clave->instancia->nombre);
@@ -94,40 +113,11 @@ t_status_clave_interno * buscar_clave(char * nombre_clave){
 }
 
 void atender_comando_status(){
-	/****
-	struct addrinfo hints;
-	struct addrinfo *serverInfo;
 
-	memset(&hints, 0, sizeof(hints));
-	hints.ai_family = AF_UNSPEC;		// No importa si uso IPv4 o IPv6
-	hints.ai_socktype = SOCK_STREAM;	// Indica que usaremos el protocolo TCP
-	getaddrinfo(IP, PUERTO_ESCUCHA_PETICION_STATUS, &hints, &serverInfo);
-
-	int listenningSocket = socket(serverInfo->ai_family, serverInfo->ai_socktype, serverInfo->ai_protocol);
-	log_info(logger,"Socket de escucha planificador status creado %d", listenningSocket);
-
-	// Las siguientes dos lineas sirven para no lockear el address
-	int activado = 1;
-	setsockopt(listenningSocket, SOL_SOCKET, SO_REUSEADDR, &activado, sizeof(activado));
-
-	bind(listenningSocket,serverInfo->ai_addr, serverInfo->ai_addrlen);
-	log_info(logger, "Socket de escucha planificador status bindeado");
-	freeaddrinfo(serverInfo);
-
-	log_info(logger, "Escuchando...");
-	listen(listenningSocket, BACKLOG);
-
-	struct sockaddr_in addr;// Esta estructura contendra los datos de la conexion del cliente. IP, puerto, etc.
-	socklen_t addrlen = sizeof(addr);
-
-	log_info(logger, "Esperando conexion para petición...");
-	int socketCliente = accept(listenningSocket, (struct sockaddr *) &addr, &addrlen);
-	log_info(logger, "Conexión recibida desde el planificador para comando status - Accept: %d ",socketCliente);
-
-	int socket_planif = socketCliente;
-	****/
 	int listenning_socket = listenningSocket(PUERTO_ESCUCHA_PETICION_STATUS);
-	log_warning(logger, "listenning hilo status %d", listenning_socket);
+
+	logger_coordinador(escribir_loguear,l_warning, "Escuchando hilo status, %d\n", listenning_socket);
+
 	struct sockaddr_in client_addr;
 
 	//Setea la direccion en 0
@@ -136,7 +126,8 @@ void atender_comando_status(){
 
 	//Acepta la nueva conexion
 	int socket_planif = accept(listenning_socket, (struct sockaddr *)&client_addr, &client_len);
-	log_warning(logger, "listenning socket hilo status accepted %d", socket_planif);
+
+	logger_coordinador(escribir_loguear,l_warning, "Hilo para consulta de comando status aceptado, %d\n", socket_planif);
 
 	int estado_recv_consulta = 1;
 	t_status_clave_interno * st_clave_interno = NULL;
@@ -145,94 +136,78 @@ void atender_comando_status(){
 		//recv header
 		t_content_header * header_consulta_valor = malloc(sizeof(t_content_header));
 		estado_recv_consulta = recv(socket_planif,header_consulta_valor,sizeof(t_content_header),0);
-		if(estado_recv_consulta < 0)
-		{
-			log_error(logger,"Error al recibir el header de la consulta de status %d", estado_recv_consulta);
-		}
-		else{
+
+		if(estado_recv_consulta < 0){
+			logger_coordinador(escribir_loguear, l_error,"Error en el recv del header de consulta valor\n");
+		}else{
 			//En el campo "cantidad_a_leer" me indica la long del nombre de la clave
-				//recv del nombre de la clave
-				char * nombre_clave = malloc(header_consulta_valor->cantidad_a_leer);
 
-				int status_recv_clave = recv(socket_planif, nombre_clave, header_consulta_valor->cantidad_a_leer,0);
-				if(status_recv_clave <= 0)
-				{
-					log_error(logger,"Error al recibir la clave de la consulta de status");
+			//Recv del nombre de la clave
+			char * nombre_clave = malloc(header_consulta_valor->cantidad_a_leer);
+			int status_recv_clave = recv(socket_planif, nombre_clave, header_consulta_valor->cantidad_a_leer,0);
+
+			if(status_recv_clave <= 0){
+				logger_coordinador(escribir_loguear, l_error,"Error en el recv de la clave para consultar valor\n");
+			}else{
+				t_status_clave_interno * st_clave_interno = buscar_clave(nombre_clave);
+
+				//Devolver rta:
+				t_content_header * header_rta_consulta_status = crear_cabecera_mensaje(coordinador,planificador,PLANIFICADOR_COORDINADOR_CMD_STATUS,sizeof(t_status_clave));
+				int rdo_send_h = send(socket_planif, header_rta_consulta_status, sizeof(header_rta_consulta_status),0);
+
+				if(rdo_send_h < 0){
+					logger_coordinador(escribir_loguear, l_error,"Error en el send del header de la rta a consulta status\n");
 				}else{
-					st_clave_interno = buscar_clave(nombre_clave);
+					//Mandar t_status_clave
+					t_status_clave * st_clave = malloc(sizeof(t_status_clave));
+					st_clave->cod = st_clave_interno->cod;
+					st_clave->tamanio_instancia_nombre = st_clave_interno->tamanio_instancia_nombre;
+					st_clave->tamanio_valor = st_clave_interno->tamanio_valor;
 
-					//Devolver rta:
-					t_content_header * header_rta_consulta_status = crear_cabecera_mensaje(coordinador,planificador,PLANIFICADOR_COORDINADOR_CMD_STATUS,sizeof(t_status_clave));
+					int rdo_send_st_clave = send(socket_planif, st_clave, sizeof(t_status_clave),0);
 
-					int rdo_send_h = send(socket_planif, header_rta_consulta_status, sizeof(t_content_header),0);
-					if(rdo_send_h < 0)
-					{
-						log_error(logger,"Error al mandar el header de la consulta de status");
+					if(rdo_send_st_clave < 0){
+						logger_coordinador(escribir_loguear, l_error,"Error en el send del contenido de la rta a consulta status\n");
 					}else{
-						//Mandar t_status_clave
-						t_status_clave * st_clave = malloc(sizeof(t_status_clave));
-						st_clave->cod = st_clave_interno->cod;
-						st_clave->tamanio_instancia_nombre = st_clave_interno->tamanio_instancia_nombre;
-						st_clave->tamanio_valor = st_clave_interno->tamanio_valor;
+						//Ahora mando valor y nombre instancia, en ese orden.
+						if (st_clave->cod != COORDINADOR_SIN_CLAVE){
 
-						int rdo_send_st_clave = send(socket_planif, st_clave, sizeof(t_status_clave),0);
-						if(rdo_send_st_clave < 0)
-						{
-							log_error(logger,"Error al mandar los datos del resultado de la consulta status");
-						}else{
-							//Ahora mando valor y nombre instancia, en ese orden.
-							if (st_clave->cod != COORDINADOR_SIN_CLAVE){
-								//Se envía siempre el nombre de la instancia para los siguientes casos:
-								//INSTANCIA_SIMULADA, INSTANCIA_SIN_CLAVE, CORRECTO_CONSULTA_VALOR, INSTANCIA_CAIDA
-								log_info(logger,"nombre instancia %s",st_clave_interno->nombre_instancia);
-								int rdo_send_instancia = send(socket_planif, st_clave_interno->nombre_instancia, st_clave_interno->tamanio_instancia_nombre, 0);
-								if(rdo_send_instancia < 0)
-								{
-									log_error(logger,"Error al mandar el nombre de la instancia");
-								}
-								else{
-									//Si es caso feliz, se envía el valor.
-									if (st_clave->cod == CORRECTO_CONSULTA_VALOR){
-										log_info(logger,"valor %s",st_clave_interno->valor);
-										int rdo_send_valor = send(socket_planif, st_clave_interno->valor, st_clave_interno->tamanio_valor, 0);
-										if(rdo_send_valor < 0)
-										{
-											log_error(logger,"Error al mandar el valor de la clave");
-										}
+							//Se envía siempre el nombre de la instancia para los siguientes casos:
+							//INSTANCIA_SIMULADA, INSTANCIA_SIN_CLAVE, CORRECTO_CONSULTA_VALOR, INSTANCIA_CAIDA
+							int rdo_send_instancia = send(socket_planif, st_clave_interno->nombre_instancia, st_clave_interno->tamanio_instancia_nombre, 0);
 
+							if(rdo_send_instancia < 0){
+								logger_coordinador(escribir_loguear, l_error,"Error en el send del nombre de instancia y tamanio en la rta a consulta status\n");
+							}else{
+								//Si es caso feliz, se envía el valor.
+								if (st_clave->cod != CORRECTO_CONSULTA_VALOR){
+									int rdo_send_valor = send(socket_planif, st_clave_interno->valor, st_clave_interno->tamanio_valor, 0);
+
+									if(rdo_send_valor < 0){
+										logger_coordinador(escribir_loguear, l_error,"Error en el send del valor y tamanio en la rta a consulta status\n");
 									}
 								}
-
-
 							}
-
-							free(st_clave);
-							free(st_clave_interno);
-							free(header_consulta_valor);
-							destruir_cabecera_mensaje(header_rta_consulta_status);
-							free(nombre_clave);
 						}
-
-
+						free(st_clave);
+						free(st_clave_interno);
+						free(header_consulta_valor);
+						destruir_cabecera_mensaje(header_rta_consulta_status);
+						free(nombre_clave);
 					}
-
-
 				}
-
-
+			}
 		}
-
-
 	}
-	log_info(logger,"Fin hilo status");
 
+	logger_coordinador(loguear,l_info,"Fin hilo status\n");
 	close(socket_planif);
 }
 
 void armar_hilo_planificador_status(){
 
 	pthread_t hilo;
-	pthread_create(&hilo,NULL,*atender_comando_status, NULL);
-	pthread_detach(&hilo);
+	pthread_create(&hilo,NULL,(void*)atender_comando_status, NULL);
+	pthread_detach(hilo);
 
 }

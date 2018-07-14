@@ -9,84 +9,85 @@
 #include "Utilidades.h"
 #include "FuncionesPlanificador.c"
 
-void crear_hilo_conexion(int socket, void(*funcion_a_ejecutar)(int)){
+void crear_hilo_conexion(int socket, void*funcion_a_ejecutar(int)){
 	pthread_t hilo;
-	pthread_create(&hilo,NULL,*funcion_a_ejecutar,socket);
-	pthread_detach(&hilo);
+	pthread_create(&hilo,NULL,(void*)funcion_a_ejecutar,(void*)socket);
+	pthread_detach(hilo);
 }
 
-void administrarSentencia(t_esi_operacion_sin_puntero *);
-void interpretarOperacionInstancia(t_content_header *, int);
-void interpretarOperacionPlanificador(t_content_header *, int);
-void interpretarOperacionESI(t_content_header *, int);
-void interpretarHeader(t_content_header * , int);
-void *escucharMensajesEntrantes(int);
 void configurar_signals();
 
 void cargarArchivoConfiguracion(char * path){
-	log_info(logger,"Cargando archivo de configuración...");
+	logger_coordinador(escribir_loguear, l_info, "Cargando archivo de configuración...\n");
+
 	t_config * config_file = config_create(path);
-	log_info(logger,"Se cargó archivo? : %d", config_file!=NULL);
+	char * algo_dist;
+	logger_coordinador(escribir_loguear, l_info, "Se cargó archivo? : %d\n",config_file!=NULL);
 
 	if (config_has_property(config_file,ARCH_CONFIG_ALGORITMO_DISTRIBUCION)){
-		char * algo_dist = strdup(config_get_string_value(config_file, ARCH_CONFIG_ALGORITMO_DISTRIBUCION));
+		algo_dist = strdup(config_get_string_value(config_file, ARCH_CONFIG_ALGORITMO_DISTRIBUCION));
 		if (string_equals_ignore_case(algo_dist, "EL")){
 			//Equitative Load
 			ALGORITMO_DISTRIBUCION = EQUITATIVE_LOAD;
-			log_info(logger,"Se obtuvo configuración 'Algoritmo de distribución': %s - %d", algo_dist, ALGORITMO_DISTRIBUCION);
+			logger_coordinador(escribir_loguear, l_info, "Se obtuvo configuración 'Algoritmo de distribución': %s - %d\n", algo_dist, ALGORITMO_DISTRIBUCION);
 		}
 		else if (string_equals_ignore_case(algo_dist, "KE")){
 			//Key Explicit
 			ALGORITMO_DISTRIBUCION = KEY_EXPLICIT;
-			log_info(logger,"Se obtuvo configuración 'Algoritmo de distribución': %s - %d", algo_dist, ALGORITMO_DISTRIBUCION);
+			logger_coordinador(escribir_loguear, l_info, "Se obtuvo configuración 'Algoritmo de distribución': %s - %d\n", algo_dist, ALGORITMO_DISTRIBUCION);
 		}
 		else if (string_equals_ignore_case(algo_dist, "LSU")){
 			//Least Space Used
 			ALGORITMO_DISTRIBUCION = LEAST_SPACE_USED;
-			log_info(logger,"Se obtuvo configuración 'Algoritmo de distribución': %s - %d", algo_dist, ALGORITMO_DISTRIBUCION);
+			logger_coordinador(escribir_loguear, l_info, "Se obtuvo configuración 'Algoritmo de distribución': %s - %d\n", algo_dist, ALGORITMO_DISTRIBUCION);
 		}else {
-			log_info(logger,"No se reconoció el algoritmo especificado en el archivo de configuración. Se setea por default EL.");}
+			logger_coordinador(escribir_loguear, l_warning, "No se reconoció el algoritmo especificado en el archivo de configuración. Se setea por default EL.\n");
+		}
 
-	}else log_info(logger,"No se encontró algoritmo especificado en el archivo de configuración. Se setea por default EL.");
+	}else logger_coordinador(escribir_loguear, l_warning, "No se reconoció el algoritmo especificado en el archivo de configuración. Se setea por default EL.\n");
 
 	if (config_has_property(config_file,ARCH_CONFIG_CANTIDAD_ENTRADAS)){
 		CANT_MAX_ENTRADAS = config_get_int_value(config_file, ARCH_CONFIG_CANTIDAD_ENTRADAS);
-		log_info(logger,"Se obtuvo configuración 'Cantidad de entradas': %d", CANT_MAX_ENTRADAS);
-	}else log_info(logger,"No se encontró cantidad de entradas especificadas en el archivo de configuración. Se setea por default 50.");
+		logger_coordinador(escribir_loguear, l_info, "Se obtuvo configuración 'Cantidad de entradas': %d \n", CANT_MAX_ENTRADAS);
+	}else logger_coordinador(escribir_loguear, l_warning, "No se encontró cantidad de entradas especificadas en el archivo de configuración. Se setea por default 50.\n");
 
 	if (config_has_property(config_file,ARCH_CONFIG_PUERTO)){
 		PUERTO = strdup(config_get_string_value(config_file, ARCH_CONFIG_PUERTO));
-		log_info(logger,"Se obtuvo configuración 'Puerto': %s", PUERTO);
-	}else log_info(logger,"No se encontró puerto especificado en el archivo de configuración. Se setea por default 8888.");
+		logger_coordinador(escribir_loguear, l_info, "Se obtuvo configuración 'Puerto': %s\n",PUERTO);
+	}else logger_coordinador(escribir_loguear, l_warning, "No se encontró puerto especificado en el archivo de configuración. Se setea por default 8888.\n");
 
 	if (config_has_property(config_file,ARCH_CONFIG_TAMANIO_ENTRADAS)){
 		TAMANIO_ENTRADAS = config_get_int_value(config_file, ARCH_CONFIG_TAMANIO_ENTRADAS);
-		log_info(logger,"Se obtuvo configuración 'Tamaño de entradas': %d", TAMANIO_ENTRADAS);
-	}else log_info(logger,"No se encontró tamaño de entradas especificado en el archivo de configuración. Se setea por default 300.");
+		logger_coordinador(escribir_loguear, l_info, "Se obtuvo configuración 'Tamaño de entradas': %d\n",TAMANIO_ENTRADAS);
+	}else logger_coordinador(escribir_loguear, l_warning, "No se encontró tamaño de entradas especificado en el archivo de configuración. Se setea por default 300.\n");
 
 	if (config_has_property(config_file,ARCH_CONFIG_RETARDO)){
 		RETARDO = config_get_int_value(config_file, ARCH_CONFIG_RETARDO);
-		log_info(logger,"Se obtuvo configuración 'Retardo': %d", RETARDO);
-	}else log_info(logger,"No se encontró retardo especificado en el archivo de configuración. Se setea por default 0.");
+		logger_coordinador(escribir_loguear, l_info, "Se obtuvo configuración 'Retardo': %d\n",RETARDO);
+	}else logger_coordinador(escribir_loguear, l_warning, "No se encontró retardo especificado en el archivo de configuración. Se setea por default 0.\n");
 
+	free(algo_dist);
 	config_destroy(config_file);
 }
 
 void inicializarLogger(){
-	logger = log_create("log_coordinador.txt","Coordinador",true, LOG_LEVEL_INFO);
+	logger = log_create("log_coordinador.txt","Coordinador",false, LOG_LEVEL_INFO);
 	logger_operaciones = log_create("log_operaciones_coordinador.txt","Coordinador",false, LOG_LEVEL_INFO);
 }
 void seteosIniciales(char *path){
 	inicializarLogger();
+
 	if (path != NULL){
 		cargarArchivoConfiguracion(path);
 		}
 	else {
-		log_warning(logger,"Configuraciones cargadas por defecto");
+		logger_coordinador(escribir_loguear, l_warning, "Configuraciones cargadas por defecto\n");
 	}
+
 	lista_instancias = list_create();
 	lista_claves = list_create();
 	indice_actual_lista = -1; //TODO usar la funcion list_size para ver si mostrar o no el error
+
 	configurar_signals();
 }
 
@@ -101,7 +102,7 @@ struct addrinfo* crear_addrinfo(){
 	return serverInfo;
 }
 
-int listenningSocket( char * puerto)
+int listenningSocket(char * puerto)
 {
 	struct sockaddr_in dir_sock;
 
@@ -137,7 +138,7 @@ t_esi_operacion_sin_puntero * armar_esi_operacion_sin_puntero(t_sentencia * sent
 	t_esi_operacion_sin_puntero * op_sin_punt = malloc(sizeof(t_esi_operacion_sin_puntero));
 	strncpy(op_sin_punt->clave, sentencia->clave,40);
 	op_sin_punt->keyword = sentencia->keyword;
-	op_sin_punt->tam_valor = strlen(sentencia->valor)+1;
+	op_sin_punt->tam_valor = strlen(sentencia->valor);
 	op_sin_punt->pid = sentencia->pid;
 	return op_sin_punt;
 }
@@ -159,7 +160,8 @@ void log_operacion_esi(t_sentencia * sentencia, t_log * logger){
 	else if(sentencia->keyword == SET) {keyw = strdup("SET");}
 	else {keyw = strdup("STORE");}
 
-	log_info(logger, "ESI %d = %s %s %v ",sentencia->pid,keyw,sentencia->clave,sentencia->valor);
+	logger_coordinador(loguear,l_esi, "ESI %d = %s %s %s \n",sentencia->pid,keyw,sentencia->clave,sentencia->valor);
+
 	free(keyw);
 }
 void log_error_operacion_esi(t_sentencia * sentencia, int puedoEnviar){
@@ -171,9 +173,39 @@ void log_error_operacion_esi(t_sentencia * sentencia, int puedoEnviar){
 	if (puedoEnviar == ABORTAR) {error = strdup("ABORTAR");}
 	else {error = strdup("CLAVE BLOQUEADA");}
 
-	log_info(logger_operaciones, "ESI %d = %s %s %v - ERROR: %s",sentencia->pid,keyw,sentencia->clave,sentencia->valor, error);
+	logger_coordinador(loguear,l_esi, "ESI %d = %s %s %s - ERROR: %s \n",sentencia->pid,keyw,sentencia->clave,sentencia->valor,error);
+
 	free(keyw);
 	free(error);
+}
+
+void destruir_lista_instancia(t_instancia * instancia){
+	free(instancia->nombre);
+	free(instancia);
+}
+
+void destruir_lista_clave(t_clave * clave){
+	free(clave);
+}
+
+void liberar_listas(){
+	list_destroy_and_destroy_elements(lista_instancias, (void*)destruir_lista_instancia);
+	list_destroy_and_destroy_elements(lista_claves, (void*)destruir_lista_clave);
+
+}
+
+void liberar_loggers(){
+	log_destroy(logger);
+	log_destroy(logger_operaciones);
+}
+
+void finalizar_coordinador(){
+	liberar_listas();
+	liberar_loggers();
+
+	if(rta1 != NULL){
+		free(rta1);
+	}
 }
 
 void captura_sigpipe(int signo)
@@ -182,14 +214,14 @@ void captura_sigpipe(int signo)
 
     if(signo == SIGINT)
     {
-    	//TODO finalizar ejecución
-    	log_warning(logger, "Finalizando proceso...");
+    	logger_coordinador(escribir_loguear, l_warning,"\n Finalizando proceso...\n");
     	GLOBAL_SEGUIR = 0;
+    	finalizar_coordinador();
     	exit(EXIT_FAILURE);
     }
     else if(signo == SIGPIPE)
     {
-    	log_error(logger,"Se desconectó un proceso al que se quizo enviar");
+    	logger_coordinador(escribir_loguear, l_error,"\n Se desconectó un proceso al que se quizo enviar.\n");
     }
 
 }
@@ -206,7 +238,7 @@ void configurar_signals(void)
 	sigaddset(&signal_struct.sa_mask, SIGPIPE);
     if (sigaction(SIGPIPE, &signal_struct, NULL) < 0)
     {
-    	log_error(logger,"SIGACTION error");
+    	logger_coordinador(escribir_loguear, l_error,"\n SIGACTION error \n");
         //fprintf(stderr, "sigaction error\n");
         //exit(1);
     }
@@ -214,7 +246,7 @@ void configurar_signals(void)
     sigaddset(&signal_struct.sa_mask, SIGINT);
     if (sigaction(SIGINT, &signal_struct, NULL) < 0)
     {
-    	log_error(logger,"SIGACTION error");
+    	logger_coordinador(escribir_loguear, l_error,"\n SIGACTION error \n");
     	//fprintf(stderr, "sigaction error\n");
         //exit(1);
     }
