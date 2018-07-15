@@ -10,6 +10,7 @@
 
 #include "Instancia.h"
 #include "FuncionesInstancia.c"
+#include "liberar_clave_atomica.c"
 
 int conexionConCoordinador() {
 	struct sockaddr_in direccionServidor;
@@ -666,6 +667,22 @@ _Bool hayEntradasContiguasDisponibles(int cantRequerida) {
 	return mayorCantDeEntradasContiguasDisp >= cantRequerida;
 }
 
+int obtenerCantidadAtomicos(){
+	bool esAtomica(t_indice_entrada * entrada){
+		return entrada->esAtomica;
+	}
+	t_list * atomicos = list_filter(l_indice_entradas, *esAtomica);
+	int cantidad = list_size(atomicos);
+
+	//libero la lista filtrada (porque filter devuelve una nueva)
+	/*void lib_punt(t_indice_entrada * ent){free(ent->puntero);};
+	list_iterate(atomicos,*lib_punt);
+	list_destroy(atomicos);
+*/
+	return cantidad;
+
+}
+
 void guardarClaveValor(char clave[40], char * valor) {
 
 	t_list * indicesQueContienenClave = obtenerIndicesDeClave(clave);
@@ -742,9 +759,62 @@ void guardarClaveValor(char clave[40], char * valor) {
 				}
 
 			} else {
-				printf("No hay mas lugar para guardar un valor NO atomico.\n");
-				respuestaParaCoordinador = ERROR_I;
-				//TODO: Devolver un error al coordinador
+				//cantidadAtomicas + entradaslibres > ccantidad entradas necesarias para el nuevo valor no atomico?
+				int entradasDisponibles = obtenerEntradasDisponibles();
+				int cantidadValoresAtomicos = obtenerCantidadAtomicos();
+				int totalLibreMasAtomicos = entradasDisponibles + cantidadValoresAtomicos;
+				printf("**********entradas necesarias: %d, disp: %d, cant atom: %d, tot libre + atom: %d\n\n", entradasNecesariasParaGuardarValor, entradasDisponibles, cantidadValoresAtomicos, totalLibreMasAtomicos);
+				if ( entradasNecesariasParaGuardarValor > totalLibreMasAtomicos){
+					//abortar
+					printf("No hay mas lugar para guardar un valor NO atomico.\n");
+					respuestaParaCoordinador = ERROR_I;
+					//TODO: Devolver un error al coordinador
+				}else{
+					//libre + atomico mayor o igual al necesario
+					//while no hay espacio libre suficiente:
+						//libero una atomica
+
+					//hay espacio contiguo para el nuevo valor?
+						//no: compactar
+						//si: reemplazo segun algoritmo
+					while (entradasNecesariasParaGuardarValor > entradasDisponibles){
+						//liberar una clave
+						liberar_clave_atom();
+						entradasDisponibles = obtenerEntradasDisponibles();
+						imprimirTablaEntradas();
+						printf("**********entradas necesarias: %d, disp: %d, cant atom: %d, tot libre + atom: %d\n\n", entradasNecesariasParaGuardarValor, entradasDisponibles, cantidadValoresAtomicos, totalLibreMasAtomicos);
+					};
+					if (entradasDisponibles >= entradasNecesariasParaGuardarValor) {
+						if (hayEntradasContiguasDisponibles(entradasNecesariasParaGuardarValor)) {
+
+							printf("No es necesario compactar tabla de entradas...\n");
+
+							if (numeroEntrada >= configTablaEntradas->cantTotalEntradas) {
+
+								numeroEntrada = nroEntradaBaseAux;
+								printf("Valor de numeroEntrada: %d. El aux: %d\n", numeroEntrada, nroEntradaBaseAux);
+							}
+
+							t_indice_entrada * indiceBase = guardarIndiceNoAtomicoEnTabla(clave, valor, numeroEntrada);
+
+							numeroEntrada = numeroEntrada + entradasNecesariasParaGuardarValor;
+
+							// guardarValorEnEntrada(sentenciaRecibida->valor,	indiceEntrada->puntero);
+
+							printf("Guardando valor: %s en puntero: %p...\n", valor, indiceBase->puntero);
+							memcpy(indiceBase->puntero, valor, strlen(valor));
+
+							printf("Valor guardado: %s\n", indiceBase->puntero);
+
+							respuestaParaCoordinador = EXITO_I;
+						} else {
+							printf("**********SE NECESITA COMPACTAR\n\n");
+
+							printf("Es necesario compactar... Enviando solicitud al Coordinador...\n");
+							respuestaParaCoordinador = COMPACTAR;
+						}
+					}
+				}
 			}
 
 		} else {
