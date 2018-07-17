@@ -89,6 +89,8 @@ void imprimirEntrada(t_indice_entrada * entrada) {
 }
 
 void imprimirTablaEntradas() {
+	ordenarAscPorNroDeEntrada(l_indice_entradas);
+
 	printf("Imprimiendo tabla administrativa:\n");
 	printf(
 			"\t| N° entrada |     Clave     | Tamanio | Valor Atomico | Nro. Operacion | PunteroValor |\n");
@@ -180,7 +182,7 @@ void eliminarEntradasAsociadasAClave(char * clave) {
 		_Bool contieneClave(t_indice_entrada * entrada) {
 			return (strcmp(entrada->clave, clave) == 0);
 		}
-		list_remove_by_condition(l_indice_entradas, (void*) contieneClave);
+		list_remove_and_destroy_by_condition(l_indice_entradas, (void*) contieneClave, (void*) destruir_indice_entrada);
 	}
 
 	printf("Se eliminaron %d entradas\n", cantidadDeIndices);
