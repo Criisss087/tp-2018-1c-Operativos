@@ -231,7 +231,7 @@ void recuperarClave(char clave[40]) {
 	} else {
 		printf("File Descriptor: %d\n", fileDescriptor);
 
-		char * valor = malloc(PACKAGESIZE);
+		char * valor = calloc(PACKAGESIZE,sizeof(char));
 
 		int tamanioValor = read(fileDescriptor, valor, PACKAGESIZE);
 
@@ -272,7 +272,7 @@ void crearTablaEntradas(t_configTablaEntradas * config) {
 
 	int tamanioTotal = config->cantTotalEntradas * config->tamanioEntradas;
 
-	tablaEntradas = malloc(tamanioTotal);
+	tablaEntradas = calloc(tamanioTotal,sizeof(char));
 
 	// Esta linea es para limpiar la memoria que se esta reservando
 	memset(tablaEntradas, 0, tamanioTotal);
