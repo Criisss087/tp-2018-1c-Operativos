@@ -955,6 +955,7 @@ void guardarClaveValor(char clave[40], char * valor) {
 
 			printf("Guardando valor: %s en puntero: %p...\n", valor,
 					indiceEntrada->puntero);
+			memset(indiceEntrada->puntero, 0, entradasNecesariasParaGuardarValor * configTablaEntradas->tamanioEntradas);
 			memcpy(indiceEntrada->puntero, valor, strlen(valor));
 
 			printf("Valor guardado: %s\n", indiceEntrada->puntero);

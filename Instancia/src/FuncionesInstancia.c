@@ -83,9 +83,9 @@ t_sentencia * construirSentenciaConValor(
 
 void imprimirEntrada(t_indice_entrada * entrada) {
 	printf(
-			"\t| %8d \t| %40s \t| %d \t| %d \t| %d \t| %p \t| %s \t|\n",
+			"| %8d \t| %40s \t| %7d | %13d | %7d | %p  | %.*s |\n",
 			entrada->numeroEntrada, entrada->clave, entrada->tamanioValor,
-			entrada->esAtomica, entrada->nroDeOperacion, entrada->puntero, entrada->puntero);
+			entrada->esAtomica, entrada->nroDeOperacion, entrada->puntero, configTablaEntradas->tamanioEntradas, entrada->puntero);
 }
 
 void imprimirTablaEntradas() {
@@ -94,7 +94,7 @@ void imprimirTablaEntradas() {
 	printf("Imprimiendo tabla administrativa:\n");
 	printf(
 			//"\t| N° entrada |     Clave     | Tamanio | Valor Atomico | Nro. Operacion | PunteroValor |\n");
-	"\t| N° entrada\t|     Clave\t| Tamanio\t| Valor Atomico\t| Nro. Operacion\t| PunteroValor\t| Valor \t|\n");
+	"| N° entrada\t| \t\t\tClave\t\t\t| Tamanio | Valor Atomico | Nro. Op | PunteroValor | Valor \t|\n");
 	list_iterate(l_indice_entradas, (void*) imprimirEntrada);
 }
 
