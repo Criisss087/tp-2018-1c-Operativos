@@ -91,6 +91,9 @@ void finalizar_instancia(void);
 void destruir_tabla_entradas(void);
 void destruir_indice_entrada(t_indice_entrada * indice_entrada);
 t_indice_entrada * guardarIndiceNoAtomicoEnTabla(char clave[40], char * valor, int numeroEntrada);
+t_list * obtenerClavesDeMayorEspacioUtilizado(void);
+void ordenarAscPorCodDeOperacion(t_list * lista);
+void ordenarAscPorNroDeEntrada(t_list * lista);
 
 
 #endif /* SRC_UTILIDADES_H_ */

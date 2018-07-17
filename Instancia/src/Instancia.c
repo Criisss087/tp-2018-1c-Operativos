@@ -761,7 +761,7 @@ int obtenerCantidadAtomicos() {
 	bool esAtomica(t_indice_entrada * entrada) {
 		return entrada->esAtomica;
 	}
-	t_list * atomicos = list_filter(l_indice_entradas, *esAtomica);
+	t_list * atomicos = list_filter(l_indice_entradas, (void*) esAtomica);
 	int cantidad = list_size(atomicos);
 
 	//libero la lista filtrada (porque filter devuelve una nueva)

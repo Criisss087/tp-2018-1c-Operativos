@@ -5,11 +5,7 @@
  *      Author: utnso
  */
 
-t_list * obtenerClavesDeMayorEspacioUtilizado(void);
-
-void liberar_clave_atom(){
-	aplicarAlgoritmoDeReemplazoYBorrar();
-}
+#include "Instancia.h"
 
 _Bool entradaAtomicaExistenteEnIndice(int nroEntrada) {
 	_Bool entradaOcupada(t_indice_entrada * entrada) {
@@ -60,3 +56,8 @@ aplicarAlgoritmoDeReemplazoYBorrar() {
 		eliminarEntradasAsociadasAClave(claveAReemplazar);
 	}
 }
+
+void liberar_clave_atom(){
+	aplicarAlgoritmoDeReemplazoYBorrar();
+}
+
