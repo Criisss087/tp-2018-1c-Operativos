@@ -231,7 +231,7 @@ void recuperarClave(char clave[40]) {
 	} else {
 		printf("File Descriptor: %d\n", fileDescriptor);
 
-		char * valor = calloc(PACKAGESIZE,sizeof(char));
+		char * valor = calloc(PACKAGESIZE, sizeof(char));
 
 		int tamanioValor = read(fileDescriptor, valor, PACKAGESIZE);
 
@@ -272,7 +272,7 @@ void crearTablaEntradas(t_configTablaEntradas * config) {
 
 	int tamanioTotal = config->cantTotalEntradas * config->tamanioEntradas;
 
-	tablaEntradas = calloc(tamanioTotal,sizeof(char));
+	tablaEntradas = calloc(tamanioTotal, sizeof(char));
 
 	// Esta linea es para limpiar la memoria que se esta reservando
 	memset(tablaEntradas, 0, tamanioTotal);
@@ -378,7 +378,6 @@ t_indice_entrada * guardarIndiceAtomicoEnTabla(char clave[40], char * valor,
 
 		claveAReemplazar = obtenerClaveExistenteEnEntrada(nroEntrada,
 				l_indice_entradas);
-		printf("Clave: %s", claveAReemplazar);
 		t_list * listaDeIndices = obtenerIndicesDeClave(claveAReemplazar);
 		int tamanioDeValorAReemplazar = obtenerTamanioTotalDeValorGuardado(
 				listaDeIndices);
@@ -421,7 +420,6 @@ t_indice_entrada * guardarIndiceAtomicoEnTabla(char clave[40], char * valor,
 
 			printf("Indice agregado correctamente\n");
 
-			numeroEntrada = nroEntrada + 1;
 		} else {
 			printf(
 					"La entrada a reemplazar contiene un valor NO atomico. Por enunciado no se reemplaza..\n");
@@ -611,6 +609,10 @@ t_indice_entrada * guardarIndiceNoAtomicoEnTabla(char clave[40], char * valor,
 	return indiceBase;
 }
 
+_Bool entradaAtomica(t_indice_entrada * entrada) {
+	return (_Bool) entrada->esAtomica;
+}
+
 t_indice_entrada * aplicarAlgoritmoDeReemplazo(char clave[40], char * valor) {
 	printf("Aplicando algoritmo de reemplazo: %s\n", ALGORITMO_DE_REEMPLAZO);
 
@@ -636,22 +638,31 @@ t_indice_entrada * aplicarAlgoritmoDeReemplazo(char clave[40], char * valor) {
 		}
 
 	} else if (strcmp(ALGORITMO_DE_REEMPLAZO, "LRU") == 0) {
-		// TODO: Buscar entrada con menor nro de operacion y reemplazarla
 
-		t_list * listaAux = list_duplicate(l_indice_entradas);
+		t_list * indicesAtomicos = list_filter(l_indice_entradas,
+				(void *) entradaAtomica);
+		// t_list * listaAux = list_duplicate(l_indice_entradas);
 
-		ordenarAscPorCodDeOperacion(listaAux);
+		// ordenarAscPorCodDeOperacion(listaAux);
 
-		t_indice_entrada * entradaMenosUsada = list_get(listaAux, 0);
+		ordenarAscPorCodDeOperacion(indicesAtomicos);
+
+		// t_indice_entrada * entradaMenosUsada = list_get(listaAux, 0);
+
+		t_indice_entrada * entradaMenosUsada = list_get(indicesAtomicos, 0);
 
 		// TODO en lugar de puntero a char debe ser un char[40]
+		//char * claveAReemplazar = obtenerClaveExistenteEnEntrada(
+		//		entradaMenosUsada->numeroEntrada, listaAux);
+
 		char * claveAReemplazar = obtenerClaveExistenteEnEntrada(
-				entradaMenosUsada->numeroEntrada, listaAux);
+				entradaMenosUsada->numeroEntrada, indicesAtomicos);
 
 		printf("Clave a ser reemplazada: %s\n", claveAReemplazar);
 
 		// TODO: Eliminar los elementos de la lista destruida
-		list_destroy(listaAux);
+		// list_destroy(listaAux);
+		list_destroy(indicesAtomicos);
 
 		t_list * indicesQueContienenClave = obtenerIndicesDeClave(
 				claveAReemplazar);
@@ -697,25 +708,45 @@ t_indice_entrada * aplicarAlgoritmoDeReemplazo(char clave[40], char * valor) {
 
 void actualizarEntradasConNuevoValor(char clave[40], char * valor) {
 	t_list * indices = obtenerIndicesDeClave(clave);
-	t_indice_entrada * indiceBase = list_get(indices, 0);
 
-	// Me guardo el numero de entrada para no perderlo al guardar claveValor
-	int nroEntradaAux = numeroEntrada;
+	int entradasRequeridas = cantidadDeEntradasRequeridasParaValor(
+			strlen(valor));
 
-	// Seteo el numero de entrada con el de las claves ya existentes.
-	numeroEntrada = indiceBase->numeroEntrada;
-	eliminarEntradasAsociadasAClave(clave);
+	for (int i = 0; i < entradasRequeridas; i++) {
+		t_indice_entrada * entradaActual = list_get(indices, i);
 
-	if (reemplazoActivo) {
-		reemplazoActivo = 0;
-		guardarClaveValor(clave, valor);
-		reemplazoActivo = 1;
-	} else {
-		guardarClaveValor(clave, valor);
+		if (i > list_size(indices)) {
+			list_remove_and_destroy_element(indices, i,
+					destruir_indice_entrada);
+			printf("Entrada [%d] eliminada.\n", entradaActual->numeroEntrada);
+		} else {
+			if (i == 0) {
+				int viejoTamanio = obtenerTamanioTotalDeValorGuardado(indices);
+				memset(entradaActual->puntero, 0, viejoTamanio);
+				strcpy(entradaActual->puntero, valor);
+			}
+
+			if (i == entradasRequeridas - 1) {
+				// ultima entrada
+				entradaActual->tamanioValor = strlen(valor)
+						- (i * configTablaEntradas->tamanioEntradas);
+			} else {
+				//entradas intermedias
+				entradaActual->tamanioValor =
+						configTablaEntradas->tamanioEntradas;
+			}
+
+			entradaActual->nroDeOperacion = contadorOperacion;
+
+			printf("Entrada [%d] actualizada.\n", entradaActual->numeroEntrada);
+		}
 	}
 
-// Recupero el numero de entrada
-	numeroEntrada = nroEntradaAux;
+	contadorOperacion++;
+
+	imprimirTablaEntradas();
+
+	printf("%d entradas actualizadas correctamente\n", entradasRequeridas);
 }
 
 _Bool hayEntradasContiguasDisponibles(int cantRequerida) {
@@ -955,7 +986,9 @@ void guardarClaveValor(char clave[40], char * valor) {
 
 			printf("Guardando valor: %s en puntero: %p...\n", valor,
 					indiceEntrada->puntero);
-			memset(indiceEntrada->puntero, 0, entradasNecesariasParaGuardarValor * configTablaEntradas->tamanioEntradas);
+			memset(indiceEntrada->puntero, 0,
+					entradasNecesariasParaGuardarValor
+							* configTablaEntradas->tamanioEntradas);
 			memcpy(indiceEntrada->puntero, valor, strlen(valor));
 
 			printf("Valor guardado: %s\n", indiceEntrada->puntero);

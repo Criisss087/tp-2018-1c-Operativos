@@ -96,6 +96,7 @@ void imprimirTablaEntradas() {
 			//"\t| N° entrada |     Clave     | Tamanio | Valor Atomico | Nro. Operacion | PunteroValor |\n");
 	"| N° entrada\t| \t\t\tClave\t\t\t| Tamanio | Valor Atomico | Nro. Op | PunteroValor | Valor \t|\n");
 	list_iterate(l_indice_entradas, (void*) imprimirEntrada);
+	printf("\n\tNumero de entrada global: %d\n\n", numeroEntrada);
 }
 
 int interpretarHeader(int socketCoordinador, t_content_header * header) {
