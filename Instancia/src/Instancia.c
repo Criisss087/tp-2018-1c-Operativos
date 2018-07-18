@@ -703,13 +703,21 @@ void actualizarEntradasConNuevoValor(char clave[40], char * valor) {
 	int entradasRequeridas = cantidadDeEntradasRequeridasParaValor(
 			strlen(valor));
 
-	for (int i = 0; i < entradasRequeridas; i++) {
+	for (int i = 0; i < list_size(indices); i++) {
 		t_indice_entrada * entradaActual = list_get(indices, i);
 
-		if (i > list_size(indices)) {
-			list_remove_and_destroy_element(indices, i,
-					destruir_indice_entrada);
+		if (i >= entradasRequeridas) {
+
 			printf("Entrada [%d] eliminada.\n", entradaActual->numeroEntrada);
+			//list_remove_and_destroy_element(l_indice_entradas, entradaActual->numeroEntrada,
+			//		destruir_indice_entrada);
+
+			_Bool contieneNroEntrada(t_indice_entrada * entradaAEliminar) {
+				return entradaAEliminar->numeroEntrada == entradaActual->numeroEntrada;
+			}
+
+			list_remove_by_condition(l_indice_entradas, (void *) contieneNroEntrada);
+			printf("Destruida");
 		} else {
 			if (i == 0) {
 				int viejoTamanio = obtenerTamanioTotalDeValorGuardado(indices);
@@ -732,6 +740,8 @@ void actualizarEntradasConNuevoValor(char clave[40], char * valor) {
 			printf("Entrada [%d] actualizada.\n", entradaActual->numeroEntrada);
 		}
 	}
+
+	// list_destroy(indices);
 
 	contadorOperacion++;
 
@@ -1181,8 +1191,6 @@ void compactarEntradas() {
 	printf("La tabla de entradas contiene %d indices...\n",
 			cantEntradasExistentes);
 
-	ordenarAscPorNroDeEntrada(l_indice_entradas);
-
 	imprimirTablaEntradas();
 
 	t_list * listaAuxiliar = list_create();
@@ -1197,8 +1205,10 @@ void compactarEntradas() {
 		entradaAux->tamanioValor = entrada->tamanioValor;
 		entradaAux->esAtomica = entrada->esAtomica;
 		entradaAux->nroDeOperacion = entrada->nroDeOperacion;
+
 		entradaAux->puntero = tablaEntradas
 				+ (i * configTablaEntradas->tamanioEntradas);
+		strcpy(entradaAux->puntero, entrada->puntero);
 
 		list_add(listaAuxiliar, entradaAux);
 
