@@ -641,27 +641,18 @@ t_indice_entrada * aplicarAlgoritmoDeReemplazo(char clave[40], char * valor) {
 
 		t_list * indicesAtomicos = list_filter(l_indice_entradas,
 				(void *) entradaAtomica);
-		// t_list * listaAux = list_duplicate(l_indice_entradas);
-
-		// ordenarAscPorCodDeOperacion(listaAux);
 
 		ordenarAscPorCodDeOperacion(indicesAtomicos);
-
-		// t_indice_entrada * entradaMenosUsada = list_get(listaAux, 0);
 
 		t_indice_entrada * entradaMenosUsada = list_get(indicesAtomicos, 0);
 
 		// TODO en lugar de puntero a char debe ser un char[40]
-		//char * claveAReemplazar = obtenerClaveExistenteEnEntrada(
-		//		entradaMenosUsada->numeroEntrada, listaAux);
-
 		char * claveAReemplazar = obtenerClaveExistenteEnEntrada(
 				entradaMenosUsada->numeroEntrada, indicesAtomicos);
 
 		printf("Clave a ser reemplazada: %s\n", claveAReemplazar);
 
 		// TODO: Eliminar los elementos de la lista destruida
-		// list_destroy(listaAux);
 		list_destroy(indicesAtomicos);
 
 		t_list * indicesQueContienenClave = obtenerIndicesDeClave(
