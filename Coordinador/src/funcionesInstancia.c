@@ -400,7 +400,7 @@ t_instancia * siguienteInstanciaSegunAlgoritmo(char clave[40], int cod){
 						if(chequearConectividadProceso(i) == CONECTADO){
 							flag = 0;
 						}else{
-							logger_coordinador(escribir_loguear, l_error,"No hay Instancias conectadas\n");
+							logger_coordinador(escribir_loguear, l_error,"No esta conectada la instancia\n");
 							t_instancia * instancia_error = malloc(sizeof(t_instancia));
 							strncpy(instancia_error->nombre,"ERROR",5);
 							return instancia_error;
@@ -411,7 +411,7 @@ t_instancia * siguienteInstanciaSegunAlgoritmo(char clave[40], int cod){
 						if(chequearConectividadProceso(i) == CONECTADO){
 							flag = 0;
 						}else{
-							logger_coordinador(escribir_loguear, l_error,"No hay Instancias conectadas\n");
+							logger_coordinador(escribir_loguear, l_error,"No esta conectada la instancia\n");
 							t_instancia * instancia_error = malloc(sizeof(t_instancia));
 							strncpy(instancia_error->nombre,"ERROR",5);
 							return instancia_error;

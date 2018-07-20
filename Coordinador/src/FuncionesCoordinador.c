@@ -17,10 +17,17 @@ void crear_hilo_conexion(int socket, void*funcion_a_ejecutar(int)){
 void configurar_signals();
 
 void cargarArchivoConfiguracion(char * path){
+
 	logger_coordinador(escribir_loguear, l_info, "Cargando archivo de configuración...\n");
 
 	t_config * config_file = config_create(path);
 	char * algo_dist;
+
+	if(config_file==NULL){
+		logger_coordinador(escribir_loguear, l_error, "No se pudo cargar el archivo de configuracion\n");
+		exit(EXIT_FAILURE);
+	}
+
 	logger_coordinador(escribir_loguear, l_info, "Se cargó archivo? : %d\n",config_file!=NULL);
 
 	if (config_has_property(config_file,ARCH_CONFIG_ALGORITMO_DISTRIBUCION)){
