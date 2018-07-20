@@ -16,10 +16,7 @@ void enviarHeader(int socketCoordinador, int procesoOrigen, int procesoReceptor,
 	header->proceso_receptor = procesoReceptor;
 
 	printf("Enviando header..: \n");
-	printf("\tProceso origen: %d \n", header->proceso_origen);
-	printf("\tProceso destino: %d \n", header->proceso_receptor);
-	printf("\tOperacion: %d \n", header->operacion);
-	printf("\tCant a leer: %d \n", header->cantidad_a_leer);
+	printf("\tOrigen: %d, Destino: %d, Operacion: %d, Cant a leer: %d\n\n", header->proceso_origen, header->proceso_receptor, header->operacion, header->cantidad_a_leer);
 
 	int resultado = send(socketCoordinador, header, sizeof(t_content_header),
 			0);

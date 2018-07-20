@@ -25,6 +25,7 @@
 #include <fcntl.h>
 #include <pthread.h>
 #include <signal.h>
+#include <semaphore.h>
 
 #include "CargarArchivoDeConfiguracion.c"
 
@@ -70,6 +71,8 @@ typedef struct {
 
 // Cantidad de threads requeridos: principal + auxiliar para efectuar DUMP
 pthread_t threadId[2];
+
+pthread_mutex_t mutexDump;
 
 int socketCoordinador;
 int numeroEntrada = 0;
