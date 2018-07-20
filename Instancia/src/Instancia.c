@@ -1065,8 +1065,9 @@ void realizarStoreDeClave(char clave[40]) {
 		printf("Tamaño del valor guardado: %d\n", tamanioValorCompleto);
 
 		char * valorCompleto = obtenerValorCompleto(primerEntrada->puntero,
-				tamanioValorCompleto);
+				tamanioValorCompleto + 1);
 		printf("El valor completo es: %s\n", valorCompleto);
+
 
 		grabarArchivoPorPrimeraVez(fileDescriptor, valorCompleto,
 				tamanioValorCompleto);
