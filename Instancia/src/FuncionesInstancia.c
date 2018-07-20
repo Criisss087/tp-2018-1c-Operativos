@@ -83,16 +83,20 @@ t_sentencia * construirSentenciaConValor(
 
 void imprimirEntrada(t_indice_entrada * entrada) {
 	printf(
-			"\t| %d        | %s    |   %d    |   %d      |   %d       |      %p   |\n",
+			"| %10d | %40s | %7d | %13d | %7d | %p  | %.*s |\n",
 			entrada->numeroEntrada, entrada->clave, entrada->tamanioValor,
-			entrada->esAtomica, entrada->nroDeOperacion, entrada->puntero);
+			entrada->esAtomica, entrada->nroDeOperacion, entrada->puntero, configTablaEntradas->tamanioEntradas, entrada->puntero);
 }
 
 void imprimirTablaEntradas() {
+	ordenarAscPorNroDeEntrada(l_indice_entradas);
+
 	printf("Imprimiendo tabla administrativa:\n");
 	printf(
-			"\t| N° entrada |     Clave     | Tamanio | Valor Atomico | Nro. Operacion | PunteroValor |\n");
+			//"\t| N° entrada |     Clave     | Tamanio | Valor Atomico | Nro. Operacion | PunteroValor |\n");
+	"| N° entrada | \t\t\tClave\t\t\t| Tamanio | Valor Atomico | Nro. Op | PunteroValor | Valor \t|\n");
 	list_iterate(l_indice_entradas, (void*) imprimirEntrada);
+	printf("\n\tNumero de entrada global: %d\n\n", numeroEntrada);
 }
 
 int interpretarHeader(int socketCoordinador, t_content_header * header) {
@@ -180,7 +184,7 @@ void eliminarEntradasAsociadasAClave(char * clave) {
 		_Bool contieneClave(t_indice_entrada * entrada) {
 			return (strcmp(entrada->clave, clave) == 0);
 		}
-		list_remove_by_condition(l_indice_entradas, (void*) contieneClave);
+		list_remove_and_destroy_by_condition(l_indice_entradas, (void*) contieneClave, (void*) destruir_indice_entrada);
 	}
 
 	printf("Se eliminaron %d entradas\n", cantidadDeIndices);

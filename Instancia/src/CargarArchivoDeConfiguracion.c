@@ -29,6 +29,12 @@ void cargarArchivoDeConfig(char *path) {
 		printf("Cargando archivo de configuracion...\n");
 		t_config * config_file = config_create(path);
 
+		if(config_file==NULL)
+		{
+			printf("Error al cargar el archivo de configuracion...\n");
+			exit(1);
+		}
+
 		if (config_has_property(config_file,ARCH_CONFIG_IP_COORD)){
 			IP_COORDINADOR = strdup(config_get_string_value(config_file, ARCH_CONFIG_IP_COORD));
 			printf("\tIP Coordinador: %s\n", IP_COORDINADOR);
