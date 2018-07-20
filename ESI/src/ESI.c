@@ -87,11 +87,11 @@ int conectar_planificador(char * ip, char * puerto){
 void finalizar_esi(void)
 {
 	if(confirmacion != NULL){
-		free(confirmacion);
+		//free(confirmacion);
 	}
 
 
-	if(linea_a_parsear){
+	if(linea_a_parsear != NULL){
 		free(linea_a_parsear);
 	}
 
@@ -277,6 +277,7 @@ void recibir_orden_planif_para_comenzar(t_content_header * header){
 	//mostrar_header(header);
 
 	confirmacion = malloc(sizeof(t_confirmacion_sentencia));
+	memset(confirmacion,0,sizeof(t_confirmacion_sentencia));
 	read_size = recv(serverPlanif, confirmacion, sizeof(t_confirmacion_sentencia), 0);
 
 	if(read_size < 0){
@@ -516,6 +517,9 @@ void esperar_orden_planificador_para_finalizar(int esperar){
 			exit(EXIT_FAILURE);
 		}
 		destruir_cabecera_mensaje(content_header);
+		if(confirmacion != NULL){
+			free(confirmacion);
+		}
 		printf("Fin de ejecucion por alcanzar el fin del archivo \n");
 	}
 
@@ -579,7 +583,7 @@ void captura_sigint(int signo)
     {
 
     	printf("\nApretaste ctrl+c, por qué?, no hay porque\n");
-    	destruir_operacion(parsed);
+   		//destruir_operacion(parsed);
     	finalizar_esi();
     	exit(EXIT_FAILURE);
     }
