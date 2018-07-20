@@ -263,6 +263,15 @@ void guardarEnListaDeInstancias(int socketInstancia, char *nombre){
 
 }
 
+void check_todas_las_instancias(){
+	void check_conectividad(t_instancia * t){
+		if(chequearConectividadProceso(t)==DESCONECTADO){
+			t->flag_thread = 0;
+		}
+	}
+	list_iterate(lista_instancias, (void*)check_conectividad);
+}
+
 t_instancia * siguienteEqLoad(int cod){
 	//Quizá convenga hacer que recorra la lista de atrás para adelante,
 	//para no estar siempre con las nuevas dejando las viejas para lo último.
@@ -292,7 +301,7 @@ t_instancia * siguienteLSU(){
 	int indiceContador = 0;
 
 	void getInstanciaMayorEspacioLibre(t_instancia * t){
-		if (t->entradas_libres > maximo){
+		if (t->entradas_libres > maximo && t->flag_thread){
 			maximo = t->entradas_libres;
 			indiceDelMaximo = indiceContador;
 		}
@@ -304,6 +313,7 @@ t_instancia * siguienteLSU(){
 }
 
 t_instancia * siguienteKeyExplicit(char clave[40]){
+	check_todas_las_instancias();
 
 	int cantidad_instancias = list_size(lista_instancias);
 	int caracter = 97; // a
@@ -335,29 +345,6 @@ t_instancia * siguienteKeyExplicit(char clave[40]){
 	free(letra);
 }
 
-t_instancia * siguienteInstanciaSegunAlgoritmo(char clave[40], int cod){
-	if(	list_size(lista_instancias)==0){
-		logger_coordinador(escribir_loguear, l_error,"No hay Instancias conectadas\n");
-		t_instancia * instancia_error = malloc(sizeof(t_instancia));
-		strncpy(instancia_error->nombre,"ERROR",5);
-		return instancia_error;
-	}
-
-	switch(ALGORITMO_DISTRIBUCION){
-		case EQUITATIVE_LOAD:
-			return siguienteEqLoad(cod);
-			break;
-		case LEAST_SPACE_USED:
-			return siguienteLSU();
-			break;
-		case KEY_EXPLICIT:
-			return siguienteKeyExplicit(clave);
-			break;
-		default:
-			return siguienteEqLoad(cod);
-		}
-}
-
 int chequearConectividadProceso(t_instancia * inst){
 	t_content_header * st_connect = crear_cabecera_mensaje(coordinador,instancia,COORDINADOR_INSTANCIA_CHEQUEO_CONEXION,0);
 	int status_connect = send(inst->socket,st_connect,sizeof(t_content_header),0);
@@ -376,6 +363,74 @@ int chequearConectividadProceso(t_instancia * inst){
 	}else{
 		logger_coordinador(escribir_loguear, l_info,"Chequeo de conectividad de proceso: %d\n", status_recv);
 		return CONECTADO;
+	}
+}
+
+bool hay_alguna_conectada(t_instancia * inst){
+	if(chequearConectividadProceso(inst) == CONECTADO){
+		return true;
+	}
+	else false;
+}
+
+t_instancia * siguienteInstanciaSegunAlgoritmo(char clave[40], int cod){
+	check_todas_las_instancias();
+
+	if(list_size(lista_instancias)==0){
+		logger_coordinador(escribir_loguear, l_error,"No hay Instancias conectadas\n");
+		t_instancia * instancia_error = malloc(sizeof(t_instancia));
+		strncpy(instancia_error->nombre,"ERROR",5);
+		return instancia_error;
+	}
+
+	if(list_any_satisfy(lista_instancias, hay_alguna_conectada)){
+		int flag = 1;
+		t_instancia * i = NULL;
+
+		while(flag){
+			switch(ALGORITMO_DISTRIBUCION){
+					case EQUITATIVE_LOAD:
+						i = siguienteEqLoad(cod);
+						if(chequearConectividadProceso(i) == CONECTADO){
+							flag = 0;
+						}
+						break;
+					case LEAST_SPACE_USED:
+						i = siguienteLSU();
+						if(chequearConectividadProceso(i) == CONECTADO){
+							flag = 0;
+						}else{
+							logger_coordinador(escribir_loguear, l_error,"No hay Instancias conectadas\n");
+							t_instancia * instancia_error = malloc(sizeof(t_instancia));
+							strncpy(instancia_error->nombre,"ERROR",5);
+							return instancia_error;
+						}
+						break;
+					case KEY_EXPLICIT:
+						i = siguienteKeyExplicit(clave);
+						if(chequearConectividadProceso(i) == CONECTADO){
+							flag = 0;
+						}else{
+							logger_coordinador(escribir_loguear, l_error,"No hay Instancias conectadas\n");
+							t_instancia * instancia_error = malloc(sizeof(t_instancia));
+							strncpy(instancia_error->nombre,"ERROR",5);
+							return instancia_error;
+						}
+						break;
+					default:
+						i = siguienteEqLoad(cod);
+						if(chequearConectividadProceso(i) == CONECTADO){
+							flag = 0;
+						}
+			}
+
+		}
+		return i;
+	}else{
+		logger_coordinador(escribir_loguear, l_error,"No hay Instancias conectadas\n");
+		t_instancia * instancia_error = malloc(sizeof(t_instancia));
+		strncpy(instancia_error->nombre,"ERROR",5);
+		return instancia_error;
 	}
 }
 
