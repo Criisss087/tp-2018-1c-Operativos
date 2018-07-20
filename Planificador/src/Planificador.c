@@ -549,11 +549,12 @@ int recibir_mensaje_esi(t_conexion_esi conexion_esi)
 
 			if(confirmacion->pid == clave_a_bloquear_por_get->pid)
 			{
-				logger_planificador(loguear,l_warning,"Bloquea el esi por aca");
+				esi_en_ejecucion->instruccion_actual++;
+				esi_en_ejecucion->estimacion_actual--;
+				esi_en_ejecucion->ejec_anterior = 1;
 
 				logger_planificador(escribir_loguear,l_info,"El ESI %d intentó acceder a la clave %s, se pasa a bloqueados",confirmacion->pid,clave_a_bloquear_por_get->clave);
 				esi_en_ejecucion->estado = bloqueado;
-				esi_en_ejecucion->ejec_anterior = 1;
 				esi_en_ejecucion->clave_bloqueo = strdup(clave_a_bloquear_por_get->clave);
 				esi_aux = esi_en_ejecucion;
 
@@ -2335,6 +2336,12 @@ void leer_configuracion_desde_archivo(char* path_archivo){
 
 	if(arch_config==NULL){
 		logger_planificador(escribir_loguear,l_error,"ERROR. No se pudo obtener un archivo de configuración.");
+		terminar_planificador();
+		exit(EXIT_FAILURE);
+	}
+	else if(config_keys_amount(arch_config)==0)
+	{
+		logger_planificador(escribir_loguear,l_error,"ERROR. El archivo ingresado no tienen configuraciones!.");
 		terminar_planificador();
 		exit(EXIT_FAILURE);
 	}
