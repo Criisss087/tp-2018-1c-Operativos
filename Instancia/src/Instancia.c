@@ -211,7 +211,7 @@ char * obtenerPathArchivo(char clave[40]) {
 	char * path = string_new();
 	string_append(&path, puntoDeMontaje);
 	string_append(&path, archivo);
-	printf("Path del archivo a crear: %s\n", path);
+	// printf("Path del archivo a crear: %s\n", path);
 
 	return path;
 }
@@ -229,7 +229,7 @@ void recuperarClave(char clave[40]) {
 		printf("No se pudo crear el archivo: %s\n", path);
 		printf("\tFile Descriptor: %d\n", fileDescriptor);
 	} else {
-		printf("File Descriptor: %d\n", fileDescriptor);
+		// printf("File Descriptor: %d\n", fileDescriptor);
 
 		char * valor = calloc(PACKAGESIZE, sizeof(char));
 
@@ -244,7 +244,7 @@ void recuperarClave(char clave[40]) {
 
 		printf("Cerrando el fileDescriptor...\n");
 		if (close(fileDescriptor) == 0) {
-			printf("\tArchivo cerrado correctamente.\n");
+			// printf("\tArchivo cerrado correctamente.\n");
 		} else {
 			printf("\tError en el cerrado del archivo.\n");
 		}
@@ -993,9 +993,7 @@ void make_directory(const char* name) {
 		printf("Directorio creado: %s\t check = %d\n", name, check);
 
 	else {
-		printf(
-				"No se puede crear el directorio... o ya existe...\t check = %d\n",
-				check);
+		// printf("No se puede crear el directorio... o ya existe...\t check = %d\n",check);
 	}
 }
 
@@ -1046,7 +1044,7 @@ void realizarStoreDeClave(char clave[40]) {
 		printf("No se pudo crear el archivo: %s\n", path);
 		printf("\tFile Descriptor: %d\n", fileDescriptor);
 	} else {
-		printf("File Descriptor: %d\n", fileDescriptor);
+		// printf("File Descriptor: %d\n", fileDescriptor);
 	}
 
 	t_list * indices = obtenerIndicesDeClave(clave);
@@ -1062,12 +1060,11 @@ void realizarStoreDeClave(char clave[40]) {
 		t_indice_entrada * primerEntrada = list_get(indices, 0);
 
 		int tamanioValorCompleto = obtenerTamanioTotalDeValorGuardado(indices);
-		printf("Tamaño del valor guardado: %d\n", tamanioValorCompleto);
+		// printf("Tamaño del valor guardado: %d\n", tamanioValorCompleto);
 
 		char * valorCompleto = obtenerValorCompleto(primerEntrada->puntero,
 				tamanioValorCompleto + 1);
 		printf("El valor completo es: %s\n", valorCompleto);
-
 
 		grabarArchivoPorPrimeraVez(fileDescriptor, valorCompleto,
 				tamanioValorCompleto);
@@ -1083,7 +1080,7 @@ void realizarStoreDeClave(char clave[40]) {
 //	punteroDeArchivo = append(fileDescriptor, valor, tamanioDelValor, void *map, size_t len);
 
 		if (punteroDeArchivo != MAP_FAILED) {
-			printf("El Mapeo se efectuo correctamente\n\n");
+			// printf("El Mapeo se efectuo correctamente\n\n");
 			// printf("\tPuntero de archivo: %p\n", punteroDeArchivo);
 		} else {
 			printf("Error en el Mapeo de archivo\n");
@@ -1112,7 +1109,7 @@ void realizarStoreDeClave(char clave[40]) {
 		}
 
 		if (close(fileDescriptor) == 0) {
-			printf("\tArchivo cerrado correctamente.\n");
+			// printf("\tArchivo cerrado correctamente.\n");
 		} else {
 			printf("\tError en el cerrado del archivo.\n");
 		}
@@ -1248,6 +1245,8 @@ void interpretarOperacionCoordinador(t_content_header * header,
 
 	case COORDINADOR_INSTANCIA_SENTENCIA:
 
+		pthread_mutex_lock(&mutexDump);
+
 		sentenciaRecibida = recibirSentencia(socketCoordinador);
 
 		switch (sentenciaRecibida->keyword) {
@@ -1269,6 +1268,8 @@ void interpretarOperacionCoordinador(t_content_header * header,
 			enviarResultadoSentencia(socketCoordinador, STORE_);
 			break;
 		}
+
+		pthread_mutex_unlock(&mutexDump);
 
 		break;
 
@@ -1300,20 +1301,19 @@ void ejecutarDump() {
 	}
 
 	list_iterate(l_indice_entradas, (void*) storearClave);
+
 }
 
 void iniciarDump() {
 	while (1) {
 		usleep(INTERVALO_DUMP * 1000000); // El producto es necesario ya que usleep recibe microsegundos como parametro
-		printf("#################################################\n");
-		printf("#           Comenzando proceso Dump...          #\n");
-		printf("#################################################\n");
+		printf("\n#           Comenzando proceso Dump...          #\n");
 
+		pthread_mutex_lock(&mutexDump);
 		ejecutarDump();
+		pthread_mutex_unlock(&mutexDump);
 
-		printf("#################################################\n");
-		printf("#          Dump realizado correctamente.        #\n");
-		printf("#################################################\n");
+		printf("#          Dump realizado correctamente.        #\n\n");
 	}
 }
 
@@ -1325,6 +1325,8 @@ int main(int argc, char **argv) {
 	socketCoordinador = conexionConCoordinador();
 
 	enviarNombreInstanciaACoordinador(socketCoordinador);
+
+	pthread_mutex_init(&mutexDump, NULL);
 
 	int err = pthread_create(&(threadId[1]), NULL, (void *) iniciarDump, NULL);
 	if (err != 0)
@@ -1377,7 +1379,7 @@ void configurar_signals(void) {
 
 void captura_sigint(int signo) {
 	printf(
-			"\n\nSe presinó ctrl+c, son las 3 de la mañana y tengo que hacer mil free's\n\n");
+			"\n\nLiberando memoria alocada...\n\n");
 
 	if (signo == SIGINT) {
 		finalizar_instancia();
